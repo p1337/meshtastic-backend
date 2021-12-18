@@ -10,7 +10,7 @@ import org.eclipse.paho.client.mqttv3.MqttConnectOptions
  *
  * Note: Most subscribers of MQTTClient must have their own instance, because the paho subscription code only allows one handler per unique topic string
  */
-class MQTTClient : MqttClient("tcp://mqtt.meshtastic.org:1883", generateClientId(), null) {
+class MQTTClient : MqttClient("tcp://localhost:1883", generateClientId(), null) {
     /**
      * 0 – “at most once” semantics, also known as “fire-and-forget”. Use this option when message loss is acceptable, as it does not require any kind of acknowledgment or persistence
     1 – “at least once” semantics. Use this option when message loss is not acceptable and your subscribers can handle duplicates
