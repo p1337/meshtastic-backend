@@ -46,7 +46,7 @@ def main():
     manifest = {'items': [{'assets': [{'kind': 'software-package', 'url': package_url}],
                            'metadata': {'bundle-identifier': info['CFBundleIdentifier'],
                                         'bundle-version': str(info['CFBundleVersion']),
-                                        'kind': 'software', 'title': 'LoRa Lab'}}]}
+                                        'kind': 'software', 'title': 'Werkbeleg'}}]}
     (destination / 'manifest.plist').write_bytes(plistlib.dumps(manifest))
     install_url = 'itms-services://?action=download-manifest&url=' + urllib.parse.quote(manifest_url, safe='')
     expiry = html.escape(verification['profile_expires_utc'][:10])
@@ -54,16 +54,16 @@ def main():
     build = html.escape(str(info['CFBundleVersion']))
     page = f'''<!doctype html>
 <html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="robots" content="noindex"><title>LoRa Lab installieren</title>
+<meta name="robots" content="noindex"><title>Werkbeleg installieren</title>
 <style>body{{margin:0;background:#0c1421;color:#edf2fa;font:17px/1.6 system-ui,sans-serif}}
 main{{max-width:620px;margin:auto;padding:56px 24px}}h1{{font-size:36px;line-height:1.15}}
-.tag{{color:#75e2b4}}.button{{display:block;background:#75e2b4;color:#0c1421;padding:16px;border-radius:12px;text-align:center;text-decoration:none;font-weight:700;margin:28px 0 12px}}
+.tag{{color:#ff9a16}}.button{{display:block;background:#ff9a16;color:#0c1421;padding:16px;border-radius:12px;text-align:center;text-decoration:none;font-weight:700;margin:28px 0 12px}}
 a{{color:#9dcaff}}small{{color:#b8c6d9}}.note{{padding:16px;border:1px solid #35445b;border-radius:12px}}</style></head>
-<body><main><p class="tag">APPLE-SIGNIERTE TEST-APP</p><h1>LoRa Lab auf dein iPhone.</h1>
+<body><main><p class="tag">APPLE-SIGNIERTE TEST-APP</p><h1>Werkbeleg auf dein iPhone.</h1>
 <p>Version {version} · Build {build}</p>
 <a class="button" href="{html.escape(install_url, quote=True)}">Auf diesem iPhone installieren</a>
 <p>Öffne diese Seite in Safari und bestätige die Installation. Dein iPhone muss im Signierprofil registriert sein.</p>
-<p class="note">Diese Version bietet lokale CSS-Tests und Dateiimport. Live-LoRa-Empfang ist noch nicht verfügbar.</p>
+<p class="note">Kunden, Aufträge, Foto- und Sprachberichte mit PDF-Export. Teamserver und automatisches Wetter sind noch nicht eingerichtet. Diese Testversion ersetzt LoRa Lab auf deinem iPhone.</p>
 <p><a href="{html.escape(package_url, quote=True)}">Signierte IPA herunterladen</a></p>
 <small>Profil gültig bis {expiry}. Die Installation und der Start müssen auf deinem Gerät geprüft werden.</small>
 </main></body></html>'''

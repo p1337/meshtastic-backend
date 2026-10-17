@@ -33,49 +33,20 @@ xcrun simctl boot "$device_id" 2>/dev/null || true
 xcrun simctl bootstatus "$device_id" -b
 app="$output_dir/DerivedData/Build/Products/Debug-iphonesimulator/LoRaLab.app"
 xcrun simctl install "$device_id" "$app"
-xcrun simctl launch "$device_id" de.p1337.LoRaLab
+xcrun simctl launch "$device_id" de.p1337.LoRaLab --werkbeleg-smoke
 container="$(xcrun simctl get_app_container "$device_id" de.p1337.LoRaLab data)"
-for attempt in $(seq 1 80); do
-  if [ -s "$container/Documents/LoRaLab-Latest.json" ]; then
-    if python3 - "$container/Documents/LoRaLab-Latest.json" <<'PY'
-import json,sys
-try:
-    v=json.load(open(sys.argv[1]))
-    sys.exit(0 if v.get('accessSession',{}).get('state')=='completed' else 1)
-except (OSError,ValueError):
-    sys.exit(1)
-PY
-    then break; fi
-  fi
+for attempt in $(seq 1 30); do
+  if [ -s "$container/Documents/Werkbeleg-Smoke.json" ]; then break; fi
   sleep 2
 done
-test -s "$container/Documents/LoRaLab-Latest.json"
-cp "$container/Documents/LoRaLab-Latest.json" "$output_dir/simulator-report.json"
-python3 - "$output_dir/simulator-report.json" <<'PY'
+cp "$container/Documents/Werkbeleg-Smoke.json" "$output_dir/simulator-report.json"
+python3 - "$output_dir/simulator-report.json" <<'CHECK'
 import json,sys
-v=json.load(open(sys.argv[1]));r=v['suite']
-assert v['state']=='completed'
-assert r['environment']['simulator'] is True
-assert r['environment']['appVersion']=='0.4.0'
-assert not r['liveRF'] and not r['packetDecoder']
-assert len(r['noise'])==30
-assert sum(c['cases'] for c in r['checks'])>=700
-assert not [c for c in r['checks'] if c['status']=='failed'],r['checks']
-assert v['schemaVersion']==3
-a=v['runtimeAudit'];s=v['accessSession']
-assert a['environment']['simulator'] is True
-assert a['probes'] and a['rfIQSamples']==0 and not a['rfIQSourceVerified']
-assert a['modemCommandsSent']==0 and a['driverConnectionsOpened']==0
-trace=[p for p in a['probes'] if p['id'].startswith('trace:')]
-assert len(trace)==1 and trace[0]['id']=='trace:inventory' and trace[0]['status']=='unavailable'
-assert s['state']=='completed' and s['requestedSeconds']==60
-assert s['source']=='public-telephony-metadata-only'
-assert s['rfIQSamples']==0 and not s['rfCaptureAvailable']
-assert 'rfCenterFrequencyHz' not in s
-rows=s['observations']
-assert len(rows)>=2 and rows[-1]['elapsedSeconds']>=60
-assert all(b['elapsedSeconds']>a['elapsedSeconds'] for a,b in zip(rows,rows[1:]))
-print('PASS: simulator app launched, ran a real 60-second metadata session and exported runtime audit + software results without claiming RF.')
-PY
+v=json.load(open(sys.argv[1])); assert v['passed'],v
+assert v['product']=='Werkbeleg' and v['pdfPages']>=3
+assert v['persistence'] and v['backupRoundTrip']
+assert not v['teamServerConnected'] and not v['cameraOrMicrophoneTested']
+print('PASS: native launch, disk persistence, attachment backup and multipage PDF. Synthetic fixtures only.')
+CHECK
 xcrun simctl io "$device_id" screenshot "$output_dir/simulator-tests.png"
 cp "$project_dir/Assets.xcassets/AppIcon.appiconset/AppIcon.png" "$output_dir/AppIcon.png"

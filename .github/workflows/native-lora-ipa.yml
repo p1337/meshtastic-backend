@@ -1,4 +1,4 @@
-name: Native LoRa Lab Apple-signed IPA
+name: Werkbeleg Apple-signed iPhone App
 on:
   push:
     branches: [codex/native-lora-ios]
@@ -32,12 +32,14 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
+      - name: Verify team server
+        run: python3 -m unittest discover -s native-lora-ios/team-server -p "test_*.py" -v
       - name: Run fast native regression suite
         timeout-minutes: 3
         run: |
           set -euo pipefail
           mkdir -p native-lora-ios/build-signed
-          xcrun swiftc -O native-lora-ios/Sources/CSS.swift native-lora-ios/Sources/Diagnostics.swift native-lora-ios/Sources/RuntimeAudit.swift native-lora-ios/Tests/main.swift -o native-lora-ios/build-signed/css-tests
+          xcrun swiftc -O native-lora-ios/Werkbeleg/Model.swift native-lora-ios/Tests/main.swift -o native-lora-ios/build-signed/css-tests
           native-lora-ios/build-signed/css-tests --json native-lora-ios/build-signed/diagnostics-report.json | tee native-lora-ios/build-signed/test-results.txt
       - name: Upload native regression evidence
         if: always()

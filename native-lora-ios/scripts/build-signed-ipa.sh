@@ -107,7 +107,7 @@ installed_profile="$profile_dir/$profile_uuid.mobileprovision"
 cp "$signing_dir/profile.mobileprovision" "$installed_profile"
 xcodebuild -version
 xcrun swift "$project_dir/scripts/render-icon.swift" "$project_dir/Assets.xcassets/AppIcon.appiconset/AppIcon.png"
-xcrun swiftc -O "$project_dir/Sources/CSS.swift" "$project_dir/Sources/Diagnostics.swift" "$project_dir/Sources/RuntimeAudit.swift" "$project_dir/Tests/main.swift" -o "$output_dir/css-tests"
+xcrun swiftc -O "$project_dir/Werkbeleg/Model.swift" "$project_dir/Tests/main.swift" -o "$output_dir/css-tests"
 "$output_dir/css-tests" --json "$output_dir/diagnostics-report.json" | tee "$output_dir/test-results.txt"
 xcodebuild -project "$project_dir/LoRaLab.xcodeproj" -scheme LoRaLab \
   -configuration Release -destination 'generic/platform=iOS' \
@@ -158,7 +158,7 @@ out=pathlib.Path(os.environ['SIGNED_OUTPUT_DIR']);ipa=out/'LoRaLab-Apple-signed.
 record={'bundle_id':info['CFBundleIdentifier'],'cpu':'arm64','apple_distribution_signature_verified':True,
         'provisioning_profile_matches':True,'profile_expires_utc':v['ExpirationDate'].isoformat()+'Z',
         'registered_device_count':len(v['ProvisionedDevices']),'ipa_sha256':hashlib.sha256(ipa.read_bytes()).hexdigest(),
-        'live_lora_reception':False,'on_device_execution_verified':False}
+        'product':'Werkbeleg','on_device_execution_verified':False}
 (out/'signature-verification.json').write_text(json.dumps(record,indent=2)+'\n')
 print('Verified Apple Distribution signature, Ad Hoc profile and arm64 iOS device binary.')
 PY
