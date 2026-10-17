@@ -22,6 +22,7 @@ PY
 cleanup() { xcrun simctl shutdown "$device_id" >/dev/null 2>&1 || true; }
 trap cleanup EXIT
 xcrun swift "$project_dir/scripts/render-icon.swift" "$project_dir/Assets.xcassets/AppIcon.appiconset/AppIcon.png"
+xcrun simctl boot "$device_id" 2>/dev/null || true
 xcodebuild -project "$project_dir/LoRaLab.xcodeproj" -scheme LoRaLab \
   -configuration Debug -sdk iphonesimulator -destination "id=$device_id" \
   -derivedDataPath "$output_dir/DerivedData" CURRENT_PROJECT_VERSION="${GITHUB_RUN_NUMBER:-1}" \
@@ -44,7 +45,7 @@ python3 - "$output_dir/simulator-report.json" <<'CHECK'
 import json,sys
 v=json.load(open(sys.argv[1])); assert v['passed'],v
 assert v['product']=='Werkbeleg' and v['pdfPages']>=3
-assert v['persistence'] and v['backupRoundTrip']
+assert v['persistence'] and v['backupRoundTrip'] and v['photoPixelSizeVerified']
 assert not v['teamServerConnected'] and not v['cameraOrMicrophoneTested']
 print('PASS: native launch, disk persistence, attachment backup and multipage PDF. Synthetic fixtures only.')
 CHECK

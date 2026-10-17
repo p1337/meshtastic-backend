@@ -100,8 +100,12 @@ struct Camera: UIViewControllerRepresentable {
 }
 extension UIImage {
     func reportJPEG() -> Data? {
-        let ratio = min(1, 1800 / max(size.width, size.height))
-        let output = UIGraphicsImageRenderer(size: CGSize(width: size.width * ratio, height: size.height * ratio)).image { _ in self.draw(in: CGRect(x: 0, y: 0, width: size.width * ratio, height: size.height * ratio)) }
+        let pixels = CGSize(width: size.width * scale, height: size.height * scale)
+        guard pixels.width > 0, pixels.height > 0 else { return nil }
+        let ratio = min(1, 1800 / max(pixels.width, pixels.height))
+        let target = CGSize(width: max(1, (pixels.width * ratio).rounded(.down)), height: max(1, (pixels.height * ratio).rounded(.down)))
+        let format = UIGraphicsImageRendererFormat(); format.scale = 1; format.opaque = true
+        let output = UIGraphicsImageRenderer(size: target, format: format).image { _ in self.draw(in: CGRect(origin: .zero, size: target)) }
         return output.jpegData(compressionQuality: 0.78)
     }
 }

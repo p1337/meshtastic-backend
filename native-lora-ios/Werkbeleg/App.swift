@@ -306,6 +306,11 @@ enum Smoke {
             let c = Customer(name: "SIMULATOR TEST", address: "Teststraße 1")
             let j = Job(customerID: c.id, title: "Testauftrag")
             let image = UIGraphicsImageRenderer(size: CGSize(width: 100, height: 100)).image { ctx in UIColor.orange.setFill(); ctx.fill(CGRect(x: 0, y: 0, width: 100, height: 100)) }
+            let pixelFormat = UIGraphicsImageRendererFormat(); pixelFormat.scale = 1
+            let wideImage = UIGraphicsImageRenderer(size: CGSize(width: 2000, height: 20), format: pixelFormat).image { ctx in UIColor.orange.setFill(); ctx.fill(CGRect(x: 0, y: 0, width: 2000, height: 20)) }
+            guard let resizedData = wideImage.reportJPEG(), let resized = UIImage(data: resizedData),
+                  resized.cgImage?.width == 1800, resized.cgImage?.height == 18 else { throw TeamError.message("Retina resize exceeded the 1800px limit") }
+            output["photoPixelSizeVerified"] = true
             let r = Report(jobID: j.id, author: "Synthetic test", text: String(repeating: "Prüfung der PDF-Paginierung.\n", count: 150), photos: [Evidence(data: image.jpegData(compressionQuality: 0.8)!, source: "camera")])
             store.data = Workspace(company: "Testbetrieb", customers: [c], jobs: [j], reports: [r]); store.save()
             guard store.error == nil else { throw TeamError.message(store.error!) }
