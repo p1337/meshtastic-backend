@@ -49,3 +49,30 @@ jobs:
             native-lora-ios/build-signed/test-results.txt
           if-no-files-found: error
           retention-days: 30
+      - name: Prepare iPhone installation page
+        run: |
+          python3 native-lora-ios/scripts/prepare-ota.py \
+            --build-directory native-lora-ios/build-signed \
+            --base-url https://p1337.github.io/meshtastic-backend \
+            --build-id "${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+            --output native-lora-ios/build-signed/ota
+      - name: Upload installation site
+        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b
+        with:
+          path: native-lora-ios/build-signed/ota
+  deploy-iphone-install-page:
+    needs: build-signed-ipa
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publish signed iPhone installation page
+        id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e
+

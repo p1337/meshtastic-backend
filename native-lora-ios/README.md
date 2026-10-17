@@ -23,6 +23,10 @@ Die IPA kann auf den im Profil registrierten Geräten installiert werden. Ein pa
 
 Der erste erfolgreiche historische Build erzeugte eine unsignierte IPA. Das erhaltene Skript `scripts/build-ipa.sh` erzeugt weiterhin nur diesen unsignierten lokalen Testbuild.
 
+## Direkt unterwegs installieren
+
+Der Workflow bereitet eine HTTPS-Installationsseite mit OTA-Manifest vor. Die einmalige Pages-Einrichtung und die verbleibende Geräteprüfung stehen in [OTA_INSTALL.md](OTA_INSTALL.md).
+
 ## Lokal unter macOS
 
 ```bash

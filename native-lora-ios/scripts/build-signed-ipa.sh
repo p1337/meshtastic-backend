@@ -111,6 +111,7 @@ xcrun swiftc "$project_dir/Sources/CSS.swift" "$project_dir/Tests/main.swift" -o
 xcodebuild -project "$project_dir/LoRaLab.xcodeproj" -scheme LoRaLab \
   -configuration Release -destination 'generic/platform=iOS' \
   -archivePath "$output_dir/LoRaLab.xcarchive" \
+  CURRENT_PROJECT_VERSION="${GITHUB_RUN_NUMBER:-1}" \
   CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM="$team_id" \
   CODE_SIGN_IDENTITY="$identity" PROVISIONING_PROFILE_SPECIFIER="$profile_uuid" \
   archive > "$signing_dir/archive.log" 2>&1 || {
