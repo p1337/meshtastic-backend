@@ -8,12 +8,12 @@ let size = 1024
 let space = CGColorSpaceCreateDeviceRGB()
 let context = CGContext(data: nil, width: size, height: size, bitsPerComponent: 8,
                         bytesPerRow: size * 4, space: space,
-                        bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue)!
+                        bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue)!
 let colors = [CGColor(red: 0.055, green: 0.105, blue: 0.17, alpha: 1),
               CGColor(red: 0.08, green: 0.24, blue: 0.28, alpha: 1)] as CFArray
 let gradient = CGGradient(colorsSpace: space, colors: colors, locations: [0, 1])!
 context.drawLinearGradient(gradient, start: CGPoint(x: 0, y: 0),
-                           end: CGPoint(x: size, y: size), options: [])
+                           end: CGPoint(x: CGFloat(size), y: CGFloat(size)), options: [])
 let chirp = CGMutablePath()
 for k in 0...900 {
     let t = Double(k) / 900
