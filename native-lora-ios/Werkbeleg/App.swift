@@ -11,6 +11,7 @@ import UniformTypeIdentifiers
             RootView().environmentObject(store).tint(Color.orange)
                 .environment(\.locale, Locale(identifier: language))
                 .preferredColorScheme(.light)
+                .onOpenURL { store.receiveInvitation($0) }
                 .task {
                     if ProcessInfo.processInfo.arguments.contains("--werkbeleg-smoke") { Smoke.run() }
                 }
@@ -22,10 +23,11 @@ struct RootView: View {
     @AppStorage("language") var language = "de"
     var body: some View {
         TabView {
-            JobsView().tabItem { Label(L.t("Aufträge", "Jobs", "Zlecenia"), systemImage: "hammer.fill") }
+            JobsView().tabItem { Label(L.t("Projekte", "Projects", "Projekty"), systemImage: "hammer.fill") }
             CustomersView().tabItem { Label(L.t("Kunden", "Customers", "Klienci"), systemImage: "person.2.fill") }
             SettingsView().tabItem { Label(L.t("Büro", "Office", "Biuro"), systemImage: "building.2.fill") }
         }
+        .sheet(item: $store.invitation) { InvitationView(invite: $0) }
         .id(language)
         .disabled(store.syncing)
         .alert(L.t("Hinweis", "Notice", "Informacja"), isPresented: Binding(get: { store.error != nil }, set: { if !$0 { store.error = nil } })) { Button("OK") { store.error = nil } } message: { Text(store.error ?? "") }
@@ -48,9 +50,9 @@ struct JobsView: View {
         NavigationStack {
             List {
                 Section { BrandHeader().listRowInsets(EdgeInsets()).listRowBackground(Color.clear) }
-                Section(L.t("Deine Aufträge", "Your jobs", "Twoje zlecenia")) {
+                Section(L.t("Deine Projekte", "Your projects", "Twoje projekty")) {
                     if store.data.jobs.isEmpty {
-                        ContentUnavailableView(L.t("Ersten Auftrag anlegen", "Create your first job", "Dodaj pierwsze zlecenie"), systemImage: "hammer", description: Text(L.t("Kunden anlegen, Auftrag öffnen und die Arbeit festhalten.", "Add a customer, open a job and document your work.", "Dodaj klienta, otwórz zlecenie i dokumentuj pracę.")))
+                        ContentUnavailableView(L.t("Erstes Projekt anlegen", "Create your first project", "Dodaj pierwsze zlecenie"), systemImage: "hammer", description: Text(L.t("Kunden anlegen, Projekt öffnen und die Arbeit festhalten.", "Add a customer, open a project and document your work.", "Dodaj klienta, otwórz projekt i dokumentuj pracę.")))
                     }
                     ForEach(store.data.jobs.filter { search.isEmpty || $0.title.localizedCaseInsensitiveContains(search) }) { job in
                         NavigationLink { JobView(jobID: job.id) } label: {
@@ -120,10 +122,10 @@ struct NewJobView: View {
             Form {
                 Picker(L.t("Kunde", "Customer", "Klient"), selection: $customer) { Text(L.t("Bitte wählen", "Choose", "Wybierz")).tag(nil as UUID?); ForEach(store.data.customers) { Text($0.name).tag(Optional($0.id)) } }
                 Button(L.t("Kunden hinzufügen", "Add customer", "Dodaj klienta")) { newCustomer = true }
-                TextField(L.t("Auftrag / Baustelle", "Job / site", "Zlecenie / budowa"), text: $title)
+                TextField(L.t("Projekt / Baustelle", "Job / site", "Zlecenie / budowa"), text: $title)
                 TextField(L.t("Baustellenadresse", "Site address", "Adres budowy"), text: $address, axis: .vertical)
                 TextField(L.t("Zuständig (Name)", "Assigned to (name)", "Osoba odpowiedzialna"), text: $person)
-            }.navigationTitle(editing == nil ? L.t("Neuer Auftrag", "New job", "Nowe zlecenie") : L.t("Auftrag bearbeiten", "Edit job", "Edytuj zlecenie"))
+            }.navigationTitle(editing == nil ? L.t("Neues Projekt", "New project", "Nowy projekt") : L.t("Projekt bearbeiten", "Edit project", "Edytuj projekt"))
                 .onAppear { if let j = editing { title = j.title; address = j.address; person = j.assignedTo; customer = j.customerID } }
                 .sheet(isPresented: $newCustomer) { NewCustomerView() }
                 .toolbar { ToolbarItem(placement: .cancellationAction) { Button(L.t("Abbrechen", "Cancel", "Anuluj")) { dismiss() } }; ToolbarItem(placement: .confirmationAction) { Button(L.t("Anlegen", "Create", "Utwórz")) {
@@ -144,6 +146,7 @@ struct JobView: View {
                 Section { Text(j.address); if !j.assignedTo.isEmpty { Label(j.assignedTo, systemImage: "person") }
                     Button { if let i = store.data.jobs.firstIndex(where: { $0.id == jobID }) { store.data.jobs[i].completed.toggle(); store.save() } } label: { Label(j.completed ? L.t("Abgeschlossen", "Completed", "Zakończone") : L.t("Als erledigt markieren", "Mark completed", "Oznacz jako zakończone"), systemImage: j.completed ? "checkmark.circle.fill" : "circle") }.disabled(!store.canEdit)
                 }
+                Section { NavigationLink { ProjectChatView(jobID: jobID) } label: { Label(L.t("Projektchat öffnen", "Open project chat", "Otwórz czat projektu"), systemImage: "bubble.left.and.bubble.right.fill") } }
                 Section(L.t("Berichte", "Reports", "Raporty")) {
                     ForEach(store.data.reports.filter { $0.jobID == jobID }.sorted { $0.createdAt > $1.createdAt }) { report in
                         NavigationLink { ReportDetail(reportID: report.id) } label: {
@@ -267,19 +270,23 @@ struct SettingsView: View {
                     Button(L.t("Vollständige Sicherung erstellen", "Create full backup", "Utwórz pełną kopię")) { do { backupURL = try store.backup() } catch { store.error = error.localizedDescription } }
                     if let url = backupURL { ShareLink(item: url) { Label(L.t("In Dateien / iCloud / Cloud sichern", "Save to Files / iCloud / cloud", "Zapisz w Plikach / iCloud / chmurze"), systemImage: "square.and.arrow.up") } }
                     Button(L.t("Sicherung wiederherstellen", "Restore backup", "Przywróć kopię")) { importing = true }.disabled(!store.canEdit)
-                    Text(L.t("Enthält Kunden, Aufträge, Fotos und Audio. Wähle im Teilen-Menü ›In Dateien sichern‹ und deinen Cloudordner. Das ist eine Sicherung, keine automatische iCloud-Synchronisation.", "Includes customers, jobs, photos and audio. Choose Save to Files and your cloud folder. This is a backup, not automatic iCloud sync.", "Zawiera klientów, zlecenia, zdjęcia i dźwięk. Wybierz Zapisz w Plikach i folder chmury. To kopia, nie automatyczna synchronizacja iCloud.")).font(.caption)
+                    Text(L.t("Enthält Kunden, Projekte, Fotos und Audio. Wähle im Teilen-Menü ›In Dateien sichern‹ und deinen Cloudordner. Das ist eine Sicherung, keine automatische iCloud-Synchronisation.", "Includes customers, jobs, photos and audio. Choose Save to Files and your cloud folder. This is a backup, not automatic iCloud sync.", "Zawiera klientów, zlecenia, zdjęcia i dźwięk. Wybierz Zapisz w Plikach i folder chmury. To kopia, nie automatyczna synchronizacja iCloud.")).font(.caption)
                 }
-                Section(L.t("Team bis 20 Personen · Pilot", "Team up to 20 · Pilot", "Zespół do 20 osób · Pilot")) {
+                Section(L.t("Team & Pakete", "Team & plans", "Zespół i pakiety")) {
+                    NavigationLink { PlansView() } label: { Label(L.t("5 / 10 / 20 Personen", "5 / 10 / 20 people", "5 / 10 / 20 osób"), systemImage: "person.3.fill") }
+                    NavigationLink { TeamView() } label: { Label(L.t("Team verwalten & einladen", "Manage team & invite", "Zarządzaj zespołem i zaproś"), systemImage: "person.badge.plus") }
+                }
+                Section(L.t("Eigener Teamserver · Pilot", "Your team server · Pilot", "Własny serwer zespołu · Pilot")) {
                     TextField("https://team.example.com", text: $teamURL).textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
                     SecureField(L.t("Persönlicher Zugangstoken", "Personal access token", "Osobisty token dostępu"), text: $token).textInputAutocapitalization(.never).autocorrectionDisabled()
                     Button(L.t("Zugang sicher speichern", "Save access securely", "Zapisz dostęp bezpiecznie")) { do { try KeychainToken.save(token); store.syncStatus = L.t("Token im Schlüsselbund gespeichert", "Token saved in Keychain", "Token zapisany w pęku kluczy") } catch { store.error = error.localizedDescription } }
                     Button { Task { await store.sync() } } label: { Label(store.syncing ? L.t("Synchronisiert …", "Syncing …", "Synchronizacja …") : L.t("Team synchronisieren", "Sync team", "Synchronizuj zespół"), systemImage: "arrow.triangle.2.circlepath") }.disabled(store.syncing)
                     Text(store.syncStatus.isEmpty ? L.t("Kein Teamserver verbunden. Daten liegen lokal auf diesem iPhone.", "No team server connected. Data is local to this iPhone.", "Nie połączono serwera. Dane są lokalne na tym iPhonie.") : store.syncStatus).font(.caption)
                     Button(L.t("Teamstand laden (lokalen Stand ersetzen)", "Load team version (replace local)", "Pobierz wersję zespołu (zastąp lokalną)"), role: .destructive) { loadRemote = true }.disabled(store.syncing)
-                    Text(L.t("Gemeinsame Kunden, Aufträge und Berichte über eigenen HTTPS-Server. Lese-/Schreibrechte je Token. Manueller Abgleich, Versionskonflikte werden blockiert. Noch kein Server eingerichtet.", "Shared customers, jobs and reports on your own HTTPS server. Read/write roles per token. Manual sync; version conflicts are blocked. No server provisioned yet.", "Wspólni klienci, zlecenia i raporty na własnym serwerze HTTPS. Role odczytu/zapisu. Ręczna synchronizacja, konflikty wersji blokowane. Serwer nie jest jeszcze skonfigurowany.")).font(.caption)
+                    Text(L.t("Gemeinsame Kunden, Projekte und Berichte über eigenen HTTPS-Server. Lese-/Schreibrechte je Token. Manueller Abgleich, Versionskonflikte werden blockiert. Noch kein Server eingerichtet.", "Shared customers, jobs and reports on your own HTTPS server. Read/write roles per token. Manual sync; version conflicts are blocked. No server provisioned yet.", "Wspólni klienci, zlecenia i raporty na własnym serwerze HTTPS. Role odczytu/zapisu. Ręczna synchronizacja, konflikty wersji blokowane. Serwer nie jest jeszcze skonfigurowany.")).font(.caption)
                 }
-                Section("Werkbeleg 0.1 · Testversion") {
-                    Text(L.t("Testphase ohne Abrechnung. Geplant: 9,99 €/Monat. Abo und App-Store-Veröffentlichung sind noch nicht aktiv.", "Free pilot. Planned: €9.99/month. Subscription and App Store launch are not active yet.", "Darmowy pilotaż. Plan: 9,99 €/mies. Subskrypcja i publikacja w App Store nie są jeszcze aktywne."))
+                Section("Werkbeleg 1.1 · Testversion") {
+                    Text(L.t("Testphase ohne Abrechnung. Geplant: 5 Personen 9,99 €, 10 Personen 14,99 €, 20 Personen 19,99 € pro Monat. Abo und App-Store-Veröffentlichung sind noch nicht aktiv.", "Free pilot. Planned monthly: 5 people €9.99, 10 €14.99, 20 €19.99. Subscription and App Store launch are not active yet.", "Darmowy pilotaż. Miesięcznie: 5 osób 9,99 €, 10 osób 14,99 €, 20 osób 19,99 €. Subskrypcja i publikacja w App Store nie są jeszcze aktywne."))
                     Link(L.t("Neue Testversion installieren", "Install latest test version", "Zainstaluj nową wersję testową"), destination: URL(string: "https://p1337.github.io/meshtastic-backend/")!)
                 }
             }.navigationTitle(L.t("Büro", "Office", "Biuro"))

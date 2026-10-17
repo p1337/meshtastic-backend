@@ -23,6 +23,14 @@ var lon = workspace; lon.reports[0].longitude = -181; reject(lon)
  do { _ = try Workspace.decode(Data("{bad json".utf8)); fatalError("Malformed JSON accepted") } catch { checks += 1 }
  do { _ = try Workspace.decode(Data(repeating: 0, count: 30 * 1024 * 1024 + 1)); fatalError("Oversize input accepted") } catch { checks += 1 }
 check(report.photos[0].source == "imported", "Imported provenance survives")
+let legacy = try JSONSerialization.jsonObject(with: bytes) as! [String: Any]
+var withoutMessages = legacy; withoutMessages.removeValue(forKey: "messages")
+let migrated = try Workspace.decode(JSONSerialization.data(withJSONObject: withoutMessages))
+check(migrated.messages.isEmpty && migrated.customers == workspace.customers, "1.0 backups migrate without a messages field")
+var withChat = workspace
+withChat.messages.append(ProjectMessage(jobID: job.id, author: "Tester", text: "Project update"))
+let chatDecoded = try Workspace.decode(withChat.encoded())
+check(chatDecoded == withChat, "Chat metadata survives backup")
 let result: [String: Any] = ["product": "Werkbeleg", "passed": true, "checks": checks, "source": "synthetic", "teamHosted": false]
 if let index = CommandLine.arguments.firstIndex(of: "--json"), CommandLine.arguments.count > index + 1 {
     try JSONSerialization.data(withJSONObject: result, options: [.prettyPrinted, .sortedKeys]).write(to: URL(fileURLWithPath: CommandLine.arguments[index + 1]))

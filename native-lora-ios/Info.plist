@@ -17,7 +17,18 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.0.0</string>
+	<string>1.1.0</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>Werkbeleg invitations</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>werkbeleg</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
@@ -26,6 +37,8 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>Fotos für deine Arbeitsberichte aufnehmen. / Take photos for work reports.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Deinen selbst gewählten Teamserver im lokalen Netzwerk erreichen. / Connect to your selected team server on your local network.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Den Standort auf deinen Wunsch im Bericht festhalten. / Record your location in a report when requested.</string>
 	<key>NSMicrophoneUsageDescription</key>

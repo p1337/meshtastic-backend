@@ -34,12 +34,23 @@ struct Report: Codable, Identifiable, Equatable {
     var locationAt: Date? = nil
     var weather = "" // entered by the author; never presented as measured weather
 }
+struct ProjectMessage: Codable, Identifiable, Equatable {
+    var id = UUID()
+    var jobID: UUID
+    var author: String
+    var text: String
+    var createdAt = Date()
+}
+struct TeamMember: Codable, Identifiable { var name: String; var role: String; var id: String { name } }
+struct TeamInfo: Codable { var seatLimit: Int; var memberCount: Int; var pendingInvites: Int; var role: String; var members: [TeamMember] }
+struct InvitationContext: Identifiable { let id = UUID(); var server: URL; var code: String }
 struct Workspace: Codable, Equatable {
     var schema = 1
     var company = ""
     var customers: [Customer] = []
     var jobs: [Job] = []
     var reports: [Report] = []
+    var messages: [ProjectMessage] = []
     func validate() throws {
         guard schema == 1, Set(customers.map(\.id)).count == customers.count,
               Set(jobs.map(\.id)).count == jobs.count,
@@ -56,6 +67,19 @@ struct Workspace: Codable, Equatable {
         guard data.count <= 30 * 1024 * 1024 else { throw ModelError.tooLarge }
         let result = try JSONDecoder().decode(Workspace.self, from: data)
         try result.validate(); return result
+    }
+}
+// Explicitly decode additive fields so pilot 1.0 backups remain readable.
+extension Workspace {
+    enum CodingKeys: String, CodingKey { case schema, company, customers, jobs, reports, messages }
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        schema = try c.decode(Int.self, forKey: .schema)
+        company = try c.decode(String.self, forKey: .company)
+        customers = try c.decode([Customer].self, forKey: .customers)
+        jobs = try c.decode([Job].self, forKey: .jobs)
+        reports = try c.decode([Report].self, forKey: .reports)
+        messages = try c.decodeIfPresent([ProjectMessage].self, forKey: .messages) ?? []
     }
 }
 enum ModelError: LocalizedError {

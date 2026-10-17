@@ -13,6 +13,7 @@ class TeamTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.db = str(Path(self.tmp.name) / 'test.sqlite3')
+        with connect(self.db) as c:c.execute('UPDATE settings SET seats=20 WHERE id=1')
         self.editor = add_member(self.db, 'Editor', 'editor')
         self.reader = add_member(self.db, 'Reader', 'reader')
         self.server = serve(self.db, port=0)
@@ -64,6 +65,48 @@ class TeamTests(unittest.TestCase):
         self.assertEqual(self.request(self.editor,dict(version=True,workspace=EMPTY))[0],400)
         w = dict(EMPTY,unexpected=float('nan'))
         self.assertEqual(self.request(self.editor,dict(version=0,workspace=w))[0],400)
+    def api(self,path,token=None,payload=None,method='GET'):
+        headers = {} if token is None else {'Authorization':'Bearer '+token}
+        req=urllib.request.Request(self.url.removesuffix('/workspace')+path,data=None if payload is None else json.dumps(payload).encode(),method=method,headers=headers)
+        try:
+            with urllib.request.urlopen(req,timeout=5) as r:return r.status,json.load(r)
+        except urllib.error.HTTPError as e:return e.code,json.load(e)
+    def test_invites_reserve_plan_seats_and_redeem_once(self):
+        owner=add_member(self.db,'Owner','admin')
+        with connect(self.db) as c:c.execute('UPDATE settings SET seats=5 WHERE id=1')
+        self.assertEqual(self.api('/invites',self.editor,dict(name='Not allowed',role='editor'),'POST')[0],403)
+        codes=[]
+        for name in ['Person A','Person B']:
+            status,invite=self.api('/invites',owner,dict(name=name,role='editor'),'POST');self.assertEqual(status,200);codes.append(invite['code'])
+        self.assertEqual(self.api('/invites',owner,dict(name='Too many',role='editor'),'POST')[0],409)
+        self.assertEqual(self.api('/team',owner)[1]['pendingInvites'],2)
+        status,result=self.api('/join',payload=dict(code=codes[0]),method='POST');self.assertEqual(status,200)
+        self.assertEqual(self.api('/team',result['token'])[1]['memberCount'],4)
+        self.assertEqual(self.api('/join',payload=dict(code=codes[0]),method='POST')[0],410)
+        with connect(self.db) as c:c.execute('UPDATE invites SET expires=0')
+        self.assertEqual(self.api('/join',payload=dict(code=codes[1]),method='POST')[0],410)
+    def test_chat_concurrent_messages_idempotency_and_server_author(self):
+        import uuid
+        customer=str(uuid.uuid4());project=str(uuid.uuid4())
+        w=dict(EMPTY,customers=[dict(id=customer)],jobs=[dict(id=project,customerID=customer)])
+        self.assertEqual(self.request(self.editor,dict(version=0,workspace=w))[0],200)
+        def post(i):return self.api('/messages',self.editor,dict(id=str(uuid.uuid4()),jobID=project,text='Message '+str(i),author='Spoof'),'POST')[0]
+        with ThreadPoolExecutor(max_workers=2) as pool:self.assertEqual(list(pool.map(post,[1,2])),[200,200])
+        payload=dict(id=str(uuid.uuid4()),jobID=project,text='Once')
+        self.assertEqual(self.api('/messages',self.editor,payload,'POST')[0],200)
+        self.assertEqual(self.api('/messages',self.editor,payload,'POST')[0],200)
+        code,messages=self.api('/messages?project='+project,self.reader)
+        self.assertEqual(code,200);self.assertEqual(len(messages),3)
+        self.assertTrue(all(m['author']=='Editor' for m in messages))
+        self.assertEqual(self.api('/messages',self.reader,payload,'POST')[0],403)
+        self.assertEqual(self.request(self.editor)[1]['version'],1) # chat does not invalidate report CAS versions
+        self.assertEqual(len(self.request(self.reader)[1]['workspace']['messages']),3)
+        self.assertEqual(self.request(self.editor,dict(version=1,workspace=w))[0],200)
+        self.assertEqual(len(self.api('/messages?project='+project,self.reader)[1]),3) # snapshot uploads cannot erase chat
+    def test_all_three_seat_limits(self):
+        for size in [5,10,20]:
+            with connect(self.db) as c:c.execute('UPDATE settings SET seats=? WHERE id=1',(size,))
+            self.assertEqual(self.api('/team',self.editor)[1]['seatLimit'],size)
     def test_wrong_route_and_body_limit(self):
         old=self.url;self.url += '/unknown'
         self.assertEqual(self.request(self.editor)[0],404);self.url=old

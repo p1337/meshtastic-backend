@@ -7,11 +7,13 @@ import Security
     @Published var syncing = false
     @Published var syncStatus = ""
     @Published var dirty = false
+    @Published var invitation: InvitationContext? = nil
+    @Published var teamInfo: TeamInfo? = nil
     @Published var canEdit = true
     var version = 0
-    private let root: URL
+    let root: URL
     private var loaded = false
-    private var persistedData = Workspace()
+    var persistedData = Workspace()
     init(root: URL? = nil) {
         self.root = root ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("Werkbeleg", isDirectory: true)
         do {
@@ -71,6 +73,7 @@ import Security
                 let (result, res) = try await URLSession.shared.data(for: put)
                 guard (res as? HTTPURLResponse)?.statusCode == 200 else { throw TeamError.message("Team-Upload abgelehnt; lokale Daten bleiben erhalten (ggf. Versionskonflikt).") }
                 let saved = try JSONDecoder().decode(TeamSnapshot.self, from: result); version = saved.version
+                data.messages = saved.workspace.messages; try persistChatCache()
             } else {
                 let bytes = try remote.workspace.encoded()
                 try bytes.write(to: root.appendingPathComponent("workspace.json"), options: [.atomic, .completeFileProtection])
