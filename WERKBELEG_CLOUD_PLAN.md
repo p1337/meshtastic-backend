@@ -57,3 +57,7 @@ Geschäftsdaten sollen in Europa liegen. Bevorzugte feste Projektregion: Frankfu
 ## Nachgewiesene Cloud-Grundlagentests
 
 Am 17.10.2026 bestanden 31 Prüfungen in einer isolierten PostgreSQL-16-Testdatenbank: Mandantentrennung, Leser-/Schreiberrollen, unveränderliche Autor-/Zeitfelder, Paket- und Platzgrenzen einschließlich offener Einladungen, einmalige und ablaufende Einladungen, private Medien, Speicherreservierung und gesperrte ungeprüfte Uploads. CI-Nachweis: https://github.com/p1337/meshtastic-backend/actions/runs/39054073801 . Dies prüft die SQL-Regeln mit synthetischen Daten; kein Nachweis einer realen Supabase-Anmeldung, eines echten Medienuploads oder einer vollständigen EU-Datenresidenz.
+
+## Kundendaten je zahlendem Betriebszugang
+
+Neue feste Nutzervorgabe vom 17.10.2026: ein getrennter Kundenbestand pro bezahltem Betrieb, geteilt nur mit dessen autorisierten Mitarbeitern. Die recherchierten Importwege, nötige Modellfelder, Schutzregeln und zusätzlichen Abnahmetests stehen in [WERKBELEG_CUSTOMERS_AND_ISOLATION.md](WERKBELEG_CUSTOMERS_AND_ISOLATION.md). Kein physisch dedizierter Datenbankserver je Abo zugesagt. Vor Live-Freigabe insbesondere Abo-/Kaufzuordnung, Einladungsempfänger, unveränderliche org_id, Native-Cachetrennung, Importwege und echte Provider-A/B-Tests fertigstellen. Die bisherigen 31 SQL-Tests sind keine vollständige Produkt-Sicherheitsgarantie.
