@@ -68,7 +68,7 @@ struct ProjectMessage: Codable, Identifiable, Equatable {
     var createdAt = Date()
 }
 struct TeamMember: Codable, Identifiable { var name: String; var role: String; var id: String { name } }
-struct TeamInfo: Codable { var seatLimit: Int; var memberCount: Int; var pendingInvites: Int; var role: String; var members: [TeamMember] }
+struct TeamInfo: Codable { var seatLimit: Int; var memberCount: Int; var pendingInvites: Int; var role: String; var members: [TeamMember]; var recipientBoundInvites: Bool? = nil }
 struct InvitationContext: Identifiable { let id = UUID(); var server: URL; var code: String }
 struct Workspace: Codable, Equatable {
     var schema = 1

@@ -15,7 +15,7 @@ import CryptoKit
     @Published var contextID = "local"
     var root: URL
     let baseRoot: URL
-    var canBulkManage: Bool { contextID == "local" || teamInfo?.role == "admin" }
+    var canBulkManage: Bool { contextID == "local" || ["owner", "admin"].contains(teamInfo?.role ?? "") }
     static func scope(server: String, token: String) -> String {
         SHA256.hash(data: Data((server.trimmingCharacters(in: CharacterSet(charactersIn: "/")) + "\n" + token).utf8)).map { String(format: "%02x", $0) }.joined()
     }
@@ -44,12 +44,14 @@ import CryptoKit
     }
     private var loaded = false
     var persistedData = Workspace()
-    init(root: URL? = nil) {
+    init(root: URL? = nil, resumeTeam: Bool = false) {
         let base = root ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("Werkbeleg", isDirectory: true)
         baseRoot = base; self.root = base
-        if root == nil, let server = UserDefaults.standard.string(forKey: "teamURL"), let token = KeychainToken.read(), !token.isEmpty {
+        if root == nil || resumeTeam, let server = UserDefaults.standard.string(forKey: "teamURL"), let token = KeychainToken.read(), !token.isEmpty {
             let key = Self.scope(server: server, token: token)
-            contextID = key; self.root = base.appendingPathComponent("Contexts", isDirectory: true).appendingPathComponent(key, isDirectory: true); canEdit = false
+            let scoped = base.appendingPathComponent("Contexts", isDirectory: true).appendingPathComponent(key, isDirectory: true)
+            if FileManager.default.fileExists(atPath: scoped.path) { contextID = key; self.root = scoped; canEdit = false }
+            // Earlier pilot credentials must never silently move a local workspace into a team.
         }
         do {
             try FileManager.default.createDirectory(at: self.root, withIntermediateDirectories: true)

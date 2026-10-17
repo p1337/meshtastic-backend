@@ -44,6 +44,7 @@ extension WorkStore {
         try await loadMessages(project)
     }
     func createInvite(name: String, reader: Bool) async throws -> URL {
+        guard teamInfo?.recipientBoundInvites == true else { throw TeamError.message(L.t("Personengebundene Einladungen werden nach Einrichtung des sicheren Cloudzugangs freigeschaltet.", "Recipient-bound invitations are enabled after secure cloud access is configured.", "Zaproszenia przypisane do osoby zostaną włączone po konfiguracji bezpiecznej chmury.")) }
         let bytes = try await teamRequest("invites", method: "POST", body: ["name": name, "role": reader ? "reader" : "editor"])
         guard let response = try JSONSerialization.jsonObject(with: bytes) as? [String: Any], let code = response["code"] as? String else { throw ModelError.invalid }
         var link = URLComponents(); link.scheme = "werkbeleg"; link.host = "join"
@@ -62,19 +63,11 @@ extension WorkStore {
         invitation = InvitationContext(server: base, code: code)
     }
     func acceptInvitation(_ invite: InvitationContext) async throws {
-        let context = contextID
-        guard !syncing else { throw ModelError.invalid }
-        _ = try backup()
-        var req = URLRequest(url: invite.server.appendingPathComponent("join")); req.httpMethod = "POST"; req.timeoutInterval = 20
-        req.httpBody = try JSONSerialization.data(withJSONObject: ["code": invite.code]); req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        let (bytes, response) = try await URLSession.shared.data(for: req)
-        guard (response as? HTTPURLResponse)?.statusCode == 200,
-              let result = try JSONSerialization.jsonObject(with: bytes) as? [String: Any], let token = result["token"] as? String else { throw TeamError.message(L.t("Einladung ungültig, abgelaufen oder bereits verwendet.", "Invitation invalid, expired or already used.", "Zaproszenie nieprawidłowe, wygasłe lub wykorzystane.")) }
-        guard contextID == context else { throw ModelError.invalid }
-        try activateTeam(server: invite.server.absoluteString, token: token)
-        if let name = result["name"] as? String { UserDefaults.standard.set(name, forKey: "author") }
-        await loadTeamVersion(); try await refreshTeam(); invitation = nil
+        // The old anonymous /join endpoint cannot prove the recipient. Fail closed until
+        // the hosted authenticated-recipient flow is connected, rather than grant a bearer-link team.
+        throw TeamError.message(L.t("Dieser Pilot kann Einladungen noch nicht personengebunden prüfen. Sicheren Cloudzugang zuerst einrichten.", "This pilot cannot verify invitation recipients yet. Configure secure cloud access first.", "Pilot nie potrafi jeszcze zweryfikować odbiorcy. Najpierw skonfiguruj bezpieczną chmurę."))
     }
+
 }
 
 struct ProjectChatView: View {
@@ -126,9 +119,10 @@ struct TeamView: View {
                 Button(L.t("Team laden", "Load team", "Wczytaj zespół")) { Task { do { try await store.refreshTeam(); status = "" } catch { status = error.localizedDescription } } }
             }
             Section(L.t("Person einladen", "Invite a person", "Zaproś osobę")) {
+                if store.teamInfo?.recipientBoundInvites != true { Label(L.t("Sichere Einladungen folgen mit dem verbundenen Cloudzugang. Der alte Pilot-Link bleibt gesperrt.", "Secure invitations require the connected cloud service. Legacy pilot links are disabled.", "Bezpieczne zaproszenia wymagają połączonej chmury. Stare linki pilota są zablokowane."), systemImage: "lock.shield").font(.subheadline) }
                 TextField(L.t("Name der Person", "Person's name", "Imię osoby"), text: $name)
                 Toggle(L.t("Nur lesen", "Read only", "Tylko odczyt"), isOn: $reader)
-                Button(L.t("Einladungslink erstellen", "Create invitation link", "Utwórz link zaproszenia")) { Task { busy = true; defer { busy = false }; do { inviteLink = try await store.createInvite(name: name, reader: reader); try await store.refreshTeam(); status = "" } catch { status = error.localizedDescription } } }.disabled(busy || name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || store.teamInfo?.role != "admin")
+                Button(L.t("Einladungslink erstellen", "Create invitation link", "Utwórz link zaproszenia")) { Task { busy = true; defer { busy = false }; do { inviteLink = try await store.createInvite(name: name, reader: reader); try await store.refreshTeam(); status = "" } catch { status = error.localizedDescription } } }.disabled(busy || name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || store.teamInfo?.role != "admin" || store.teamInfo?.recipientBoundInvites != true)
                 if let url = inviteLink {
                     Button { var wa = URLComponents(string: "https://wa.me/")!; wa.queryItems = [URLQueryItem(name: "text", value: L.t("Komm in unser Werkbeleg-Team: ", "Join our Werkbeleg team: ", "Dołącz do naszego zespołu Werkbeleg: ") + url.absoluteString)]; if let link = wa.url { openURL(link) } } label: { Label(L.t("Per WhatsApp einladen", "Invite via WhatsApp", "Zaproś przez WhatsApp"), systemImage: "message.fill") }
                     ShareLink(item: url) { Label(L.t("Einladung anders teilen", "Share invitation another way", "Udostępnij inaczej"), systemImage: "square.and.arrow.up") }

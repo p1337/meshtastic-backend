@@ -127,9 +127,9 @@ struct NewCustomerView: View {
                         customer.name = customer.name.trimmingCharacters(in: .whitespacesAndNewlines)
                         let d = customer.details
                         let address = [d.street, [d.postalCode, d.city].filter { !$0.isEmpty }.joined(separator: " "), d.country].filter { !$0.isEmpty }.joined(separator: "\n")
-                        if !address.isEmpty { customer.address = address }
+                        if !address.isEmpty || (editing?.details.street.isEmpty == false || editing?.details.city.isEmpty == false || editing?.details.postalCode.isEmpty == false) { customer.address = address }
                         let contact = [d.person, d.email, d.phone].filter { !$0.isEmpty }.joined(separator: "\n")
-                        if !contact.isEmpty { customer.contact = contact }
+                        if !contact.isEmpty || (editing?.details.email.isEmpty == false || editing?.details.phone.isEmpty == false || editing?.details.person.isEmpty == false) { customer.contact = contact }
                         if let i = store.data.customers.firstIndex(where: { $0.id == customer.id }) { store.data.customers[i] = customer } else { store.data.customers.append(customer) }
                         if store.save() { dismiss() }
                     }.disabled(customer.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || customer.name.count > 160 || !store.canEdit) }

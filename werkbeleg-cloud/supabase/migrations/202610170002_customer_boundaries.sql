@@ -45,6 +45,22 @@ end $$;
 revoke all on function public.wb_import_customers(uuid,jsonb) from public,anon;
 grant execute on function public.wb_import_customers(uuid,jsonb) to authenticated;
 
+-- Recheck role after the quota row lock, including concurrent membership revocation.
+create or replace function public.wb_reserve_asset(target uuid, project uuid, size_bytes bigint, content_type text) returns jsonb
+language plpgsql security definer set search_path='' as $$
+declare asset_id uuid:=gen_random_uuid(); object_name text; limit_bytes bigint; current_bytes bigint;
+begin
+ if private.wb_role(target) is null or private.wb_role(target) not in ('owner','admin','editor') then raise exception 'write access required'; end if;
+ if size_bytes not between 1 and 20000000 then raise exception 'invalid size'; end if;
+ select storage_limit_bytes,reserved_bytes into limit_bytes,current_bytes from public.wb_organizations where id=target for update;
+ if private.wb_role(target) is null or private.wb_role(target) not in ('owner','admin','editor') then raise exception 'write access required'; end if;
+ if current_bytes+size_bytes>limit_bytes then raise exception 'storage limit reached'; end if;
+ object_name:=target::text||'/'||asset_id::text;
+ insert into public.wb_assets(id,org_id,project_id,created_by,object_path,mime_type,expected_bytes) values(asset_id,target,project,auth.uid(),object_name,content_type,size_bytes);
+ update public.wb_organizations set reserved_bytes=reserved_bytes+size_bytes where id=target;
+ return jsonb_build_object('id',asset_id,'path',object_name,'bytes',size_bytes);
+end $$;
+
 -- Billing records can only be written by a trusted, separately verified server flow.
 create table public.wb_subscriptions (
  org_id uuid primary key references public.wb_organizations(id),
@@ -87,6 +103,7 @@ begin
  if private.wb_role(target) is null or private.wb_role(target) not in ('owner','admin') then raise exception 'admin required'; end if;
  if person_role not in ('editor','viewer') or recipient is null or not exists(select 1 from auth.users where id=recipient) then raise exception 'invalid recipient or role'; end if;
  select o.seats into seats from public.wb_organizations o where o.id=target for update;
+ if private.wb_role(target) is null or private.wb_role(target) not in ('owner','admin') then raise exception 'admin required'; end if;
  if exists(select 1 from public.wb_memberships where org_id=target and user_id=recipient) then raise exception 'already a member'; end if;
  delete from public.wb_invites where org_id=target and expires_at<=now();
  select (select count(*) from public.wb_memberships where org_id=target)+(select count(*) from public.wb_invites where org_id=target) into occupied;

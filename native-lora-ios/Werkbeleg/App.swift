@@ -320,9 +320,12 @@ enum Smoke {
                 if let previousURL { UserDefaults.standard.set(previousURL, forKey: "teamURL") } else { UserDefaults.standard.removeObject(forKey: "teamURL") }
                 try? KeychainToken.save(previousToken ?? "")
             }
+            UserDefaults.standard.set("https://legacy.invalid", forKey: "teamURL"); try KeychainToken.save("legacy-token")
+            guard WorkStore(root: folder, resumeTeam: true).data.customers == [c] else { throw ModelError.invalid }
             try store.activateTeam(server: "https://synthetic.invalid/team-a", token: "synthetic-a")
             guard store.data.customers.isEmpty, !store.canEdit else { throw ModelError.invalid }
             store.data.customers = [Customer(name: "Only Team A")]; store.canEdit = true; store.save()
+            guard WorkStore(root: folder, resumeTeam: true).data.customers.map(\.name) == ["Only Team A"] else { throw ModelError.invalid }
             try store.activateTeam(server: "https://synthetic.invalid/team-b", token: "synthetic-b")
             guard store.data.customers.isEmpty else { throw ModelError.invalid }
             try store.activateTeam(server: "https://synthetic.invalid/team-a", token: "synthetic-a")

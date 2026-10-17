@@ -55,3 +55,9 @@ Pricing/product assumptions: see [WERKBELEG_CLOUD_PLAN.md](../WERKBELEG_CLOUD_PL
 ## EU residency gate
 
 User requires European business-data storage. Prefer Frankfurt eu-central-1. Supabase core database, Auth, Storage and backups can be regional, but global CDN, support and operational processing have exceptions. Do not equate choosing Frankfurt with an EU-only guarantee. Before customer upload validate all data paths or choose an EU-hosted alternative. No customer data or hosted project exists yet. Native 1.1.1 disables network speech fallback. Provider reference: https://supabase.com/legal/privacy-resources/data-residency-and-transfers-faq .
+
+## Customer-boundary revision 002
+
+Apply both migrations in order. Migration 002 adds structured customer metadata and per-business external ID uniqueness, insert-only atomic admin bulk import, immutable tenant IDs, server-only subscription ownership records (one original transaction per business), member revocation and recipient-bound invitations. The new hosted invite RPC requires a known authenticated recipient UUID; it intentionally removes the old unbound three-argument RPC. A verified-recipient lookup/UI and native hosted Auth integration are still required. This does not change the older Python pilot invite protocol, which remains a separate pilot and must not be marketed as having the hosted recipient protection. Real Apple purchase validation and billing are not implemented by storing subscription rows.
+
+Run `202610170002_customer_boundaries.sql` after migration 001 and `customer_boundaries.sql` after the existing tenant tests. At source commit 240e17111579ad969cda9a4508477c0505ca17ff, the two suites passed 50 actual PostgreSQL assertions: https://github.com/p1337/meshtastic-backend/actions/runs/39060051233 . This is not hosted JWT/Storage or app end-to-end validation. Customer import UI is local-first in native 1.2, not yet connected to this RPC.
