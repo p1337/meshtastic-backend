@@ -4,13 +4,17 @@ project_dir="$(cd "$(dirname "$0")/.." && pwd)"
 output_dir="$project_dir/build-simulator"
 mkdir -p "$output_dir"
 xcrun simctl list devices available -j > "$output_dir/devices.json"
-device_id="$(python3 - "$output_dir/devices.json" <<'PY'
+sdk_version="$(xcrun --sdk iphonesimulator --show-sdk-version)"
+device_id="$(python3 - "$output_dir/devices.json" "$sdk_version" <<'PY'
 import json,sys
 v=json.load(open(sys.argv[1]))
-for runtime,devices in reversed(list(v['devices'].items())):
+preferred='iOS-'+sys.argv[2].replace('.', '-')
+runtimes=sorted(v['devices'].items(),key=lambda item: preferred not in item[0])
+for runtime,devices in runtimes:
     if 'iOS' not in runtime: continue
     for d in devices:
         if d.get('isAvailable') and d['name'].startswith('iPhone'):
+            print('Simulator runtime: '+runtime,file=sys.stderr)
             print(d['udid']);sys.exit(0)
 raise SystemExit('No available iPhone simulator runtime on runner')
 PY
