@@ -11,3 +11,5 @@ signing-local/
 *.cer
 __pycache__/
 *.pyc
+build-simulator/
+Assets.xcassets/AppIcon.appiconset/AppIcon.png

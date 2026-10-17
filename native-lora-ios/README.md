@@ -6,6 +6,10 @@ Die unten stehenden Angaben zum unsignierten Build beschreiben den historischen 
 
 **Kein Live-LoRa-Empfang.** Es gibt noch keinen nachgewiesenen Zugriff auf die internen RF-I/Q-Samples des iPhone 15 Pro Max. Diese App testet den nativen Software- und Installationsweg. Sie enthält keinen erfundenen RadioAdapter und keine privaten Modembefehle.
 
+## Automatische Tests und Berichte ab 0.2.0
+
+Automatische Geräte-Selbsttests, lokale JSON-Berichte, AWGN-/Versatzmessungen, konfigurierbare Dateianalyse und Simulator-Startprüfung in GitHub sind in [AUTOMATED_TESTS.md](AUTOMATED_TESTS.md) beschrieben. Das iOS-App-Icon wird aus der eingecheckten Grafikquelle generiert.
+
 ## Tatsächliche Funktionen
 
 - Synthetischer Chirp-/Dechirp-Selbsttest SF7–SF12 mit nativer FFT.

@@ -15,3 +15,19 @@ for bad in [Data(), Data([0]), Data([0,0,0x80,0x7f,0,0,0,0])] {
     catch { print("Invalid input correctly rejected:", error.localizedDescription) }
 }
 print("PASS: CSS roundtrip, FFT impulse, CF32LE parser and invalid-input handling")
+
+let environment = LabEnvironment(model: "CI-host", os: ProcessInfo.processInfo.operatingSystemVersionString,
+                                 appVersion: "0.2.0", build: ProcessInfo.processInfo.environment["GITHUB_RUN_NUMBER"] ?? "local",
+                                 simulator: false, processorCount: ProcessInfo.processInfo.processorCount,
+                                 memoryMiB: ProcessInfo.processInfo.physicalMemory / 1048576)
+let report = LabDiagnostics.run(environment: environment, extended: true)
+print(report.text)
+precondition(report.failedChecks == 0, "Automated diagnostic regression failed")
+precondition(report.noise.count == 30 && report.totalCases > 2000)
+precondition(report.checks.first(where: { $0.id == "rf" })?.status == "unsupported")
+let roundtrip = try JSONDecoder().decode(LabReport.self, from: report.json())
+precondition(roundtrip.totalCases == report.totalCases && !roundtrip.liveRF && !roundtrip.packetDecoder)
+if let flag = CommandLine.arguments.firstIndex(of: "--json"), flag + 1 < CommandLine.arguments.count {
+    try report.json().write(to: URL(fileURLWithPath: CommandLine.arguments[flag + 1]), options: .atomic)
+}
+print("PASS: extended diagnostics, 30 AWGN points, input validation and Codable report")
