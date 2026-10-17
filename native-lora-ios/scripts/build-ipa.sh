@@ -12,7 +12,7 @@ xcodebuild -project "$project_dir/LoRaLab.xcodeproj" -scheme LoRaLab \
   CODE_SIGNING_REQUIRED=NO build | tee "$output_dir/xcodebuild.log"
 app="$output_dir/DerivedData/Build/Products/Release-iphoneos/LoRaLab.app"
 test -f "$app/LoRaLab"
-lipo -verify_arch arm64 "$app/LoRaLab"
+lipo "$app/LoRaLab" -verify_arch arm64
 package_dir="$(mktemp -d "$output_dir/package.XXXXXX")"
 trap 'rm -rf "$package_dir"' EXIT
 mkdir -p "$package_dir/Payload"
