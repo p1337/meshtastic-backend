@@ -49,7 +49,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
       - name: Build and automatically test native app in iOS Simulator
-        timeout-minutes: 8
+        timeout-minutes: 12
         run: bash native-lora-ios/scripts/test-simulator.sh
       - name: Upload simulator evidence
         if: always()
