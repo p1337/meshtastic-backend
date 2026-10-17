@@ -1,0 +1,37 @@
+name: Werkbeleg cloud tenant isolation
+on:
+  push:
+    branches: [codex/native-lora-ios]
+    paths: [werkbeleg-cloud/**, .github/workflows/werkbeleg-cloud-ci.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  postgres-isolation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: synthetic-ci-password
+          POSTGRES_DB: werkbeleg_test
+        ports: [5432:5432]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 3s --health-retries 12
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Test schema, tenant access, invitations and media policy on PostgreSQL 16
+        env:
+          PGPASSWORD: synthetic-ci-password
+          PGHOST: localhost
+          PGPORT: 5432
+          PGDATABASE: werkbeleg_test
+          PGUSER: postgres
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -q -f werkbeleg-cloud/tests/bootstrap.sql
+          psql -X -v ON_ERROR_STOP=1 -q -f werkbeleg-cloud/supabase/migrations/202610170001_tenant_foundation.sql
+          psql -X -v ON_ERROR_STOP=1 -qAt -f werkbeleg-cloud/tests/tenant_isolation.sql

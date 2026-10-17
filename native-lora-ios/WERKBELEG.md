@@ -1,4 +1,4 @@
-# Werkbeleg — native Handwerker-App, Pilot 1.1.0
+# Werkbeleg — native Handwerker-App, Pilot 1.1.1
 
 Arbeitsname, keine Markenfreigabe. Eigenständige Implementierung, keine Übernahme von PlanRadar-Code, Bildern oder Texten. Zielgruppe: kleine Betriebe mit bis zu 20 Personen. Weiß/Schwarz, Orange für Aktionen, Gelb für Hinweise.
 
@@ -7,7 +7,7 @@ Arbeitsname, keine Markenfreigabe. Eigenständige Implementierung, keine Überna
 - Kunden mit Kontaktdaten und Adresse anlegen und bearbeiten.
 - Aufträge mit Kunde, Baustellenadresse, zuständiger Person und Erledigt-Status anlegen und bearbeiten.
 - Arbeitsberichte mit Text, bis zu zwölf optimierten JPEG-Fotos, einer bis zu zweiminütigen Sprachaufnahme und optionalem GPS-Schnappschuss erstellen.
-- Sprachaufnahme über Apples Speech API transkribieren; Verfügbarkeit ist sprach-/geräte-/netzabhängig. Text bleibt korrigierbar. Die API kann Apple-Server verwenden; UI informiert vor der Nutzung.
+- Sprachaufnahme über Apples Speech API transkribieren; Verfügbarkeit ist sprach-/geräte-/netzabhängig. Text bleibt korrigierbar. Seit 1.1.1 ausschließlich lokale Erkennung: Unterstützung wird geprüft und requiresOnDeviceRecognition gesetzt. Kein Netzwerk-Fallback; sonst nur Audioaufnahme/manueller Text.
 - Fotozeit bei In-App-Kamera und Importzeit bei importierten Fotos unterscheiden. Keine behauptete EXIF- oder Manipulationsprüfung. Bilder werden auf maximal 1800 px verkleinert; Originaldateien werden nicht archiviert.
 - Mehrseitige PDFs mit Firmenname, Kunden-/Auftragsbezug, Text, Fotos, Zeit und optionalem GPS sowie manuell eingetragenem Wetter erstellen und über das Teilen-Menü versenden/speichern.
 - Vollständige JSON-Sicherungen inklusive Foto-/Audiodaten exportieren und nach Bestätigung wiederherstellen. In Dateien erreichbare Cloudanbieter können als Speicherziel dienen. Keine automatische iCloud-Datenbanksynchronisation.
@@ -73,3 +73,8 @@ Geteilt wird ein HTTPS-Link auf `join.html`. Der Einladungscode liegt im URL-Fra
 Ein erreichbarer eigener HTTPS-Server wurde weiterhin nicht eingerichtet. Deshalb sind reale Einladungen und Kommunikation noch nicht zwischen echten Teilnehmern verifiziert. Das AdHoc-Testprofil enthält derzeit nur Roberts Gerät; weitere Tester brauchen registrierte Geräte oder später eine passende TestFlight-/App-Store-Verteilung. Keine Behauptung einer produktiven Teamfreischaltung allein durch eine Einladung.
 
 Preise: 5 Personen 9,99 € / Monat; 10 Personen 14,99 € / Monat; 20 Personen 19,99 € / Monat, jeweils pro Betrieb inkl. Inhaber. Länderpreise/MwSt.-Darstellung und StoreKit-Abwicklung sind vor Verkauf zu konfigurieren. Kein Kaufbutton, keine aktive Belastung und keine automatische Abo-Freischaltung im Pilot.
+
+
+## Datenregion-Vorgabe
+
+Nutzer verlangt Geschäftsdaten in Europa; bevorzugte Region Frankfurt eu-central-1. Speicher, Datenbank, Audio und Backups müssen vor gehosteter Nutzung passend konfiguriert werden. Ein EU-Projekt bei Supabase garantiert laut Anbieter nicht automatisch EU-only-Verarbeitung von CDN/Support/Metadaten. Keine solche Garantie in der App ausgeben. Native 1.1.1 nutzt lokale Spracherkennung nur bei supportsOnDeviceRecognition=true und requiresOnDeviceRecognition=true; kein Audio-Upload zur Erkennung als Fallback. Geräte-/Sprachverfügbarkeit real prüfen. Quellen: https://supabase.com/legal/privacy-resources/data-residency-and-transfers-faq ; https://developer.apple.com/documentation/speech/sfspeechrecognitionrequest/requiresondevicerecognition .

@@ -60,13 +60,13 @@ import UIKit
         if flag, let url = audioURL { audio = try? Data(contentsOf: url); Task { await transcribe(url) } }
     }
     func transcribe(_ url: URL) async {
+        let lang = UserDefaults.standard.string(forKey: "language") ?? "de"
+        guard let recognizer = SFSpeechRecognizer(locale: Locale(identifier: lang == "pl" ? "pl-PL" : lang == "en" ? "en-GB" : "de-DE")), recognizer.supportsOnDeviceRecognition else {
+            status = L.t("Audio gespeichert. Lokale Spracherkennung nicht verfügbar; Text bitte eingeben.", "Audio saved. On-device recognition unavailable; enter text manually.", "Dźwięk zapisany. Brak lokalnego rozpoznawania; wpisz tekst ręcznie."); return
+        }
         let auth = await withCheckedContinuation { continuation in SFSpeechRecognizer.requestAuthorization { continuation.resume(returning: $0) } }
         guard auth == .authorized else { status = L.t("Audio gespeichert. Spracherkennung nicht erlaubt.", "Audio saved. Speech recognition denied.", "Dźwięk zapisany. Brak zgody na rozpoznawanie mowy."); return }
-        let lang = UserDefaults.standard.string(forKey: "language") ?? "de"
-        guard let recognizer = SFSpeechRecognizer(locale: Locale(identifier: lang == "pl" ? "pl-PL" : lang == "en" ? "en-GB" : "de-DE")), recognizer.isAvailable else {
-            status = "Audio gespeichert; Spracherkennung aktuell nicht verfügbar."; return
-        }
-        let request = SFSpeechURLRecognitionRequest(url: url)
+        guard let request = LocalSpeechRequest.make(url: url, supported: recognizer.supportsOnDeviceRecognition) else { status = "Audio gespeichert; lokale Erkennung nicht verfügbar."; return }
         recognition = recognizer.recognitionTask(with: request) { [weak self] result, error in
             Task { @MainActor in
                 if let result = result, result.isFinal { self?.text = result.bestTranscription.formattedString }
@@ -78,6 +78,15 @@ import UIKit
     func stop() {
         recorder?.stop(); recognition?.cancel(); recording = false
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+    }
+}
+
+enum LocalSpeechRequest {
+    static func make(url: URL, supported: Bool) -> SFSpeechURLRecognitionRequest? {
+        guard supported else { return nil }
+        let request = SFSpeechURLRecognitionRequest(url: url)
+        request.requiresOnDeviceRecognition = true
+        return request
     }
 }
 

@@ -10,7 +10,7 @@ Local workspace: Application Support/Werkbeleg/workspace.json, atomic Data write
 
 Before production prioritize authenticated multi-device integration tests, storage growth/differential synchronization, data recovery, per-record conflict handling, audio playback experience and camera/GPS/speech permission errors on real devices. Automatic weather, logos, app-store subscription and store publication are not implemented. Do not invent Apple WeatherKit entitlements or set them without matching signed provisioning. Prices are proposals only, not a configured StoreKit subscription.
 
-Native build/signature/OTA scripts are intentionally reused. Display/UI version currently 1.1.0 (pilot); GitHub run number is build number. Source sharing and publishing Apple-signed test builds are authorized by the user. Test one reviewed commit first to avoid canceling a slow simulator job through redundant pushes.
+Native build/signature/OTA scripts are intentionally reused. Display/UI version currently 1.1.1 (pilot); GitHub run number is build number. Source sharing and publishing Apple-signed test builds are authorized by the user. Test one reviewed commit first to avoid canceling a slow simulator job through redundant pushes.
 
 
 ## Version 1.1 direction
@@ -20,3 +20,6 @@ User defined exact monthly per-business tiers: up to 5 people €9.99; 10 €14.
 ProjectChatView polls every 10 seconds in foreground only. Messages table independent of workspace CAS versions; authors derived server-side, idempotent UUIDs, 4000 chars, 10000 messages cap. GET workspace injects chat from the table, PUT strips cached messages to prevent snapshot upload from erasing chat. Legacy 1.0 backups decode missing messages as []. StoreKit is not implemented; don't present these tier cards as active subscriptions.
 
 Invites use public HTTPS join.html with code in fragment, no token in query/server logs. Static page forwards only on user gesture to werkbeleg://join (Info.plist custom scheme). App displays server domain and replacement warning before redeeming. Existing local data must be backed up. New users still need an installable signed app; the existing AdHoc profile has one registered iPhone only. No server or multi-device production deployment has been provisioned.
+
+
+EU requirement: business data should be stored in Europe, preferred fixed region Frankfurt eu-central-1. Supabase regional database/storage/backups do not guarantee that all CDN/support/metadata processing stays in EU; do not claim EU-only service without validating all paths. Version 1.1.1 enforces on-device Speech: check supportsOnDeviceRecognition before requesting transcription, then requiresOnDeviceRecognition=true. No server fallback; unsupported languages retain audio/manual entry. Never re-enable network speech by default.

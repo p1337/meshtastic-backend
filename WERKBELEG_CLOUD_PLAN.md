@@ -43,3 +43,13 @@ Der aktuelle Python-Testserver ist **ein Betrieb pro Datenbank**, Token-Authenti
 ## Nächster konkreter Schritt
 
 Installierbare Version 1.1 abschließen. Danach Hostingvariante und Betreiberkonto auswählen. Ohne eingerichtetes Providerkonto, Datenregion, Zugang und Kostenfreigabe keine bezahlten Dienste anlegen und keinen aktiven Cloudbetrieb behaupten. Zunächst einen Firmenmandanten mit zwei echten Geräten prüfen; dann Trennung zwischen zwei Betrieben und Last-/Speichermessungen. iCloud-Unterstützung in der derzeitigen App ist Export in Dateien, noch kein CloudKit-Sync.
+
+
+## Konkret vorbereiteter Stand
+
+Unter `werkbeleg-cloud/` liegen eine Supabase-Migration und PostgreSQL-16-Tests für die Mandantentrennung, Rechte, Einladungen und private Medien. Das ist noch keine bereitgestellte Cloud und noch keine native Supabase-Anbindung. Direkte Uploads sind bis zur Implementierung eines geprüften Uploadwegs gesperrt. Für neue Testbetriebe sind 100 MB Reservierung vorgesehen; die kommerziellen 5/10/20-GB-Kontingente sind weiterhin nur vorgeschlagen. Supabase wurde als verfügbare Anbindung gefunden und zum Installieren/Verbinden angeboten; eine Verbindung ist bislang nicht bestätigt. Kein kostenpflichtiger Tarif wurde gebucht.
+
+
+## Verbindliche neue Vorgabe: Europa
+
+Geschäftsdaten sollen in Europa liegen. Bevorzugte feste Projektregion: Frankfurt (eu-central-1), nicht globale automatische Regionswahl. Datenbank, Auth-Kerndaten, Fotos, Audio, Medienbackups und Verarbeitungspfade prüfen. Supabase beschreibt explizite Ausnahmen (CDN, Support, Konto-/Betriebsmetadaten): https://supabase.com/legal/privacy-resources/data-residency-and-transfers-faq . EU-only ist daher noch nicht nachgewiesen; vor echtem Upload passende Konfiguration oder alternativ EU-gehosteten Dienst wählen. Es wurde kein Kundenbestand hochgeladen. Native Version 1.1.1 verwendet nur lokale Spracherkennung ohne Netzwerk-Fallback. GitHub enthält Quellcode und synthetische Tests, keine Kundenberichte.

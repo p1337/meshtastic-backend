@@ -45,7 +45,7 @@ python3 - "$output_dir/simulator-report.json" <<'CHECK'
 import json,sys
 v=json.load(open(sys.argv[1])); assert v['passed'],v
 assert v['product']=='Werkbeleg' and v['pdfPages']>=3
-assert v['persistence'] and v['backupRoundTrip'] and v['photoPixelSizeVerified']
+assert v['persistence'] and v['backupRoundTrip'] and v['photoPixelSizeVerified'] and v['localSpeechPolicyVerified']
 assert not v['teamServerConnected'] and not v['cameraOrMicrophoneTested']
 print('PASS: native launch, disk persistence, attachment backup and multipage PDF. Synthetic fixtures only.')
 CHECK

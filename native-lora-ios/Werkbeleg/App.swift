@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import Speech
 import PhotosUI
 import UniformTypeIdentifiers
 
@@ -179,7 +180,7 @@ struct NewReportView: View {
                     TextField(L.t("Dein Name", "Your name", "Twoje imię"), text: $author)
                     TextEditor(text: $bodyText).frame(minHeight: 140)
                     Button { Task { await capture.toggleRecording() } } label: { Label(capture.recording ? L.t("Aufnahme beenden", "Stop recording", "Zakończ nagrywanie") : L.t("Bericht einsprechen", "Dictate report", "Nagraj raport"), systemImage: capture.recording ? "stop.circle.fill" : "mic.fill") }
-                    Text(L.t("Spracherkennung kann Apple-Server verwenden. Aufnahme bleibt im Bericht; erkannten Text prüfen.", "Speech recognition may use Apple servers. Audio stays in the report; review the transcription.", "Rozpoznawanie może korzystać z serwerów Apple. Dźwięk jest w raporcie; sprawdź tekst.")).font(.caption).foregroundStyle(.secondary)
+                    Text(L.t("Spracherkennung ausschließlich auf diesem iPhone, sofern für die Sprache verfügbar. Sonst Audio speichern und Text eingeben.", "Speech recognition stays on this iPhone if supported for the language. Otherwise save audio and enter text manually.", "Rozpoznawanie tylko na tym iPhonie, jeśli dostępne dla języka. W przeciwnym razie zapisz dźwięk i wpisz tekst.")).font(.caption).foregroundStyle(.secondary)
                 }
                 Section(L.t("Fotos", "Photos", "Zdjęcia")) {
                     if UIImagePickerController.isSourceTypeAvailable(.camera) { Button { camera = true } label: { Label(L.t("Foto aufnehmen", "Take photo", "Zrób zdjęcie"), systemImage: "camera.fill") }.disabled(photos.count >= 12) }
@@ -318,6 +319,10 @@ enum Smoke {
             guard let resizedData = wideImage.reportJPEG(), let resized = UIImage(data: resizedData),
                   resized.cgImage?.width == 1800, resized.cgImage?.height == 18 else { throw TeamError.message("Retina resize exceeded the 1800px limit") }
             output["photoPixelSizeVerified"] = true
+            let fakeAudio = folder.appendingPathComponent("synthetic-not-recorded.m4a")
+            guard LocalSpeechRequest.make(url: fakeAudio, supported: false) == nil,
+                  let request = LocalSpeechRequest.make(url: fakeAudio, supported: true), request.requiresOnDeviceRecognition else { throw TeamError.message("Speech request allowed network fallback") }
+            output["localSpeechPolicyVerified"] = true
             let r = Report(jobID: j.id, author: "Synthetic test", text: String(repeating: "Prüfung der PDF-Paginierung.\n", count: 150), photos: [Evidence(data: image.jpegData(compressionQuality: 0.8)!, source: "camera")])
             store.data = Workspace(company: "Testbetrieb", customers: [c], jobs: [j], reports: [r]); store.save()
             guard store.error == nil else { throw TeamError.message(store.error!) }
