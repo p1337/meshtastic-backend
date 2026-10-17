@@ -62,7 +62,7 @@ import UIKit
     func transcribe(_ url: URL) async {
         let auth = await withCheckedContinuation { continuation in SFSpeechRecognizer.requestAuthorization { continuation.resume(returning: $0) } }
         guard auth == .authorized else { status = L.t("Audio gespeichert. Spracherkennung nicht erlaubt.", "Audio saved. Speech recognition denied.", "Dźwięk zapisany. Brak zgody na rozpoznawanie mowy."); return }
-        let lang = UserDefaults.standard.string(forKey: "language") ?? String(Locale.preferredLanguages.first?.prefix(2) ?? "de")
+        let lang = UserDefaults.standard.string(forKey: "language") ?? "de"
         guard let recognizer = SFSpeechRecognizer(locale: Locale(identifier: lang == "pl" ? "pl-PL" : lang == "en" ? "en-GB" : "de-DE")), recognizer.isAvailable else {
             status = "Audio gespeichert; Spracherkennung aktuell nicht verfügbar."; return
         }

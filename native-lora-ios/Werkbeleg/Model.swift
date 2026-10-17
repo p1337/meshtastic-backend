@@ -71,7 +71,7 @@ struct TeamSnapshot: Codable { var version: Int; var workspace: Workspace }
 
 enum L {
     static func t(_ de: String, _ en: String, _ pl: String) -> String {
-        let lang = UserDefaults.standard.string(forKey: "language") ?? String(Locale.preferredLanguages.first?.prefix(2) ?? "de")
+        let lang = UserDefaults.standard.string(forKey: "language") ?? "de"
         return lang == "pl" ? pl : lang == "en" ? en : de
     }
 }
