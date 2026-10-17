@@ -10,7 +10,7 @@ Die unten stehenden Angaben zum unsignierten Build beschreiben den historischen 
 
 Automatische Geräte-Selbsttests, lokale JSON-Berichte, AWGN-/Versatzmessungen, konfigurierbare Dateianalyse und Simulator-Startprüfung in GitHub sind in [AUTOMATED_TESTS.md](AUTOMATED_TESTS.md) beschrieben. Das iOS-App-Icon wird aus der eingecheckten Grafikquelle generiert.
 
-## Tatsächliche Funktionen
+## Historischer Funktionsumfang der Version 0.1.0
 
 - Synthetischer Chirp-/Dechirp-Selbsttest SF7–SF12 mit nativer FFT.
 - Lokaler CF32LE-Dateiimport (Float32 little-endian, I/Q verschachtelt, max. 8 MiB), Leistungsstatistik und angenommener erster SF11-Symbolbin. Kein vollständiger LoRa-Paketdecoder. Samplerate im Formular dient nur zur Dauerberechnung.

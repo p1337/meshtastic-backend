@@ -32,7 +32,24 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
+      - name: Run fast native regression suite
+        timeout-minutes: 3
+        run: |
+          mkdir -p native-lora-ios/build-signed
+          xcrun swiftc -O native-lora-ios/Sources/CSS.swift native-lora-ios/Sources/Diagnostics.swift native-lora-ios/Tests/main.swift -o native-lora-ios/build-signed/css-tests
+          native-lora-ios/build-signed/css-tests --json native-lora-ios/build-signed/diagnostics-report.json | tee native-lora-ios/build-signed/test-results.txt
+      - name: Upload native regression evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: LoRaLab-native-diagnostics
+          path: |
+            native-lora-ios/build-signed/diagnostics-report.json
+            native-lora-ios/build-signed/test-results.txt
+          if-no-files-found: warn
+          retention-days: 14
       - name: Build and automatically test native app in iOS Simulator
+        timeout-minutes: 8
         run: bash native-lora-ios/scripts/test-simulator.sh
       - name: Upload simulator evidence
         if: always()
