@@ -42,7 +42,7 @@ Der aktuelle Python-Testserver ist **ein Betrieb pro Datenbank**, Token-Authenti
 
 ## Nächster konkreter Schritt
 
-Installierbare Version 1.1 abschließen. Danach Hostingvariante und Betreiberkonto auswählen. Ohne eingerichtetes Providerkonto, Datenregion, Zugang und Kostenfreigabe keine bezahlten Dienste anlegen und keinen aktiven Cloudbetrieb behaupten. Zunächst einen Firmenmandanten mit zwei echten Geräten prüfen; dann Trennung zwischen zwei Betrieben und Last-/Speichermessungen. iCloud-Unterstützung in der derzeitigen App ist Export in Dateien, noch kein CloudKit-Sync.
+Version 1.1.0 (Build 20) wurde erfolgreich signiert und per OTA veröffentlicht. Version 1.1.1 ergänzt ausschließlich lokale Spracherkennung; deren Build und Veröffentlichung sind gesondert zu verifizieren. Danach Hostingvariante und Betreiberkonto auswählen. Ohne eingerichtetes Providerkonto, Datenregion, Zugang und Kostenfreigabe keine bezahlten Dienste anlegen und keinen aktiven Cloudbetrieb behaupten. Zunächst einen Firmenmandanten mit zwei echten Geräten prüfen; dann Trennung zwischen zwei Betrieben und Last-/Speichermessungen. iCloud-Unterstützung in der derzeitigen App ist Export in Dateien, noch kein CloudKit-Sync.
 
 
 ## Konkret vorbereiteter Stand
@@ -53,3 +53,7 @@ Unter `werkbeleg-cloud/` liegen eine Supabase-Migration und PostgreSQL-16-Tests 
 ## Verbindliche neue Vorgabe: Europa
 
 Geschäftsdaten sollen in Europa liegen. Bevorzugte feste Projektregion: Frankfurt (eu-central-1), nicht globale automatische Regionswahl. Datenbank, Auth-Kerndaten, Fotos, Audio, Medienbackups und Verarbeitungspfade prüfen. Supabase beschreibt explizite Ausnahmen (CDN, Support, Konto-/Betriebsmetadaten): https://supabase.com/legal/privacy-resources/data-residency-and-transfers-faq . EU-only ist daher noch nicht nachgewiesen; vor echtem Upload passende Konfiguration oder alternativ EU-gehosteten Dienst wählen. Es wurde kein Kundenbestand hochgeladen. Native Version 1.1.1 verwendet nur lokale Spracherkennung ohne Netzwerk-Fallback. GitHub enthält Quellcode und synthetische Tests, keine Kundenberichte.
+
+## Nachgewiesene Cloud-Grundlagentests
+
+Am 17.10.2026 bestanden 31 Prüfungen in einer isolierten PostgreSQL-16-Testdatenbank: Mandantentrennung, Leser-/Schreiberrollen, unveränderliche Autor-/Zeitfelder, Paket- und Platzgrenzen einschließlich offener Einladungen, einmalige und ablaufende Einladungen, private Medien, Speicherreservierung und gesperrte ungeprüfte Uploads. CI-Nachweis: https://github.com/p1337/meshtastic-backend/actions/runs/39054073801 . Dies prüft die SQL-Regeln mit synthetischen Daten; kein Nachweis einer realen Supabase-Anmeldung, eines echten Medienuploads oder einer vollständigen EU-Datenresidenz.
