@@ -62,7 +62,7 @@ enum TracePropertyDecoder {
         }
         if key == "SnapshotBufferSize" {
             guard let bytes = unsignedInteger(value) else { return p }
-            p.status = "observed"; p.detail = "Angegebene Trace-Puffergröße: \(bytes) Bytes. Keine RF-Samplerate oder Aufnahmedauer daraus ableitbar."
+            p.status = "observed"; p.detail = "Trace-Puffergrößenwert: \(bytes). Einheit und Datenformat nicht verifiziert; keine RF-Samplerate oder Aufnahmedauer daraus ableitbar."
             p.observations = ["\(bytes)"]
         } else if key == "TracePipes" {
             guard let values = value as? NSArray else { return p }
