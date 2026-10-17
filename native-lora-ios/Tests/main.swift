@@ -17,7 +17,7 @@ for bad in [Data(), Data([0]), Data([0,0,0x80,0x7f,0,0,0,0])] {
 print("PASS: CSS roundtrip, FFT impulse, CF32LE parser and invalid-input handling")
 
 let environment = LabEnvironment(model: "CI-host", os: ProcessInfo.processInfo.operatingSystemVersionString,
-                                 appVersion: "0.3.0", build: ProcessInfo.processInfo.environment["GITHUB_RUN_NUMBER"] ?? "local",
+                                 appVersion: "0.4.0", build: ProcessInfo.processInfo.environment["GITHUB_RUN_NUMBER"] ?? "local",
                                  simulator: false, processorCount: ProcessInfo.processInfo.processorCount,
                                  memoryMiB: ProcessInfo.processInfo.physicalMemory / 1048576)
 let report = LabDiagnostics.run(environment: environment, extended: true)
@@ -70,3 +70,35 @@ precondition(audit.probes.contains { $0.id == "iq" && $0.status == "unverified" 
 let decodedAudit = try JSONDecoder().decode(RuntimeAuditReport.self, from: JSONEncoder().encode(audit))
 precondition(decodedAudit.source == "read-only-runtime-observations")
 print("PASS: honest session state, monotonic timing, metadata gaps, cancellation/background interruption, no RF claims and audit serialization")
+
+// Treat metadata as untrusted input; do not accept Bool, fractional or oversized sizes.
+precondition(TracePropertyDecoder.decode(key: "TracePipes", value: nil).status == "not_returned")
+precondition(TracePropertyDecoder.decode(key: "TracePipes", value: []).status == "empty")
+precondition(TracePropertyDecoder.decode(key: "TracePipes", value: "not-an-array").status == "type_mismatch")
+let invalidTraceSizes: [Any] = [true, -1, 1.5, Double.nan, Double.infinity, 4294967296.0, "1024", NSNull()]
+for bad in invalidTraceSizes {
+    precondition(TracePropertyDecoder.decode(key: "SnapshotBufferSize", value: bad).status == "type_mismatch")
+}
+let validTraceSizes: [UInt32] = [0, 4096, UInt32.max]
+for good in validTraceSizes {
+    let p = TracePropertyDecoder.decode(key: "SnapshotBufferSize", value: NSNumber(value: good))
+    precondition(p.status == "observed" && p.observations == ["\(good)"])
+}
+let cleanPipe: [String: Any] = ["Code": 7, "Name": "DIAG\nCHANNEL\u{0}"]
+let decodedPipe = TracePropertyDecoder.decode(key: "TracePipes", value: [cleanPipe], instance: 2)
+precondition(decodedPipe.id == "trace:2:TracePipes" && decodedPipe.status == "observed")
+precondition(decodedPipe.observations == ["#0 · Code 7 · DIAGCHANNEL"])
+let malformed = TracePropertyDecoder.decode(key: "TracePipes", value: [cleanPipe, ["Code": true, "Name": "bad"], ["Code": -1, "Name": "bad"], ["Code": 3], 99])
+precondition(malformed.status == "partial" && malformed.observations.count == 1)
+let manyPipes = Array(repeating: ["Code": 1, "Name": String(repeating: "x", count: 10000)] as [String: Any], count: 80)
+let limited = TracePropertyDecoder.decode(key: "TracePipes", value: manyPipes)
+precondition(limited.status == "partial" && limited.observations.count == 64)
+precondition(limited.observations.allSatisfy { $0.count < 200 })
+let names = TracePropertyDecoder.decode(key: "IOUserClientClass", value: Array(repeating: "TestClass", count: 40))
+precondition(names.status == "partial" && names.observations.count == 32)
+precondition(TracePropertyDecoder.decode(key: "SerialNumber", value: "must-not-export").status == "unsupported")
+precondition(TracePropertyDecoder.decode(key: "IOClass", value: Data([1,2,3])).observations.isEmpty)
+let decodedProbe = try JSONDecoder().decode(AccessProbe.self, from: JSONEncoder().encode(limited))
+precondition(decodedProbe.observations.count == 64 && decodedProbe.status == "partial")
+precondition(audit.probes.contains { $0.id == "trace:inventory" && $0.status == "unavailable" })
+print("PASS: bounded trace metadata, nil ambiguity, numeric boundaries, malformed records, control characters, allowlist and Codable")

@@ -56,7 +56,7 @@ import json,sys
 v=json.load(open(sys.argv[1]));r=v['suite']
 assert v['state']=='completed'
 assert r['environment']['simulator'] is True
-assert r['environment']['appVersion']=='0.3.0'
+assert r['environment']['appVersion']=='0.4.0'
 assert not r['liveRF'] and not r['packetDecoder']
 assert len(r['noise'])==30
 assert sum(c['cases'] for c in r['checks'])>=700
@@ -66,6 +66,8 @@ a=v['runtimeAudit'];s=v['accessSession']
 assert a['environment']['simulator'] is True
 assert a['probes'] and a['rfIQSamples']==0 and not a['rfIQSourceVerified']
 assert a['modemCommandsSent']==0 and a['driverConnectionsOpened']==0
+trace=[p for p in a['probes'] if p['id'].startswith('trace:')]
+assert len(trace)==1 and trace[0]['id']=='trace:inventory' and trace[0]['status']=='unavailable'
 assert s['state']=='completed' and s['requestedSeconds']==60
 assert s['source']=='public-telephony-metadata-only'
 assert s['rfIQSamples']==0 and not s['rfCaptureAvailable']

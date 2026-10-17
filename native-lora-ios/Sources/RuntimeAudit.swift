@@ -1,4 +1,5 @@
 import Foundation
+import CoreFoundation
 #if os(iOS)
 import Darwin
 #endif
@@ -32,6 +33,62 @@ struct RuntimeAuditReport: Codable {
             lines += p.observations.map { "  " + $0 }
         }
         return lines.joined(separator: "\n")
+    }
+}
+
+/// Bounded interpretation of selected metadata, never RF data or arbitrary dictionaries.
+enum TracePropertyDecoder {
+    static let keys = ["TracePipes", "SnapshotBufferSize", "IOClass", "IOProviderClass", "IOUserClientClass"]
+    static let maximumPipes = 64
+
+    private static func unsignedInteger(_ value: Any?) -> UInt32? {
+        guard let number = value as? NSNumber, CFGetTypeID(number) != CFBooleanGetTypeID() else { return nil }
+        let d = number.doubleValue
+        guard d.isFinite, d >= 0, d <= Double(UInt32.max), d.rounded(.towardZero) == d else { return nil }
+        return UInt32(d)
+    }
+    private static func safeName(_ value: String) -> String {
+        let scalars = value.unicodeScalars.prefix(160).filter { !CharacterSet.controlCharacters.contains($0) }
+        return String(String.UnicodeScalarView(scalars))
+    }
+    static func decode(key: String, value: Any?, instance: Int = 0) -> AccessProbe {
+        var p = AccessProbe(id: "trace:\(instance):\(key)", name: "\(key) · Dienst \(instance + 1)",
+                            status: "type_mismatch", detail: "Unerwarteter Datentyp; Inhalt wird nicht gespeichert.")
+        guard keys.contains(key) else { p.status = "unsupported"; p.detail = "Eigenschaft nicht auf der erlaubten Liste."; return p }
+        guard let value else {
+            p.status = "not_returned"
+            p.detail = "Kein Wert zurückgegeben. Diese API unterscheidet fehlende Eigenschaft und Zugriffsbeschränkung nicht. Kein erfundener Fehlercode."
+            return p
+        }
+        if key == "SnapshotBufferSize" {
+            guard let bytes = unsignedInteger(value) else { return p }
+            p.status = "observed"; p.detail = "Angegebene Trace-Puffergröße: \(bytes) Bytes. Keine RF-Samplerate oder Aufnahmedauer daraus ableitbar."
+            p.observations = ["\(bytes)"]
+        } else if key == "TracePipes" {
+            guard let values = value as? NSArray else { return p }
+            if values.count == 0 { p.status = "empty"; p.detail = "Leere Pipe-Metadatenliste zurückgegeben."; return p }
+            var invalid = 0
+            for i in 0..<min(values.count, maximumPipes) {
+                guard let row = values[i] as? NSDictionary,
+                      let code = unsignedInteger(row["Code"]), let name = row["Name"] as? String else { invalid += 1; continue }
+                let cleaned = safeName(name)
+                p.observations.append("#\(i) · Code \(code) · \(cleaned.isEmpty ? "(ohne Name)" : cleaned)")
+            }
+            p.status = invalid > 0 || values.count > maximumPipes ? "partial" : "observed"
+            p.detail = "\(values.count) Einträge; \(p.observations.count) gültige Code-/Name-Paare gespeichert; \(invalid) ungültige unter den höchstens \(maximumPipes) geprüften Einträgen.\(values.count > maximumPipes ? " Liste begrenzt." : "") Keine Pipe geöffnet; Namen belegen keine RF-Samplequelle."
+        } else if let name = value as? String {
+            p.status = "observed"; p.detail = "Ausgewählte Klassenmetadaten; keine Aussage über App-Zugriffsrechte."
+            p.observations = [safeName(name)]
+        } else if let names = value as? NSArray {
+            var invalid = 0
+            for i in 0..<min(names.count, 32) {
+                if let name = names[i] as? String { p.observations.append("#\(i) · " + safeName(name)) }
+                else { invalid += 1 }
+            }
+            p.status = names.count == 0 ? "empty" : invalid > 0 || names.count > 32 ? "partial" : "observed"
+            p.detail = "Ausgewählte Klassenliste, maximal32 Namen. Ungültige Einträge: \(invalid). Keine App-Berechtigung daraus ableitbar."
+        }
+        return p
     }
 }
 
@@ -129,11 +186,18 @@ enum RuntimeAudit {
                                   detail: "Simulator: kein Test des physischen iPhone-Dateisystems."))
         #else
         probes.append(registry())
+        probes += traceProperties()
         probes += paths()
+        #endif
+        #if targetEnvironment(simulator)
+        probes.append(AccessProbe(id: "trace:inventory", name: "Trace-Eigenschaften", status: "unavailable",
+                                  detail: "Simulator: physischer Trace-Dienst wird nicht untersucht."))
         #endif
         #else
         probes.append(AccessProbe(id: "host", name: "Geräteprüfung", status: "unavailable",
                                   detail: "Nativer Host-Test; keine iPhone-Laufzeit und keine RF-Aufnahme."))
+        probes.append(AccessProbe(id: "trace:inventory", name: "Trace-Eigenschaften", status: "unavailable",
+                                  detail: "Host-Test: Parser wird separat geprüft, kein iPhone-Trace-Zugriff."))
         #endif
         probes.append(AccessProbe(id: "iq", name: "I/Q-Aufnahme", status: "unverified",
                                   detail: "Kein nachgewiesener Samplelieferant. Sichtbare Bibliotheken, Dienste oder Rechte allein sind kein RF-Datenstrom."))
@@ -254,6 +318,48 @@ enum RuntimeAudit {
         return AccessProbe(id: "registry", name: base.name, status: names.isEmpty ? "not_observed" : "observed",
                            detail: "\(inspected) sichtbare Einträge untersucht\(inspected == 2048 ? " (Limit erreicht)" : ""). Nur Klassennamen; kein UserClient geöffnet und keine Register gelesen.",
                            code: "0x00000000", observations: Array(names).sorted().prefix(64).map { $0 })
+    }
+
+    /// Only selected metadata from a known service. Never opens a user client.
+    private static func traceProperties() -> [AccessProbe] {
+        typealias Matching = @convention(c) (UnsafePointer<CChar>) -> Unmanaged<CFMutableDictionary>?
+        typealias Services = @convention(c) (UInt32, CFDictionary, UnsafeMutablePointer<UInt32>) -> Int32
+        typealias Next = @convention(c) (UInt32) -> UInt32
+        typealias Release = @convention(c) (UInt32) -> Int32
+        typealias Property = @convention(c) (UInt32, CFString, CFAllocator?, UInt32) -> Unmanaged<CFTypeRef>?
+        let base = AccessProbe(id: "trace:inventory", name: "Trace-Eigenschaften", status: "unavailable",
+                               detail: "Gezielte Registry-Eigenschaftsabfrage nicht verfügbar.")
+        guard let handle = dlopen("/System/Library/Frameworks/IOKit.framework/IOKit", RTLD_LAZY | RTLD_LOCAL) else { return [base] }
+        defer { dlclose(handle) }
+        guard let matching = symbol(handle, "IOServiceMatching", as: Matching.self),
+              let services = symbol(handle, "IOServiceGetMatchingServices", as: Services.self),
+              let next = symbol(handle, "IOIteratorNext", as: Next.self),
+              let release = symbol(handle, "IOObjectRelease", as: Release.self),
+              let property = symbol(handle, "IORegistryEntryCreateCFProperty", as: Property.self),
+              let match = "AppleBasebandPCITraceBackendRaw".withCString({ matching($0) }) else { return [base] }
+        var iterator: UInt32 = 0
+        let result = services(0, match.takeUnretainedValue(), &iterator)
+        defer { if iterator != 0 { _ = release(iterator) } }
+        guard result == 0 else {
+            return [AccessProbe(id: base.id, name: base.name, status: "error",
+                                detail: "Gezielte Dienstsuche fehlgeschlagen; keine Verbindung versucht.",
+                                code: String(format: "0x%08x", UInt32(bitPattern: result)))]
+        }
+        var probes: [AccessProbe] = [], count = 0
+        while iterator != 0 && count < 16 {
+            let object = next(iterator)
+            if object == 0 { break }
+            for key in TracePropertyDecoder.keys {
+                let value = property(object, key as CFString, nil, 0)?.takeRetainedValue()
+                probes.append(TracePropertyDecoder.decode(key: key, value: value, instance: count))
+            }
+            _ = release(object)
+            count += 1
+        }
+        probes.insert(AccessProbe(id: base.id, name: base.name, status: count == 0 ? "not_observed" : "observed",
+                                  detail: "\(count) passende Trace-Dienste\(count == 16 ? " (Abfragelimit erreicht)" : ""). Nur fünf benannte Eigenschaften; kein UserClient geöffnet, kein Log gelesen und keine Modemsteuerung.",
+                                  code: "0x00000000"), at: 0)
+        return probes
     }
 
     private static func paths() -> [AccessProbe] {

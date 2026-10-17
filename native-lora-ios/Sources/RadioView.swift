@@ -11,6 +11,10 @@ struct RadioView: View {
         case "error": return "Abfragefehler"
         case "not_observed": return "Nicht beobachtet"
         case "unverified": return "Nicht nachgewiesen"
+        case "not_returned": return "Kein Wert: fehlend oder gesperrt"
+        case "type_mismatch": return "Unerwartetes Format"
+        case "partial": return "Teilweise ausgewertet"
+        case "empty": return "Leere Liste"
         default: return "Nicht verfügbar"
         }
     }
@@ -29,6 +33,26 @@ struct RadioView: View {
                     .font(.headline).foregroundStyle(.orange)
                 LabeledContent("Echte Funk-Samples", value: "0")
                 Text("Diese Version untersucht echte Zugriffsmerkmale deines Geräts. Der Zeitlauf protokolliert Mobilfunkstatus, keine HF-Wellenform und keine LoRa-Pakete.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+
+            Section("Neu: Trace-Kanäle und Puffer") {
+                if model.auditBusy { ProgressView("Trace-Eigenschaften werden abgefragt …") }
+                if let audit = model.audit {
+                    ForEach(audit.probes.filter { $0.id.hasPrefix("trace:") }) { probe in
+                        DisclosureGroup {
+                            Text(probe.detail).font(.caption).textSelection(.enabled)
+                            if let code = probe.code { Text(code).font(.caption.monospaced()).textSelection(.enabled) }
+                            ForEach(probe.observations, id: \.self) { Text($0).font(.caption.monospaced()).textSelection(.enabled) }
+                        } label: {
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(probe.name).font(.subheadline)
+                                Text(label(probe.status)).font(.caption).foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                }
+                Text("Liest automatisch TracePipes, SnapshotBufferSize und drei Klassenangaben. Es werden keine Trace-Kanäle geöffnet. Ein fehlender Wert kann auch eine Zugriffssperre bedeuten.")
                     .font(.caption).foregroundStyle(.secondary)
             }
 
@@ -64,7 +88,7 @@ struct RadioView: View {
                     LabeledContent("Version", value: "\(audit.environment.appVersion) (\(audit.environment.build))")
                     LabeledContent("Gerät", value: audit.environment.model)
                     LabeledContent("Simulator", value: audit.environment.simulator ? "ja" : "nein")
-                    ForEach(audit.probes) { probe in
+                    ForEach(audit.probes.filter { !$0.id.hasPrefix("trace:") }) { probe in
                         DisclosureGroup {
                             Text(probe.detail).font(.caption).textSelection(.enabled)
                             if let code = probe.code { Text(code).font(.caption.monospaced()).textSelection(.enabled) }
