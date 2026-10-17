@@ -60,8 +60,39 @@ keychain_password="$(openssl rand -hex 24)"
 security create-keychain -p "$keychain_password" "$keychain_path"
 security set-keychain-settings -lut 3600 "$keychain_path"
 security unlock-keychain -p "$keychain_password" "$keychain_path"
-security import "$signing_dir/distribution.p12" -P "$IOS_P12_PASSWORD" \
-  -k "$keychain_path" -T /usr/bin/codesign -T /usr/bin/security >/dev/null
+if ! security import "$signing_dir/distribution.p12" -P "$IOS_P12_PASSWORD" \
+  -k "$keychain_path" -T /usr/bin/codesign -T /usr/bin/security \
+  > "$signing_dir/import.log" 2>&1; then
+  # Apple Security may reject the PBES2/AES defaults used by modern PKCS12
+  # exporters. Repackage the SAME key and certificate using compatible PBE.
+  # Both the intermediate PEM and the replacement P12 stay encrypted.
+  openssl3=""
+  for candidate in /opt/homebrew/opt/openssl@3/bin/openssl /usr/local/opt/openssl@3/bin/openssl "$(command -v openssl)"; do
+    if [ -x "$candidate" ] && "$candidate" version | grep -q '^OpenSSL 3\.'; then
+      openssl3="$candidate"
+      break
+    fi
+  done
+  if [ -z "$openssl3" ]; then
+    printf '%s\n' '::error::Apple PKCS12 import failed; OpenSSL 3 is required for compatibility conversion.'
+    exit 1
+  fi
+  if ! "$openssl3" pkcs12 -in "$signing_dir/distribution.p12" \
+    -passin env:IOS_P12_PASSWORD -passout env:IOS_P12_PASSWORD \
+    -out "$signing_dir/identity-encrypted.pem" > "$signing_dir/convert.log" 2>&1; then
+    printf '%s\n' '::error::OpenSSL also could not open the P12. Check that IOS_P12_PASSWORD matches the uploaded P12; no password check was bypassed.'
+    exit 1
+  fi
+  "$openssl3" pkcs12 -export -legacy -keypbe PBE-SHA1-3DES \
+    -certpbe PBE-SHA1-3DES -macalg sha1 \
+    -in "$signing_dir/identity-encrypted.pem" -out "$signing_dir/compatible.p12" \
+    -passin env:IOS_P12_PASSWORD -passout env:IOS_P12_PASSWORD \
+    > "$signing_dir/repack.log" 2>&1
+  security import "$signing_dir/compatible.p12" -P "$IOS_P12_PASSWORD" \
+    -k "$keychain_path" -T /usr/bin/codesign -T /usr/bin/security >/dev/null
+  rm -f "$signing_dir/identity-encrypted.pem" "$signing_dir/compatible.p12"
+  printf '%s\n' 'Imported unchanged Apple identity after PKCS12 compatibility conversion.'
+fi
 security set-key-partition-list -S apple-tool:,apple:,codesign: -s \
   -k "$keychain_password" "$keychain_path" >/dev/null
 security list-keychains -d user -s "$keychain_path" /Library/Keychains/System.keychain

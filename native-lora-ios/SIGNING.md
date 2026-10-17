@@ -28,7 +28,7 @@ Deployment branches auf `codex/native-lora-ios` einschränken. Wenn verfügbar, 
 | `IOS_P12_PASSWORD` | Passwort der P12 |
 | `IOS_ADHOC_PROFILE_BASE64` | Base64 des Ad-Hoc-Profils |
 
-Der Workflow akzeptiert `IOS_ADHOC_PROFILE_BASE64` übergangsweise auch als Environment Variable, damit ein bereits dort hinterlegtes Profil den Cloud-Build nicht blockiert. Ein Environment Secret bleibt empfohlen, weil das eingebettete Profil die registrierten Geräte-UDIDs enthält.
+Das Profil wird ausschließlich aus dem Environment Secret `IOS_ADHOC_PROFILE_BASE64` geladen. Ein Fallback auf unmaskierte Variablen entfällt, damit das Profil nicht in den Runner-Logs ausgegeben wird.
 
 PowerShell auf Windows (Pfad jeweils auf die eigene Datei setzen):
 
@@ -76,3 +76,7 @@ Der Helfer fragt das lokale Schlüsselpasswort und ein P12-Passwort verdeckt ab,
 - GitHub: https://docs.github.com/en/actions/how-tos/deploy/deploy-to-third-party-platforms/sign-xcode-applications
 - Apple Ad Hoc: https://developer.apple.com/help/account/provisioning-profiles/create-an-ad-hoc-provisioning-profile
 - Apple Geräte: https://developer.apple.com/help/account/devices/register-a-single-device
+
+## PKCS12-Kompatibilität
+
+Falls Apples Security-Import das moderne PKCS12-Format ablehnt, prüft OpenSSL 3 die Datei mit dem angegebenen Passwort und exportiert dieselbe Identität erneut mit kompatiblem SHA1-MAC und Triple-DES-PBE. Das Zwischen-PEM bleibt verschlüsselt, alle temporären Dateien werden entfernt. Ein falsches Passwort wird nicht umgangen. Zertifikatsbindung, Team- und Signaturprüfungen bleiben aktiv.
