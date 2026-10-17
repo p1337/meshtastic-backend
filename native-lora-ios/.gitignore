@@ -2,3 +2,12 @@ build/
 *.xcuserstate
 xcuserdata/
 .DS_Store
+build-signed/
+signing-local/
+*.p12
+*.p8
+*.key
+*.mobileprovision
+*.cer
+__pycache__/
+*.pyc

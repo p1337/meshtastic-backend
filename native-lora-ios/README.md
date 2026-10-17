@@ -1,5 +1,9 @@
 # LoRa Lab – native iOS-Test-App
 
+**Aktueller Buildweg: reguläre Apple-Distribution-Signierung in GitHub Actions. Einrichtung und fehlende Signierdaten: [SIGNING.md](SIGNING.md).**
+
+Die unten stehenden Angaben zum unsignierten Build beschreiben den historischen ersten Test; der aktuelle GitHub-Workflow erzeugt ausschließlich nach erfolgreicher Signaturprüfung eine signierte IPA.
+
 **Kein Live-LoRa-Empfang.** Es gibt noch keinen nachgewiesenen Zugriff auf die internen RF-I/Q-Samples des iPhone 15 Pro Max. Diese App testet den nativen Software- und Installationsweg. Sie enthält keinen erfundenen RadioAdapter und keine privaten Modembefehle.
 
 ## Tatsächliche Funktionen
@@ -9,20 +13,15 @@
 - Export von Gerätemodell, iOS-Version und Testergebnissen als Text.
 - Keine Internet-, Bluetooth-, Standort-, Mikrofon- oder Mobilfunk-Datenaufnahme. Keine zusätzlichen Entitlements.
 
-## IPA in GitHub Actions bauen
+## Apple-signierte IPA in GitHub Actions bauen
 
-Der Workflow `.github/workflows/native-lora-ipa.yml` baut auf einem macOS-Runner eine **arm64-Geräte-App**, keine Simulator-App. Er führt zuerst eigenständige Swift-Tests aus und erzeugt danach `LoRaLab-unsigned.ipa`. Kein Apple-Account oder Zertifikat wird an GitHub übertragen.
+Der Workflow `.github/workflows/native-lora-ipa.yml` verwendet einen macOS-Runner und eine echte Apple-Distribution-Identität mit einem passenden Ad-Hoc-Profil. Die Einrichtung steht in [SIGNING.md](SIGNING.md). Die drei Signier-Secrets gehören in das GitHub-Environment `apple-signing`; niemals als Quelltext ins Repository.
 
-1. Branch `codex/native-lora-ios` öffnen.
-2. Unter **Actions → Native LoRa Lab IPA** den erfolgreichen Lauf öffnen.
-3. Artifact **LoRaLab-unsigned-IPA** herunterladen und ZIP entpacken.
-4. Die darin enthaltene IPA muss vor der Installation signiert werden. Sie lässt sich nicht allein durch Antippen auf dem iPhone installieren.
+Der Build führt die Swift-Tests aus, archiviert die arm64-Geräte-App, exportiert eine signierte IPA und prüft Signatur, Team und Profil. Nur bei Erfolg entsteht das Artifact **LoRaLab-Apple-signed-IPA**. Fehlende Signierdaten führen zu einem ausdrücklichen Fehler. Es gibt keinen unsignierten Fallback.
 
-## Unter Windows auf dem iPhone testen
+Die IPA kann auf den im Profil registrierten Geräten installiert werden. Ein passender Installationsweg unter Windows muss separat geprüft werden; eine Geräteinstallation ist noch nicht verifiziert. Eine erneute Signierung durch AltStore ist für diesen Build nicht vorgesehen.
 
-AltServer und **AltStore Classic** gemäß https://faq.altstore.io/altstore-classic/how-to-install-altstore-windows installieren. AltStore Classic kann die IPA mit dem eigenen Apple-Account signieren und installieren. Kostenlose Accounts müssen Apps üblicherweise nach sieben Tagen erneuern. Apples Developer Mode und Vertrauen in das Entwicklerprofil müssen ggf. aktiviert werden. Die aktuelle Kombination aus iOS-/AltServer-Version ist auf dem konkreten Telefon zu prüfen; hier wurde noch keine Geräteinstallation durchgeführt. AltStore PAL ist nicht derselbe Installationsweg.
-
-Signierdaten ausschließlich selbst in der jeweiligen lokalen Software eingeben. Keine Apple-Passwörter oder privaten Zertifikate ins Repository schreiben.
+Der erste erfolgreiche historische Build erzeugte eine unsignierte IPA. Das erhaltene Skript `scripts/build-ipa.sh` erzeugt weiterhin nur diesen unsignierten lokalen Testbuild.
 
 ## Lokal unter macOS
 
