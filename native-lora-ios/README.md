@@ -1,35 +1,33 @@
-# LoRa Lab – native iOS-Test-App
+# LoRa Lab – native iOS-Forschungs-App
 
-**Aktueller Buildweg: reguläre Apple-Distribution-Signierung in GitHub Actions. Einrichtung und fehlende Signierdaten: [SIGNING.md](SIGNING.md).**
+Version **0.2.0**. Die App läuft lokal und empfängt noch keine LoRa-Pakete. Ein nutzbarer I/Q-Zugang zur internen Funkhardware des iPhone 15 Pro Max ist weiterhin nicht nachgewiesen.
 
-Die unten stehenden Angaben zum unsignierten Build beschreiben den historischen ersten Test; der aktuelle GitHub-Workflow erzeugt ausschließlich nach erfolgreicher Signaturprüfung eine signierte IPA.
+## Installieren und aktualisieren
 
-**Kein Live-LoRa-Empfang.** Es gibt noch keinen nachgewiesenen Zugriff auf die internen RF-I/Q-Samples des iPhone 15 Pro Max. Diese App testet den nativen Software- und Installationsweg. Sie enthält keinen erfundenen RadioAdapter und keine privaten Modembefehle.
+Auf dem registrierten iPhone in **Safari** öffnen:
 
-## Automatische Tests und Berichte ab 0.2.0
+https://p1337.github.io/meshtastic-backend/
 
-Automatische Geräte-Selbsttests, lokale JSON-Berichte, AWGN-/Versatzmessungen, konfigurierbare Dateianalyse und Simulator-Startprüfung in GitHub sind in [AUTOMATED_TESTS.md](AUTOMATED_TESTS.md) beschrieben. Das iOS-App-Icon wird aus der eingecheckten Grafikquelle generiert.
+„Auf diesem iPhone installieren“ antippen und die iOS-Rückfrage bestätigen. Der veröffentlichte Build ist mit dem eigenen Apple-Distribution-Zertifikat und einem passenden Ad-Hoc-Profil signiert. Einrichtung: [SIGNING.md](SIGNING.md); drahtlose Verteilung: [OTA_INSTALL.md](OTA_INSTALL.md). Profil und Zertifikat haben Ablaufdaten.
 
-## Historischer Funktionsumfang der Version 0.1.0
+## Funktionen
 
-- Synthetischer Chirp-/Dechirp-Selbsttest SF7–SF12 mit nativer FFT.
-- Lokaler CF32LE-Dateiimport (Float32 little-endian, I/Q verschachtelt, max. 8 MiB), Leistungsstatistik und angenommener erster SF11-Symbolbin. Kein vollständiger LoRa-Paketdecoder. Samplerate im Formular dient nur zur Dauerberechnung.
-- Export von Gerätemodell, iOS-Version und Testergebnissen als Text.
-- Keine Internet-, Bluetooth-, Standort-, Mikrofon- oder Mobilfunk-Datenaufnahme. Keine zusätzlichen Entitlements.
+- Automatischer Startlauf mit **835 Prüf-/Messfällen**; erweiterter Lauf mit **2567 Fällen**.
+- Analytische FFT-Referenzen, CSS SF7–SF12, Pegel/Phase, Frequenz- und Zeitversätze, 30 AWGN-Messpunkte, Parser-/Eingabegrenzen und DSP-Laufzeit.
+- CF32LE-Dateianalyse bis 8 MiB mit auswählbarer Samplerate, SF und Bandbreite, Leistungs-/DC-Statistik und erstem ausgerichtetem Symbolbin. Chirp-Auswertung nur bei Fs=BW.
+- Generierbare und teilbare synthetische Referenzdatei.
+- Automatisch gespeicherte JSON- und Textberichte; Teilen im Tab „Berichte“. Kein automatischer Upload, keine Rohsamples im Bericht.
+- Sichtbare App-/Buildnummer und eigenes opakes iOS-Icon aus einer reproduzierbaren Grafikquelle.
 
-## Apple-signierte IPA in GitHub Actions bauen
+Ein Symbolbin ist keine Paketerkennung. Kein LoRa-Header, keine FEC/CRC und kein Meshtastic-Paketcodec. Die Störsignaltests messen keine iPhone-RF-Empfindlichkeit. BW500 dient nur Offline-Analysen und ist kein Meshtastic-EU868-Sendepreset.
 
-Der Workflow `.github/workflows/native-lora-ipa.yml` verwendet einen macOS-Runner und eine echte Apple-Distribution-Identität mit einem passenden Ad-Hoc-Profil. Die Einrichtung steht in [SIGNING.md](SIGNING.md). Die drei Signier-Secrets gehören in das GitHub-Environment `apple-signing`; niemals als Quelltext ins Repository.
+## Automatische GitHub-Prüfungen
 
-Der Build führt die Swift-Tests aus, archiviert die arm64-Geräte-App, exportiert eine signierte IPA und prüft Signatur, Team und Profil. Nur bei Erfolg entsteht das Artifact **LoRaLab-Apple-signed-IPA**. Fehlende Signierdaten führen zu einem ausdrücklichen Fehler. Es gibt keinen unsignierten Fallback.
+Der Workflow `.github/workflows/native-lora-ipa.yml` führt native Regressionen aus, baut einen separaten Simulator-Build, startet die App und prüft ihren automatisch erzeugten JSON-Bericht. Danach wird die echte arm64-Geräte-App archiviert, mit Apple Distribution signiert und geprüft. Nur erfolgreiche Gerätebuilds werden über Pages veröffentlicht.
 
-Die IPA kann auf den im Profil registrierten Geräten installiert werden. Ein passender Installationsweg unter Windows muss separat geprüft werden; eine Geräteinstallation ist noch nicht verifiziert. Eine erneute Signierung durch AltStore ist für diesen Build nicht vorgesehen.
+Der Simulator benötigt keine Gerätefreigabe. Die Ad-Hoc-IPA bleibt auf die registrierten iPhones beschränkt. Der Simulator prüft keine HF-Hardware. Er ist kein Ersatz für einen Bericht vom echten Gerät.
 
-Der erste erfolgreiche historische Build erzeugte eine unsignierte IPA. Das erhaltene Skript `scripts/build-ipa.sh` erzeugt weiterhin nur diesen unsignierten lokalen Testbuild.
-
-## Direkt unterwegs installieren
-
-Der Workflow bereitet eine HTTPS-Installationsseite mit OTA-Manifest vor. Die einmalige Pages-Einrichtung und die verbleibende Geräteprüfung stehen in [OTA_INSTALL.md](OTA_INSTALL.md).
+Artifacts: `LoRaLab-native-diagnostics`, `LoRaLab-simulator-diagnostics`, `LoRaLab-Apple-signed-IPA`. Umfang und Grenzen: [AUTOMATED_TESTS.md](AUTOMATED_TESTS.md).
 
 ## Lokal unter macOS
 
@@ -37,8 +35,14 @@ Der Workflow bereitet eine HTTPS-Installationsseite mit OTA-Manifest vor. Die ei
 bash native-lora-ios/scripts/build-ipa.sh
 ```
 
-Das Xcode-Projekt benötigt keine fremden Swift-Packages oder XcodeGen. Deployment Target iOS 17.0, Produkt `de.p1337.LoRaLab`, Version 0.1.0. Xcode kann das Projekt alternativ mit eigener automatischer Signierung direkt ausführen.
+Das Skript rendert das Icon, führt die native Suite aus und erzeugt einen **unsignierten** lokalen Testbuild. Für normale Xcode-Builds das Icon vorher erzeugen:
 
-## Nächster Forschungsschritt
+```bash
+xcrun swift native-lora-ios/scripts/render-icon.swift native-lora-ios/Assets.xcassets/AppIcon.appiconset/AppIcon.png
+```
 
-Mav23-Capture-Handler und die Quelle der Samples nachweisen. Erst ein echter, auf der installierten iOS-Version erreichbarer Antennen-RX-Pfad ermöglicht die Erweiterung zur Empfangs-App. Erfolgreiches Kompilieren oder Sideloading erteilt keine Modemprivilegien.
+Keine fremden Swift-Packages oder XcodeGen nötig. Deployment Target iOS 17.0; Bundle-ID `de.p1337.LoRaLab`. Der produktive Cloud-Pfad verwendet ausschließlich die drei Environment Secrets in `apple-signing`; private Schlüssel und P12-Dateien gehören nicht ins Repository.
+
+## Nächster Hardware-Forschungsschritt
+
+Mav23-Capture-Handler, tatsächliche Samplequelle und erreichbare Schnittstelle nachweisen. Der erfolgreich installierte Offline-Test öffnet keinen Baseband-Zugang.
