@@ -1,0 +1,3 @@
+Name;Kundennummer;Ansprechpartner;Straße;PLZ;Ort;Land;E-Mail;Telefon;USt-ID;Notizen
+Musterbetrieb GmbH;00001;Erika Muster;Musterstraße 1;01234;Musterstadt;DE;beispiel@example.invalid;;;Fiktiver Beispielkunde – vor eigenem Import ersetzen
+Przykładowa Firma;00002;Łukasz Nowak;Ulica Przykładowa 2;00-001;Warszawa;PL;przyklad@example.invalid;;;Fikcyjny klient – zastąp przed importem własnych danych

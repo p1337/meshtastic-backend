@@ -125,3 +125,13 @@ Alle am 17.10.2026 geprüft; Quellen belegen Herstellerfunktionen bzw. technisch
 - [S14] OWASP CSV Injection: https://community.owasp.org/attacks/CSV_Injection
 - [S15] Apple Kaufdaten-Verifikation: https://developer.apple.com/videos/play/wwdc2024/10062/
 - [S16] Supabase regionale Verarbeitungsausnahmen: https://supabase.com/legal/privacy-resources/data-residency-and-transfers-faq
+
+## Implementierungsstand Version 1.2 (17.10.2026)
+
+Der native Importassistent und die strukturierte Kundenkartei sind implementiert: CSV/TSV/Text mit auswählbarem Zeichensatz, XLSX-Tabellenauswahl, vCard, manuelle Spaltenzuordnung, Vorschau und standardmäßig abgewählte Dubletten. Übernahme fügt hinzu, überschreibt keine Kunden. Die letzte Übernahme kann selektiv rückgängig gemacht werden; geänderte oder in Projekten referenzierte Kunden bleiben erhalten. Suchbare Kundenliste und Detailseite mit Projekten vorhanden. Alte Backups bleiben lesbar. XLS-Altformate, Makros, verschlüsselte und Formel-Tabellen benötigen weiterhin Konvertierung in CSV oder reine Werte; keine vollständige Hersteller-API-Synchronisation. Synthetische Vorlage: WERKBELEG_KUNDEN_VORLAGE.csv.
+
+Cloud-Migration 002 und 50 PostgreSQL-Prüfungen ergänzen unveränderliche Betriebszuordnung, adminbeschränkten Insert-Import mit atomarem Rollback, Quellen-ID-Trennung, personengebundene Einladungen, Mitgliedschaftsentzug und eine eindeutige Transaktionszuordnung für künftige Aboverifikation. Letzter bestandener SQL-Lauf: https://github.com/p1337/meshtastic-backend/actions/runs/39060337905 .
+
+Die native Pilot-App trennt lokale Daten nach Server/Zugang in eigene Bereiche. Der alte anonyme Einladungsbeitritt ist gesperrt, bis die personengebundene Hosted-Auth-Anbindung fertig ist. Die früheren Pilotlinks sind kein Ersatz dafür. Echte Apple-Kaufverifikation, native Supabase-Auth, Dateien-/Import-RPC-Anbindung, Echtbetrieb mit mehreren Geräten, unabhängige Prüfung und verifizierter EU-Betrieb bleiben offen. Keine Produktionsfreigabe und keine 100-%-Garantie.
+
+CI-Hinweis: 41 native Foundation-/Importprüfungen bestanden bereits. Ein erster Simulatorlauf bestand Import/Rücknahme, scheiterte dann am echten Schlüsselbund des unsignierten Simulators. Der Simulator verwendet deshalb nun ausdrücklich einen isolierten Zugangsspeicher-Testdouble; dessen Erfolg beweist keine iPhone-Keychain-ACL. Der signierte Gerätebuild enthält diesen Testdouble nicht. Finale Veröffentlichung separat verifizieren.

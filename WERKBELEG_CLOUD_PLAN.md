@@ -61,3 +61,7 @@ Am 17.10.2026 bestanden 31 Prüfungen in einer isolierten PostgreSQL-16-Testdate
 ## Kundendaten je zahlendem Betriebszugang
 
 Neue feste Nutzervorgabe vom 17.10.2026: ein getrennter Kundenbestand pro bezahltem Betrieb, geteilt nur mit dessen autorisierten Mitarbeitern. Die recherchierten Importwege, nötige Modellfelder, Schutzregeln und zusätzlichen Abnahmetests stehen in [WERKBELEG_CUSTOMERS_AND_ISOLATION.md](WERKBELEG_CUSTOMERS_AND_ISOLATION.md). Kein physisch dedizierter Datenbankserver je Abo zugesagt. Vor Live-Freigabe insbesondere Abo-/Kaufzuordnung, Einladungsempfänger, unveränderliche org_id, Native-Cachetrennung, Importwege und echte Provider-A/B-Tests fertigstellen. Die bisherigen 31 SQL-Tests sind keine vollständige Produkt-Sicherheitsgarantie.
+
+## Native Implementierung 1.2
+
+Kundenimport und Detailkartei sowie lokal getrennte Teambereiche sind im Quellcode umgesetzt. Die Cloud-Grundlage besteht nach Migration 002 aus neun Geschäftstabellen einschließlich serverseitig beschränkter Abodaten. 50 PostgreSQL-Prüfungen bestanden am 17.10.2026: https://github.com/p1337/meshtastic-backend/actions/runs/39060337905 . Personengebundene Einladungen erfordern die noch nicht verbundene native Hosted-Auth-Anbindung; unsichere ältere Pilotbeitritte sind in 1.2 gesperrt. Import vorerst lokal, Synchronisation nur mit dem älteren getrennten Pilot-API-Protokoll, nicht bereits mit Supabase. Kein Providerkonto verbunden, kein Live-Upload, keine aktive Abrechnung.
