@@ -34,7 +34,7 @@ xcrun simctl boot "$device_id" 2>/dev/null || true
 xcrun simctl bootstatus "$device_id" -b
 app="$output_dir/DerivedData/Build/Products/Debug-iphonesimulator/LoRaLab.app"
 xcrun simctl install "$device_id" "$app"
-xcrun simctl launch "$device_id" de.p1337.LoRaLab --werkbeleg-smoke
+xcrun simctl launch "$device_id" de.p1337.LoRaLab --werkbeleg-smoke --werkbeleg-customers
 container="$(xcrun simctl get_app_container "$device_id" de.p1337.LoRaLab data)"
 for attempt in $(seq 1 30); do
   if [ -s "$container/Documents/Werkbeleg-Smoke.json" ]; then break; fi
@@ -46,6 +46,7 @@ import json,sys
 v=json.load(open(sys.argv[1])); assert v['passed'],v
 assert v['product']=='Werkbeleg' and v['pdfPages']>=3
 assert v['persistence'] and v['backupRoundTrip'] and v['photoPixelSizeVerified'] and v['localSpeechPolicyVerified']
+assert v['customerImportAndUndoVerified'] and v['teamAreaIsolationVerified']
 assert not v['teamServerConnected'] and not v['cameraOrMicrophoneTested']
 print('PASS: native launch, disk persistence, attachment backup and multipage PDF. Synthetic fixtures only.')
 CHECK

@@ -39,7 +39,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p native-lora-ios/build-signed
-          xcrun swiftc -O native-lora-ios/Werkbeleg/Model.swift native-lora-ios/Tests/main.swift -o native-lora-ios/build-signed/css-tests
+          xcrun swiftc -O native-lora-ios/Werkbeleg/Model.swift native-lora-ios/Werkbeleg/CustomerImport.swift native-lora-ios/Tests/main.swift -o native-lora-ios/build-signed/css-tests
           native-lora-ios/build-signed/css-tests --json native-lora-ios/build-signed/diagnostics-report.json | tee native-lora-ios/build-signed/test-results.txt
       - name: Upload native regression evidence
         if: always()

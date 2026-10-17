@@ -51,7 +51,7 @@ do $$declare rejected boolean:=false; begin
  perform public.wb_test_assert(rejected,'viewer cannot write customers');
 end$$;
 do $$declare rejected boolean:=false; begin
- begin perform public.wb_create_invite('11111111-1111-1111-1111-111111111111','Forbidden','editor'); exception when raise_exception then rejected:=SQLERRM='admin required'; end;
+ begin perform public.wb_create_invite('11111111-1111-1111-1111-111111111111','Forbidden','editor','00000000-0000-0000-0000-000000000005'); exception when raise_exception then rejected:=SQLERRM='admin required'; end;
  perform public.wb_test_assert(rejected,'viewer cannot invite');
 end$$;
 set request.jwt.claim.sub='00000000-0000-0000-0000-000000000003';
@@ -72,13 +72,13 @@ end$$;
 set request.jwt.claim.sub='00000000-0000-0000-0000-000000000004';
 select public.wb_test_assert((select count(*)=0 from public.wb_messages),'business B cannot read business A chat');
 set request.jwt.claim.sub='00000000-0000-0000-0000-000000000001';
-select public.wb_create_invite('11111111-1111-1111-1111-111111111111','Invite 1','editor')->>'code' as code1 \gset
-select public.wb_create_invite('11111111-1111-1111-1111-111111111111','Invite 2','viewer')->>'code' as code2 \gset
+select public.wb_create_invite('11111111-1111-1111-1111-111111111111','Invite 1','editor','00000000-0000-0000-0000-000000000005')->>'code' as code1 \gset
+select public.wb_create_invite('11111111-1111-1111-1111-111111111111','Invite 2','viewer','00000000-0000-0000-0000-000000000006')->>'code' as code2 \gset
 set wb.test.code1=:'code1';
 set wb.test.code2=:'code2';
 select public.wb_test_assert((select count(*)=2 from public.wb_invites),'two pending invitations reserve remaining seats');
 do $$declare rejected boolean:=false; begin
- begin perform public.wb_create_invite('11111111-1111-1111-1111-111111111111','Overflow','editor'); exception when raise_exception then rejected:=SQLERRM='seat limit reached'; end;
+ begin perform public.wb_create_invite('11111111-1111-1111-1111-111111111111','Overflow','editor','00000000-0000-0000-0000-000000000007'); exception when raise_exception then rejected:=SQLERRM='seat limit reached'; end;
  perform public.wb_test_assert(rejected,'pending invitations enforce five person limit');
 end$$;
 set request.jwt.claim.sub='00000000-0000-0000-0000-000000000005';
@@ -132,4 +132,5 @@ reset role;
 select public.wb_test_assert((select public is false from storage.buckets where id='werkbeleg-media'),'media bucket is private');
 select public.wb_test_assert((select count(*)=8 from pg_tables where schemaname='public' and tablename in ('wb_organizations','wb_memberships','wb_customers','wb_projects','wb_reports','wb_messages','wb_invites','wb_assets') and rowsecurity),'all eight business tables enforce RLS');
 select public.wb_test_assert((select count(*)=1 from pg_indexes where indexname='wb_messages_cursor'),'chat has an incremental cursor index');
+-- More boundary tests run below in customer_boundaries.sql.
 select 'PASSED ASSERTIONS: '||count(*) from public.wb_test_results;

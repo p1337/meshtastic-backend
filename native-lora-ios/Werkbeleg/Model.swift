@@ -5,6 +5,32 @@ struct Customer: Codable, Identifiable, Equatable {
     var name: String
     var address = ""
     var contact = ""
+    var details = CustomerDetails()
+}
+struct CustomerDetails: Codable, Equatable {
+    var externalID = ""
+    var source = ""
+    var person = ""
+    var street = ""
+    var postalCode = ""
+    var city = ""
+    var country = ""
+    var email = ""
+    var phone = ""
+    var taxID = ""
+    var notes = ""
+    var importID: UUID? = nil
+}
+extension Customer {
+    enum CodingKeys: String, CodingKey { case id, name, address, contact, details }
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(UUID.self, forKey: .id)
+        name = try c.decode(String.self, forKey: .name)
+        address = try c.decodeIfPresent(String.self, forKey: .address) ?? ""
+        contact = try c.decodeIfPresent(String.self, forKey: .contact) ?? ""
+        details = try c.decodeIfPresent(CustomerDetails.self, forKey: .details) ?? CustomerDetails()
+    }
 }
 struct Job: Codable, Identifiable, Equatable {
     var id = UUID()

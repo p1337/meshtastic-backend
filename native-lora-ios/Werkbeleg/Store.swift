@@ -1,5 +1,6 @@
 import SwiftUI
 import Security
+import CryptoKit
 
 @MainActor final class WorkStore: ObservableObject {
     @Published var data = Workspace()
@@ -11,11 +12,45 @@ import Security
     @Published var teamInfo: TeamInfo? = nil
     @Published var canEdit = true
     var version = 0
-    let root: URL
+    @Published var contextID = "local"
+    var root: URL
+    let baseRoot: URL
+    var canBulkManage: Bool { contextID == "local" || teamInfo?.role == "admin" }
+    static func scope(server: String, token: String) -> String {
+        SHA256.hash(data: Data((server.trimmingCharacters(in: CharacterSet(charactersIn: "/")) + "\n" + token).utf8)).map { String(format: "%02x", $0) }.joined()
+    }
+    func activateTeam(server: String, token: String) throws {
+        guard !syncing else { throw TeamError.message("Bitte Synchronisation abwarten / Wait for sync") }
+        let address = server.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let url = URL(string: address), url.scheme == "https", url.host != nil,
+              url.user == nil, url.password == nil, url.query == nil, url.fragment == nil, !token.isEmpty else { throw TeamError.message("HTTPS-Server und Zugangstoken benötigt / HTTPS server and token required") }
+        let key = Self.scope(server: address, token: token)
+        if key == contextID { return }
+        let nextRoot = baseRoot.appendingPathComponent("Contexts", isDirectory: true).appendingPathComponent(key, isDirectory: true)
+        let next = WorkStore(root: nextRoot)
+        guard next.loaded else { throw TeamError.message(next.error ?? "Betriebsbereich konnte nicht geladen werden") }
+        try KeychainToken.save(token)
+        UserDefaults.standard.set(address, forKey: "teamURL")
+        root = nextRoot; data = next.data; persistedData = next.persistedData; version = next.version; dirty = next.dirty
+        teamInfo = nil; canEdit = false; contextID = key; syncStatus = ""
+    }
+    func disconnectTeam() throws {
+        guard !syncing else { throw TeamError.message("Bitte Synchronisation abwarten / Wait for sync") }
+        let local = WorkStore(root: baseRoot)
+        guard local.loaded else { throw ModelError.invalid }
+        try KeychainToken.save(""); UserDefaults.standard.removeObject(forKey: "teamURL")
+        root = baseRoot; data = local.data; persistedData = local.persistedData; version = local.version; dirty = local.dirty
+        teamInfo = nil; canEdit = true; contextID = "local"; syncStatus = ""
+    }
     private var loaded = false
     var persistedData = Workspace()
     init(root: URL? = nil) {
-        self.root = root ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("Werkbeleg", isDirectory: true)
+        let base = root ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("Werkbeleg", isDirectory: true)
+        baseRoot = base; self.root = base
+        if root == nil, let server = UserDefaults.standard.string(forKey: "teamURL"), let token = KeychainToken.read(), !token.isEmpty {
+            let key = Self.scope(server: server, token: token)
+            contextID = key; self.root = base.appendingPathComponent("Contexts", isDirectory: true).appendingPathComponent(key, isDirectory: true); canEdit = false
+        }
         do {
             try FileManager.default.createDirectory(at: self.root, withIntermediateDirectories: true)
             let url = self.root.appendingPathComponent("workspace.json")
@@ -44,6 +79,7 @@ import Security
         try data.encoded().write(to: url, options: [.atomic, .completeFileProtection]); return url
     }
     func restore(_ url: URL) throws {
+        guard canBulkManage, contextID == "local" else { throw TeamError.message(L.t("Sicherungen nur im lokalen Bereich wiederherstellen. Kein Übertragen zwischen Teambereichen.", "Restore backups only in the local area. No transfer between teams.", "Przywracaj kopie tylko lokalnie, bez przenoszenia między zespołami.")) }
         let access = url.startAccessingSecurityScopedResource(); defer { if access { url.stopAccessingSecurityScopedResource() } }
         let restored = try Workspace.decode(Data(contentsOf: url))
         _ = try backup() // retain current snapshot locally before replacement
@@ -57,12 +93,15 @@ import Security
               let token = KeychainToken.read(), !token.isEmpty else {
             syncStatus = L.t("Kein Teamserver verbunden", "No team server connected", "Nie połączono serwera zespołu"); return
         }
+        guard Self.scope(server: address, token: token) == contextID else { syncStatus = "Zugang zuerst verbinden / Connect access first"; return }
+        let context = contextID
         syncing = true; defer { syncing = false }
         do {
             var get = URLRequest(url: base.appendingPathComponent("workspace")); get.timeoutInterval = 30
             get.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
             let (bytes, response) = try await URLSession.shared.data(for: get)
             guard let http = response as? HTTPURLResponse, http.statusCode == 200 else { throw TeamError.message("Teamserver: Zugriff fehlgeschlagen / Access denied") }
+            guard contextID == context else { throw ModelError.invalid }
             let remote = try JSONDecoder().decode(TeamSnapshot.self, from: bytes); try remote.workspace.validate()
             canEdit = http.value(forHTTPHeaderField: "X-Role") != "reader"
             if dirty && !discardLocal {

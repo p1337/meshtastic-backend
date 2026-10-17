@@ -5,11 +5,14 @@ extension WorkStore {
         guard let base = URL(string: UserDefaults.standard.string(forKey: "teamURL") ?? ""), base.scheme == "https", base.host != nil,
               base.user == nil, base.password == nil, base.query == nil, base.fragment == nil,
               let token = KeychainToken.read(), !token.isEmpty else { throw TeamError.message(L.t("Bitte zuerst einen Teamserver verbinden.", "Connect a team server first.", "Najpierw połącz serwer zespołu.")) }
+        let context = contextID
+        guard Self.scope(server: base.absoluteString, token: token) == context else { throw ModelError.invalid }
         let url = URL(string: base.absoluteString.trimmingCharacters(in: CharacterSet(charactersIn: "/")) + "/" + path)!
         var req = URLRequest(url: url); req.timeoutInterval = 20; req.httpMethod = method
         req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         if let body { req.httpBody = try JSONSerialization.data(withJSONObject: body); req.setValue("application/json", forHTTPHeaderField: "Content-Type") }
         let (bytes, response) = try await URLSession.shared.data(for: req)
+        guard contextID == context else { throw ModelError.invalid }
         guard let code = (response as? HTTPURLResponse)?.statusCode, (200...299).contains(code) else {
             let message = (try? JSONSerialization.jsonObject(with: bytes) as? [String: Any])?["error"] as? String
             throw TeamError.message(message ?? "Teamserver nicht erreichbar / Team server unavailable")
@@ -35,7 +38,8 @@ extension WorkStore {
         do { try persistChatCache() } catch { data.messages = previous; throw error }
     }
     func sendMessage(_ project: UUID, text: String, id: UUID) async throws {
-        if dirty { await sync(); guard !dirty else { throw TeamError.message(syncStatus) } }
+        let context = contextID
+        if dirty { await sync(); guard !dirty, contextID == context else { throw TeamError.message(syncStatus) } }
         _ = try await teamRequest("messages", method: "POST", body: ["id": id.uuidString, "jobID": project.uuidString, "text": text])
         try await loadMessages(project)
     }
@@ -58,13 +62,16 @@ extension WorkStore {
         invitation = InvitationContext(server: base, code: code)
     }
     func acceptInvitation(_ invite: InvitationContext) async throws {
+        let context = contextID
+        guard !syncing else { throw ModelError.invalid }
         _ = try backup()
         var req = URLRequest(url: invite.server.appendingPathComponent("join")); req.httpMethod = "POST"; req.timeoutInterval = 20
         req.httpBody = try JSONSerialization.data(withJSONObject: ["code": invite.code]); req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         let (bytes, response) = try await URLSession.shared.data(for: req)
         guard (response as? HTTPURLResponse)?.statusCode == 200,
               let result = try JSONSerialization.jsonObject(with: bytes) as? [String: Any], let token = result["token"] as? String else { throw TeamError.message(L.t("Einladung ungültig, abgelaufen oder bereits verwendet.", "Invitation invalid, expired or already used.", "Zaproszenie nieprawidłowe, wygasłe lub wykorzystane.")) }
-        try KeychainToken.save(token); UserDefaults.standard.set(invite.server.absoluteString, forKey: "teamURL")
+        guard contextID == context else { throw ModelError.invalid }
+        try activateTeam(server: invite.server.absoluteString, token: token)
         if let name = result["name"] as? String { UserDefaults.standard.set(name, forKey: "author") }
         await loadTeamVersion(); try await refreshTeam(); invitation = nil
     }
@@ -143,7 +150,7 @@ struct InvitationView: View {
         NavigationStack { Form {
             Section(L.t("Teameinladung", "Team invitation", "Zaproszenie do zespołu")) {
                 Text(invite.server.host ?? "").font(.headline)
-                Text(L.t("Du verbindest dich mit diesem Server. Beim Laden des Teamstands werden lokale Projektdaten ersetzt. Vorher eine Sicherung exportieren.", "You will connect to this server. Loading the team replaces local project data. Export a backup first.", "Połączysz się z tym serwerem. Pobranie zespołu zastąpi dane lokalne. Najpierw wyeksportuj kopię."))
+                Text(L.t("Du verbindest dich mit diesem Server. Der bisherige Bereich bleibt getrennt erhalten. Der neue Zugang öffnet einen eigenen lokalen Datenbereich.", "You will connect to this server. Existing data remains separate. The new access opens its own local data area.", "Połączysz się z tym serwerem. Dotychczasowe dane pozostaną oddzielnie. Nowy dostęp otwiera własny obszar lokalny."))
                 Button(L.t("Einladung annehmen", "Accept invitation", "Przyjmij zaproszenie")) { Task { busy = true; defer { busy = false }; do { try await store.acceptInvitation(invite) } catch { self.error = error.localizedDescription } } }.disabled(busy)
                 if !error.isEmpty { Text(error).foregroundStyle(.red) }
             }

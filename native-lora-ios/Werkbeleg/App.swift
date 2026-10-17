@@ -22,14 +22,16 @@ import UniformTypeIdentifiers
 struct RootView: View {
     @EnvironmentObject var store: WorkStore
     @AppStorage("language") var language = "de"
+    @State private var selectedTab = 0
     var body: some View {
-        TabView {
-            JobsView().tabItem { Label(L.t("Projekte", "Projects", "Projekty"), systemImage: "hammer.fill") }
-            CustomersView().tabItem { Label(L.t("Kunden", "Customers", "Klienci"), systemImage: "person.2.fill") }
-            SettingsView().tabItem { Label(L.t("Büro", "Office", "Biuro"), systemImage: "building.2.fill") }
+        TabView(selection: $selectedTab) {
+            JobsView().tag(0).tabItem { Label(L.t("Projekte", "Projects", "Projekty"), systemImage: "hammer.fill") }
+            CustomersView().tag(1).tabItem { Label(L.t("Kunden", "Customers", "Klienci"), systemImage: "person.2.fill") }
+            SettingsView().tag(2).tabItem { Label(L.t("Büro", "Office", "Biuro"), systemImage: "building.2.fill") }
         }
+        .onAppear { if ProcessInfo.processInfo.arguments.contains("--werkbeleg-customers") { selectedTab = 1 } }
         .sheet(item: $store.invitation) { InvitationView(invite: $0) }
-        .id(language)
+        .id(language + store.contextID)
         .disabled(store.syncing)
         .alert(L.t("Hinweis", "Notice", "Informacja"), isPresented: Binding(get: { store.error != nil }, set: { if !$0 { store.error = nil } })) { Button("OK") { store.error = nil } } message: { Text(store.error ?? "") }
     }
@@ -72,40 +74,6 @@ struct JobsView: View {
             }.navigationTitle("Werkbeleg").searchable(text: $search)
                 .toolbar { Button { add = true } label: { Image(systemName: "plus.circle.fill") }.disabled(!store.canEdit) }
                 .sheet(isPresented: $add) { NewJobView() }
-        }
-    }
-}
-struct CustomersView: View {
-    @EnvironmentObject var store: WorkStore
-    @State private var add = false
-    @State private var selected: Customer? = nil
-    var body: some View {
-        NavigationStack {
-            List {
-                if store.data.customers.isEmpty { ContentUnavailableView(L.t("Noch keine Kunden", "No customers yet", "Brak klientów"), systemImage: "person.crop.circle.badge.plus") }
-                ForEach(store.data.customers) { c in
-                    Button { selected = c } label: { VStack(alignment: .leading, spacing: 5) { Text(c.name).font(.headline).foregroundStyle(.primary); Text(c.address).foregroundStyle(.primary); if !c.contact.isEmpty { Text(c.contact).foregroundStyle(.secondary) } } }
-                }
-            }.navigationTitle(L.t("Kunden", "Customers", "Klienci"))
-                .toolbar { Button { add = true } label: { Image(systemName: "plus") }.disabled(!store.canEdit) }
-                .sheet(isPresented: $add) { NewCustomerView() }
-                .sheet(item: $selected) { NewCustomerView(editing: $0) }
-        }
-    }
-}
-struct NewCustomerView: View {
-    var editing: Customer? = nil
-    @EnvironmentObject var store: WorkStore
-    @Environment(\.dismiss) var dismiss
-    @State var name = ""
-    @State var address = ""
-    @State var contact = ""
-    var body: some View {
-        NavigationStack {
-            Form { TextField(L.t("Name / Firma", "Name / company", "Nazwa / firma"), text: $name); TextField(L.t("Adresse", "Address", "Adres"), text: $address, axis: .vertical); TextField(L.t("Telefon / E-Mail", "Phone / email", "Telefon / e-mail"), text: $contact) }
-                .navigationTitle(editing == nil ? L.t("Neuer Kunde", "New customer", "Nowy klient") : L.t("Kunde bearbeiten", "Edit customer", "Edytuj klienta"))
-                .onAppear { if let c = editing { name = c.name; address = c.address; contact = c.contact } }
-                .toolbar { ToolbarItem(placement: .cancellationAction) { Button(L.t("Abbrechen", "Cancel", "Anuluj")) { dismiss() } }; ToolbarItem(placement: .confirmationAction) { Button(L.t("Speichern", "Save", "Zapisz")) { let c = Customer(id: editing?.id ?? UUID(), name: name.trimmingCharacters(in: .whitespacesAndNewlines), address: address, contact: contact); if let i = store.data.customers.firstIndex(where: { $0.id == c.id }) { store.data.customers[i] = c } else { store.data.customers.append(c) }; if store.save() { dismiss() } }.disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !store.canEdit) } }
         }
     }
 }
@@ -250,7 +218,7 @@ struct SettingsView: View {
     @EnvironmentObject var store: WorkStore
     @AppStorage("author") var author = ""
     @AppStorage("language") var language = "de"
-    @AppStorage("teamURL") var teamURL = ""
+    @State var teamURL = ""
     @State var company = ""
     @State var token = ""
     @State var backupURL: URL? = nil
@@ -258,6 +226,8 @@ struct SettingsView: View {
     @State var pendingImport: URL? = nil
     @State var replace = false
     @State var loadRemote = false
+    @State var connect = false
+    @State var disconnect = false
     var body: some View {
         NavigationStack {
             Form {
@@ -270,7 +240,7 @@ struct SettingsView: View {
                 Section(L.t("Sicherung & eigene Cloud", "Backup & your cloud", "Kopia i własna chmura")) {
                     Button(L.t("Vollständige Sicherung erstellen", "Create full backup", "Utwórz pełną kopię")) { do { backupURL = try store.backup() } catch { store.error = error.localizedDescription } }
                     if let url = backupURL { ShareLink(item: url) { Label(L.t("In Dateien / iCloud / Cloud sichern", "Save to Files / iCloud / cloud", "Zapisz w Plikach / iCloud / chmurze"), systemImage: "square.and.arrow.up") } }
-                    Button(L.t("Sicherung wiederherstellen", "Restore backup", "Przywróć kopię")) { importing = true }.disabled(!store.canEdit)
+                    Button(L.t("Sicherung wiederherstellen", "Restore backup", "Przywróć kopię")) { importing = true }.disabled(!store.canEdit || store.contextID != "local")
                     Text(L.t("Enthält Kunden, Projekte, Fotos und Audio. Wähle im Teilen-Menü ›In Dateien sichern‹ und deinen Cloudordner. Das ist eine Sicherung, keine automatische iCloud-Synchronisation.", "Includes customers, jobs, photos and audio. Choose Save to Files and your cloud folder. This is a backup, not automatic iCloud sync.", "Zawiera klientów, zlecenia, zdjęcia i dźwięk. Wybierz Zapisz w Plikach i folder chmury. To kopia, nie automatyczna synchronizacja iCloud.")).font(.caption)
                 }
                 Section(L.t("Team & Pakete", "Team & plans", "Zespół i pakiety")) {
@@ -280,23 +250,30 @@ struct SettingsView: View {
                 Section(L.t("Eigener Teamserver · Pilot", "Your team server · Pilot", "Własny serwer zespołu · Pilot")) {
                     TextField("https://team.example.com", text: $teamURL).textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
                     SecureField(L.t("Persönlicher Zugangstoken", "Personal access token", "Osobisty token dostępu"), text: $token).textInputAutocapitalization(.never).autocorrectionDisabled()
-                    Button(L.t("Zugang sicher speichern", "Save access securely", "Zapisz dostęp bezpiecznie")) { do { try KeychainToken.save(token); store.syncStatus = L.t("Token im Schlüsselbund gespeichert", "Token saved in Keychain", "Token zapisany w pęku kluczy") } catch { store.error = error.localizedDescription } }
+                    Button(L.t("Teambereich verbinden", "Connect team area", "Połącz obszar zespołu")) { connect = true }
+                    if store.contextID != "local" { Button(L.t("Zum lokalen Bereich", "Return to local area", "Wróć do obszaru lokalnego")) { disconnect = true } }
                     Button { Task { await store.sync() } } label: { Label(store.syncing ? L.t("Synchronisiert …", "Syncing …", "Synchronizacja …") : L.t("Team synchronisieren", "Sync team", "Synchronizuj zespół"), systemImage: "arrow.triangle.2.circlepath") }.disabled(store.syncing)
                     Text(store.syncStatus.isEmpty ? L.t("Kein Teamserver verbunden. Daten liegen lokal auf diesem iPhone.", "No team server connected. Data is local to this iPhone.", "Nie połączono serwera. Dane są lokalne na tym iPhonie.") : store.syncStatus).font(.caption)
                     Button(L.t("Teamstand laden (lokalen Stand ersetzen)", "Load team version (replace local)", "Pobierz wersję zespołu (zastąp lokalną)"), role: .destructive) { loadRemote = true }.disabled(store.syncing)
                     Text(L.t("Gemeinsame Kunden, Projekte und Berichte über eigenen HTTPS-Server. Lese-/Schreibrechte je Token. Manueller Abgleich, Versionskonflikte werden blockiert. Noch kein Server eingerichtet.", "Shared customers, jobs and reports on your own HTTPS server. Read/write roles per token. Manual sync; version conflicts are blocked. No server provisioned yet.", "Wspólni klienci, zlecenia i raporty na własnym serwerze HTTPS. Role odczytu/zapisu. Ręczna synchronizacja, konflikty wersji blokowane. Serwer nie jest jeszcze skonfigurowany.")).font(.caption)
                 }
-                Section("Werkbeleg 1.1 · Testversion") {
+                Section("Werkbeleg 1.2 · Testversion") {
                     Text(L.t("Testphase ohne Abrechnung. Geplant: 5 Personen 9,99 €, 10 Personen 14,99 €, 20 Personen 19,99 € pro Monat. Abo und App-Store-Veröffentlichung sind noch nicht aktiv.", "Free pilot. Planned monthly: 5 people €9.99, 10 €14.99, 20 €19.99. Subscription and App Store launch are not active yet.", "Darmowy pilotaż. Miesięcznie: 5 osób 9,99 €, 10 osób 14,99 €, 20 osób 19,99 €. Subskrypcja i publikacja w App Store nie są jeszcze aktywne."))
                     Link(L.t("Neue Testversion installieren", "Install latest test version", "Zainstaluj nową wersję testową"), destination: URL(string: "https://p1337.github.io/meshtastic-backend/")!)
                 }
             }.navigationTitle(L.t("Büro", "Office", "Biuro"))
-                .onAppear { company = store.data.company; token = KeychainToken.read() ?? "" }
+                .onAppear { company = store.data.company; token = KeychainToken.read() ?? ""; teamURL = UserDefaults.standard.string(forKey: "teamURL") ?? "" }
                 .fileImporter(isPresented: $importing, allowedContentTypes: [.data, .json]) { result in
                     do { pendingImport = try result.get(); replace = true } catch { store.error = error.localizedDescription }
                 }
                 .confirmationDialog(L.t("Lokale Daten durch Sicherung ersetzen?", "Replace local data with backup?", "Zastąpić lokalne dane kopią?"), isPresented: $replace) {
                     Button(L.t("Ersetzen", "Replace", "Zastąp"), role: .destructive) { if let url = pendingImport { do { try store.restore(url) } catch { store.error = error.localizedDescription } } }
+                }
+                .confirmationDialog(L.t("Getrennten Teambereich öffnen? Der bisherige Bestand bleibt in seinem Bereich.", "Open a separate team area? Existing data stays in its own area.", "Otworzyć oddzielny obszar zespołu? Dotychczasowe dane pozostają w swoim obszarze."), isPresented: $connect, titleVisibility: .visible) {
+                    Button(L.t("Verbinden", "Connect", "Połącz")) { do { try store.activateTeam(server: teamURL, token: token); Task { await store.sync(); try? await store.refreshTeam() } } catch { store.error = error.localizedDescription } }
+                }
+                .confirmationDialog(L.t("Lokalen Bereich öffnen? Teamdaten bleiben getrennt gespeichert.", "Open local area? Team data remains separately stored.", "Otworzyć obszar lokalny? Dane zespołu pozostają oddzielnie."), isPresented: $disconnect, titleVisibility: .visible) {
+                    Button(L.t("Lokalen Bereich öffnen", "Open local area", "Otwórz obszar lokalny")) { do { try store.disconnectTeam() } catch { store.error = error.localizedDescription } }
                 }
                 .confirmationDialog(L.t("Vorher Sicherung exportieren! Lokale Änderungen werden ersetzt.", "Export a backup first! Local changes will be replaced.", "Najpierw wyeksportuj kopię! Lokalne zmiany zostaną zastąpione."), isPresented: $loadRemote) {
                     Button(L.t("Teamstand laden", "Load team version", "Pobierz wersję zespołu"), role: .destructive) { Task { await store.loadTeamVersion() } }
@@ -330,6 +307,30 @@ enum Smoke {
             let backup = try store.backup(); let decoded = try Workspace.decode(Data(contentsOf: backup)); guard decoded == store.data else { throw ModelError.invalid }
             let pdf = try ReportPDF.make(r, job: j, customer: c, company: "Testbetrieb")
             guard let document = CGPDFDocument(pdf as CFURL), document.numberOfPages >= 3 else { throw ModelError.invalid }
+            let customerTable = try ContactImporter.parse(Data("Name;PLZ;Telefon\nImport Test;00123;+49123\nSIMULATOR TEST;00001;\n".utf8), filename: "synthetic.csv")[0]
+            let rows = ContactImporter.candidates(table: customerTable, mapping: customerTable.headers.map(ContactField.guess), source: "Synthetic", existing: store.data.customers)
+            guard rows.count == 2, rows[1].duplicate else { throw ModelError.invalid }
+            let receipt = try store.importCustomers(rows.filter { !$0.duplicate }.map(\.customer), source: "Synthetic", context: store.contextID, reviewed: store.data.customers)
+            guard receipt.customers.count == 1, WorkStore(root: folder).data.customers.count == 2,
+                  try store.undoLastImport() == 1, store.data.customers == [c] else { throw ModelError.invalid }
+            output["customerImportAndUndoVerified"] = true
+            #if targetEnvironment(simulator)
+            let previousURL = UserDefaults.standard.string(forKey: "teamURL"), previousToken = KeychainToken.read()
+            defer {
+                if let previousURL { UserDefaults.standard.set(previousURL, forKey: "teamURL") } else { UserDefaults.standard.removeObject(forKey: "teamURL") }
+                try? KeychainToken.save(previousToken ?? "")
+            }
+            try store.activateTeam(server: "https://synthetic.invalid/team-a", token: "synthetic-a")
+            guard store.data.customers.isEmpty, !store.canEdit else { throw ModelError.invalid }
+            store.data.customers = [Customer(name: "Only Team A")]; store.canEdit = true; store.save()
+            try store.activateTeam(server: "https://synthetic.invalid/team-b", token: "synthetic-b")
+            guard store.data.customers.isEmpty else { throw ModelError.invalid }
+            try store.activateTeam(server: "https://synthetic.invalid/team-a", token: "synthetic-a")
+            guard store.data.customers.map(\.name) == ["Only Team A"] else { throw ModelError.invalid }
+            try store.disconnectTeam()
+            guard store.data.customers == [c] else { throw ModelError.invalid }
+            output["teamAreaIsolationVerified"] = true
+            #endif
             output["passed"] = true; output["pdfPages"] = document.numberOfPages; output["persistence"] = true; output["backupRoundTrip"] = true
             output["testSource"] = "synthetic"; output["cameraOrMicrophoneTested"] = false; output["teamServerConnected"] = false
         } catch { output["error"] = error.localizedDescription }

@@ -34,4 +34,6 @@ jobs:
           set -euo pipefail
           psql -X -v ON_ERROR_STOP=1 -q -f werkbeleg-cloud/tests/bootstrap.sql
           psql -X -v ON_ERROR_STOP=1 -q -f werkbeleg-cloud/supabase/migrations/202610170001_tenant_foundation.sql
+          psql -X -v ON_ERROR_STOP=1 -q -f werkbeleg-cloud/supabase/migrations/202610170002_customer_boundaries.sql
           psql -X -v ON_ERROR_STOP=1 -qAt -f werkbeleg-cloud/tests/tenant_isolation.sql
+          psql -X -v ON_ERROR_STOP=1 -qAt -f werkbeleg-cloud/tests/customer_boundaries.sql

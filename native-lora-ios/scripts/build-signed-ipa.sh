@@ -107,7 +107,7 @@ installed_profile="$profile_dir/$profile_uuid.mobileprovision"
 cp "$signing_dir/profile.mobileprovision" "$installed_profile"
 xcodebuild -version
 xcrun swift "$project_dir/scripts/render-icon.swift" "$project_dir/Assets.xcassets/AppIcon.appiconset/AppIcon.png"
-xcrun swiftc -O "$project_dir/Werkbeleg/Model.swift" "$project_dir/Tests/main.swift" -o "$output_dir/css-tests"
+xcrun swiftc -O "$project_dir/Werkbeleg/Model.swift" "$project_dir/Werkbeleg/CustomerImport.swift" "$project_dir/Tests/main.swift" -o "$output_dir/css-tests"
 "$output_dir/css-tests" --json "$output_dir/diagnostics-report.json" | tee "$output_dir/test-results.txt"
 xcodebuild -project "$project_dir/LoRaLab.xcodeproj" -scheme LoRaLab \
   -configuration Release -destination 'generic/platform=iOS' \
