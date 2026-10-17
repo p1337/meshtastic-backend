@@ -1,6 +1,6 @@
 # LoRa Lab für iPhone
 
-Version **0.3.0**. Native Forschungs-App für das iPhone15ProMax. Noch kein nachgewiesener interner RF-I/Q-Zugang und kein Live-LoRa-Empfang.
+Version **0.3.0 (Build13)**, erfolgreich Apple-signiert und veröffentlicht. Native Forschungs-App für das iPhone15ProMax. Noch kein nachgewiesener interner RF-I/Q-Zugang und kein Live-LoRa-Empfang.
 
 ## Auf dem iPhone
 
@@ -34,3 +34,6 @@ Vollständiger Quelltext: `Sources/`, Xcode-Projekt ohne externe Paketabhängigk
 GitHub Actions führt native Hosttests aus, baut/startet eine separate Simulator-App und wartet auf deren tatsächliche60-Sekunden-Diagnose samt JSON-Bericht. Anschließend werden arm64-Geräte-IPA, Apple-Distribution-Signatur, Profilbindung und OTA-Veröffentlichung geprüft. Der Simulator installiert keinen gerätegebundenen Ad-Hoc-Build und bestätigt keine Telefon-HF-Fähigkeit.
 
 Details: [AUTOMATED_TESTS.md](AUTOMATED_TESTS.md), [SIGNING.md](SIGNING.md), [OTA_INSTALL.md](OTA_INSTALL.md).
+
+
+Aktueller verifizierter Build: [39037447564](https://github.com/p1337/meshtastic-backend/actions/runs/39037447564). Native Tests und reale60-Sekunden-Simulator-Sitzung bestanden, veröffentlichte IPA/Metadaten/Hashes geprüft. Siehe [RUNTIME_RESEARCH.md](RUNTIME_RESEARCH.md) auch für das tatsächlich gelesene und signaturgeprüfte Apple-Debugprofil sowie die neue, weiterhin unbewiesene SIM-Toolkit-Spur. Keine eSIM installiert und kein RF-Zugang behauptet.

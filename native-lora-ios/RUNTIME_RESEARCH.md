@@ -49,3 +49,39 @@ Ein eigener APN, Carriername, ein Konfigurationsprofil oder andere Netzeinstellu
 Version0.3 installieren, mindestens60 Sekunden im Vordergrund geöffnet lassen, Gesamtbericht teilen. Gesucht sind konkrete positive Sichtbarkeitsbefunde, ausgewertete eigene Rechte und exakte Ablehnungscodes. Diese Befunde können den nächsten versionsgebundenen Zugriffstest eingrenzen; sie sind selbst noch kein Capture. Firmwareseitig bleibt die Kette Mav23-Capture-Deskriptor → Handler → Antennen-/Loopback-Quelle → Puffer/Export offen.
 
 Erst ein belegter RF-Lieferant rechtfertigt ein Aufnahmeformat mit Samplerate, Mittenfrequenz, Zeitstempeln und Verlustnachweis. 60sCF32LE bei250kSamples/s wären120MB; die bisherige8-MiB-Dateianalyse ist kein Langzeitrecorder. Bei einem späteren echten Stream ist Streaming/Ringpuffer erforderlich.
+
+## Verifizierte Veröffentlichung0.3.0 (Build13)
+
+Quellcommit `0664b6551eda353bbe568e04dc7c6da5f82e939b`; [vollständig erfolgreicher Cloud-Lauf](https://github.com/p1337/meshtastic-backend/actions/runs/39037447564). Native Regression und Zustandsprüfungen bestanden. SimulatoriOS18.5:835 Fälle/Messungen,0 fehlgeschlagene Gruppen,19 Auditbefunde; die Zeitdiagnose endete nach60,015663s mit58 tatsächlichen Statusabfragen und maximal1,074742s Abstand. JSON und Screenshot visuell/inhaltsseitig geprüft. Das ist keine Ausführung auf dem physischen iPhone.
+
+Apple-Distribution-Signatur, arm64-Geräteplattform und Ad-Hoc-Profil für ein Gerät wurden im Build verifiziert. Veröffentlichte IPA zusätzlich perHTTPS heruntergeladen:701577Bytes, SHA256 `cbde0512696918606a7efd1cc330b65ebcd43765fc3a884ea9a1980e014dd521`. Manifest-, Seiten- und IPA-Abruf erfolgreich; Bundle0.3.0/13 und Icon geprüft. Profilablauf17.10.2027,11:36:45UTC. [Installieren](https://p1337.github.io/meshtastic-backend/?build=13). Noch kein Nutzerbericht zur physischen0.3-Ausführung.
+
+## Weiterer Ansatz: eSIM und SIM Toolkit
+
+[Apples Anbieter-API](https://developer.apple.com/documentation/coretelephony/ctcellularplanprovisioning/) setzt `com.apple.CommCenter.fine-grained` mit `public-cellular-plan` voraus. Unsere App liest diesen bestehenden Schlüssel, beantragt oder fälscht ihn nicht. Ein legitimes eSIM-Profil über iOS-Einstellungen zu installieren und als eigene App Carrier-Rechte zu besitzen sind unterschiedliche Dinge. Keine eSIM wurde erzeugt, angeboten oder auf das Telefon geladen.
+
+Die gewöhnliche Netz-/Anbieterauswahl ist kein freier CSS-Demodulator und stellt noch keinen ADC-Transport zur App bereit. Ein RX-Tuning im passenden Mobilfunkband wäre nur ein Teilnachweis.
+
+Ein konkreter zusätzlicher Ansatz ist [ETSI TS102223V17.6.0,6.4.23](https://www.etsi.org/deliver/etsi_ts/102200_102299/102223/17.06.00_60/ts_102223v170600p.pdf): Die UICC kann unter dort genannten Unterstützungs-/Aktivierungsvoraussetzungen einen AT-Befehl ans Endgerät geben. Das belegt weder iPhone-Freigabe noch ein vendor-spezifisches RF-Capturekommando. Als nächstes wäre das tatsächliche TERMINAL PROFILE bzw. der CAT-Handler zu prüfen.
+
+**Neuer eigener statischer Befund:** Beide gehashten Mav23-DSP-Images enthalten die Literale RUN AT COMMAND, TERMINAL PROFILE und qmi_cati_get_terminal_profile. Der reproduzierbare [Probe-Code](research/sim-toolkit-probe.py) wurde gegen vier Images ausgeführt. In den zwei ARM-apps.mbn keine Treffer dieser Literale; das widerlegt keine komprimierten/anders benannten Funktionen. In den beiden DSP-Images gibt es passende Zeichenketten, noch keine rekonstruierte Aufrufkette.
+
+| DSP | Dateioffset RUN AT COMMAND | Dateioffset qmi_cati_get_terminal_profile |
+| --- | ---: | ---: |
+| Mav23-1.00.03 |102713686|102744011|
+| Mav23-4.02.04 |103697630|103728131|
+
+Offsets sind Dateibytepositionen, keine Register, Befehlsnummern oder bestätigten Funktionseinstiege. Das geprüfte BaseTrace qmi-service-cat.json enthält keinen GetTerminalProfile-Request. Kein Request oder AT-Capturebefehl wurde daraus erfunden.
+
+## Tatsächlich gelesenes Apple-Diagnoseprofil
+
+[CellGuards eigener Quellcode](https://github.com/seemoo-lab/CellGuard/blob/main/CellGuardAppSwift/CellGuard/API/CellGuardURLs.swift) verweist auf den öffentlichen [Profilspiegel](https://cellguard.seemoo.de/repo/profile/Baseband.mobileconfig). Diese veröffentlichte Kopie wurde heruntergeladen und offline geprüft:17230Bytes, SHA256 `ab7b7a71c89d5b0cc67cd826d533958e02cea015a5715a4cacce78f786f7110f`.
+
+CMS-Signatur und Zertifikatspfad wurden mit OpenSSL gegen die direkt von Apple geladene [Apple Root CA](https://www.apple.com/appleca/AppleIncRootCertificate.cer) erfolgreich validiert (`-purpose any`; keine vollständige Reimplementierung der iOS-Profilpolicy). Root-DER-SHA256 `b0b1730ecbc7ff4505142c49f1295e6eda6bcaed7e2c68c5be91b5a11001f024`. Signierer: AppleCare Profile Signing Certificate; Zwischenstelle: Apple Application Integration2 Certification Authority. Nicht als die aktuellste Apple-Downloadversion oder als auf Roberts Telefon installiert behaupten.
+
+Payload: Baseband and Telephony Logging; com.apple.system.logging sowie com.apple.defaults.managed / Domain com.apple.commcenter. Enthalten sind `EnableBasebandLogging` mit History8/Profile1/Sleep0, TelephonyLoggingPriority3 und TelephonyLoggingVersion18. DurationUntilRemoval604800Sekunden betrifft dieses Diagnoseprofil, nicht die Jahresgültigkeit unserer Appsignierung. AbsoluteRemovalDate13.02.2027,08:00UTC. Mehrere Loggingbereiche einschließlich CommCenter/SIMSetupSupport/Messages werden erweitert und auf Public gesetzt; vollständige Systemlogs deshalb nicht ungefiltert anfordern.
+
+Das Profil ist ein echter, nun inhaltlich verifizierter Loggingweg. Seine tatsächliche Wirkung unter iOS27.2 und nutzbare RF-I/Q-Daten sind weiterhin nicht nachgewiesen. Ein Profile1-Wert wird nicht als frei konfigurierbarer Capturemodus interpretiert. [CellGuards Profilprüfung](https://github.com/seemoo-lab/CellGuard/blob/main/CellGuardAppSwift/CellGuard/System%20Diagnoses/ProfileTask.swift) beobachtet `/private/var/preferences/Logging/Subsystems/com.apple.CommCenter.plist`; unsere0.3-App behauptet noch keine Installationserkennung dafür.
+
+Nächster gezielter Versuch:0.3-Gerätebericht auswerten; dann ggf. vorhandenes Apple-Logging mit einem lokalen, identitätsarmen Filter auf CAT/TERMINAL-PROFILE-Befunde untersuchen. Erst tatsächliche Karten-/Terminalfähigkeit und Vendor-Handler bestimmen. Kein ungeprüftes Carrierprofil, keine erfundene eSIM und kein blindes Durchprobieren von AT-/FTM-Befehlen.
+
