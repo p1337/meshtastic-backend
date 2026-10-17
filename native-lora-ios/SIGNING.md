@@ -28,6 +28,8 @@ Deployment branches auf `codex/native-lora-ios` einschränken. Wenn verfügbar, 
 | `IOS_P12_PASSWORD` | Passwort der P12 |
 | `IOS_ADHOC_PROFILE_BASE64` | Base64 des Ad-Hoc-Profils |
 
+Der Workflow akzeptiert `IOS_ADHOC_PROFILE_BASE64` übergangsweise auch als Environment Variable, damit ein bereits dort hinterlegtes Profil den Cloud-Build nicht blockiert. Ein Environment Secret bleibt empfohlen, weil das eingebettete Profil die registrierten Geräte-UDIDs enthält.
+
 PowerShell auf Windows (Pfad jeweils auf die eigene Datei setzen):
 
 ```powershell
