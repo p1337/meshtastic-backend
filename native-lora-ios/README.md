@@ -1,48 +1,36 @@
-# LoRa Lab – native iOS-Forschungs-App
+# LoRa Lab für iPhone
 
-Version **0.2.0**. Die App läuft lokal und empfängt noch keine LoRa-Pakete. Ein nutzbarer I/Q-Zugang zur internen Funkhardware des iPhone 15 Pro Max ist weiterhin nicht nachgewiesen.
+Version **0.3.0**. Native Forschungs-App für das iPhone15ProMax. Noch kein nachgewiesener interner RF-I/Q-Zugang und kein Live-LoRa-Empfang.
 
-## Installieren und aktualisieren
+## Auf dem iPhone
 
-Auf dem registrierten iPhone in **Safari** öffnen:
+[Installationsseite](https://p1337.github.io/meshtastic-backend/). Über den vorhandenen Apple-signierten Ad-Hoc-Weg aktualisieren. Nach Veröffentlichung zeigt die Seite die aktuelle Version/Buildnummer. Profil und Zertifikat müssen für das registrierte Gerät gültig sein.
 
-https://p1337.github.io/meshtastic-backend/
+App öffnen und **60 Sekunden im Vordergrund lassen**. Der neue Tab **Funkpfad** startet automatisch eine Geräteprüfung und eine Zeitdiagnose. Danach **Gesamten JSON-Bericht teilen** oder den Textbericht exportieren. Optional120 Sekunden wählen. Ein Hintergrundwechsel beendet die Beobachtung mit entsprechendem Status.
 
-„Auf diesem iPhone installieren“ antippen und die iOS-Rückfrage bestätigen. Der veröffentlichte Build ist mit dem eigenen Apple-Distribution-Zertifikat und einem passenden Ad-Hoc-Profil signiert. Einrichtung: [SIGNING.md](SIGNING.md); drahtlose Verteilung: [OTA_INSTALL.md](OTA_INSTALL.md). Profil und Zertifikat haben Ablaufdaten.
+Diese Minute ist eine reale Beobachtung von Zugriffsmerkmalen und öffentlichem Mobilfunkstatus, **keine RF-Aufnahme**. Es werden keine künstlichen I/Q-Daten als Funkempfang ausgegeben. `rfIQSamples=0` bleibt ausdrücklich sichtbar.
 
-## Funktionen
+## Neu in0.3
 
-- Automatischer Startlauf mit **835 Prüf-/Messfällen**; erweiterter Lauf mit **2567 Fällen**.
-- Analytische FFT-Referenzen, CSS SF7–SF12, Pegel/Phase, Frequenz- und Zeitversätze, 30 AWGN-Messpunkte, Parser-/Eingabegrenzen und DSP-Laufzeit.
-- CF32LE-Dateianalyse bis 8 MiB mit auswählbarer Samplerate, SF und Bandbreite, Leistungs-/DC-Statistik und erstem ausgerichtetem Symbolbin. Chirp-Auswertung nur bei Fs=BW.
-- Generierbare und teilbare synthetische Referenzdatei.
-- Automatisch gespeicherte JSON- und Textberichte; Teilen im Tab „Berichte“. Kein automatischer Upload, keine Rohsamples im Bericht.
-- Sichtbare App-/Buildnummer und eigenes opakes iOS-Icon aus einer reproduzierbaren Grafikquelle.
+- Tatsächlicher iOS-Build und eigene Prozessrechte.
+- Ausgewählte eigene Entitlements über SecTask; Rückgabefehler werden erhalten.
+- dyld-Cache-/Image-Prüfung für mögliche Modem-Transportbibliotheken.
+- Sichtbare Baseband-nahe IORegistry-Klassennamen und Gerätepfade; genaue Rückgabecodes.
+- Monoton protokollierte60-/120-Sekunden-Sitzung, tatsächliche Statusabfragen und erkennbare Lücken/Abbrüche.
+- Gemeinsamer lokaler JSON-Bericht, äußeres Schema3, sowie Textbericht.
 
-Ein Symbolbin ist keine Paketerkennung. Kein LoRa-Header, keine FEC/CRC und kein Meshtastic-Paketcodec. Die Störsignaltests messen keine iPhone-RF-Empfindlichkeit. BW500 dient nur Offline-Analysen und ist kein Meshtastic-EU868-Sendepreset.
+Keine neuen privaten Entitlements, keine Carrier- oder Modemkonfiguration geändert, kein UserClient geöffnet und kein Modemkommando gesendet. Sichtbare Bibliotheken oder Registry-Dienste beweisen keinen erreichbaren I/Q-Stream. Herkunft und Grenzen stehen vollständig in [RUNTIME_RESEARCH.md](RUNTIME_RESEARCH.md).
 
-## Automatische GitHub-Prüfungen
+## Vorhandene Signalwerkzeuge
 
-Der Workflow `.github/workflows/native-lora-ipa.yml` führt native Regressionen aus, baut einen separaten Simulator-Build, startet die App und prüft ihren automatisch erzeugten JSON-Bericht. Danach wird die echte arm64-Geräte-App archiviert, mit Apple Distribution signiert und geprüft. Nur erfolgreiche Gerätebuilds werden über Pages veröffentlicht.
+Automatischer synthetischer Softwarelauf:835 Fälle/Messungen; erweiterter Lauf2567. FFT-Referenzen, SF7–SF12, Pegel/Phase, Frequenz-/zyklische Zeitversätze,30 deterministische AWGN-Punkte, Parsergrenzen und Benchmark. Niedrige SNRs dürfen Symbolfehler enthalten. Kein Paketcodec, keine Präambelsynchronisation und keine iPhone-Empfindlichkeitsmessung.
 
-Der Simulator benötigt keine Gerätefreigabe. Die Ad-Hoc-IPA bleibt auf die registrierten iPhones beschränkt. Der Simulator prüft keine HF-Hardware. Er ist kein Ersatz für einen Bericht vom echten Gerät.
+CF32LE-Dateianalyse bis8MiB: Fs/SF/BW, Leistung/DC, ausgerichteter Chirp nur beiFs=BW. Eine exportierbare Referenzdatei bleibt klar als synthetisch markiert. BW500 ist eine Offline-Einstellung, kein EU868-Sendepreset. Die Dateiwerkzeuge sind kein Langzeitrecorder.
 
-Artifacts: `LoRaLab-native-diagnostics`, `LoRaLab-simulator-diagnostics`, `LoRaLab-Apple-signed-IPA`. Umfang und Grenzen: [AUTOMATED_TESTS.md](AUTOMATED_TESTS.md).
+## Automatisierung und Quelltext
 
-## Lokal unter macOS
+Vollständiger Quelltext: `Sources/`, Xcode-Projekt ohne externe Paketabhängigkeiten, reproduzierbarer CoreGraphics-Icongenerator. Mindestziel iOS17. Der spezialisierte Branch ist `codex/native-lora-ios`; `master` bleibt unverändert.
 
-```bash
-bash native-lora-ios/scripts/build-ipa.sh
-```
+GitHub Actions führt native Hosttests aus, baut/startet eine separate Simulator-App und wartet auf deren tatsächliche60-Sekunden-Diagnose samt JSON-Bericht. Anschließend werden arm64-Geräte-IPA, Apple-Distribution-Signatur, Profilbindung und OTA-Veröffentlichung geprüft. Der Simulator installiert keinen gerätegebundenen Ad-Hoc-Build und bestätigt keine Telefon-HF-Fähigkeit.
 
-Das Skript rendert das Icon, führt die native Suite aus und erzeugt einen **unsignierten** lokalen Testbuild. Für normale Xcode-Builds das Icon vorher erzeugen:
-
-```bash
-xcrun swift native-lora-ios/scripts/render-icon.swift native-lora-ios/Assets.xcassets/AppIcon.appiconset/AppIcon.png
-```
-
-Keine fremden Swift-Packages oder XcodeGen nötig. Deployment Target iOS 17.0; Bundle-ID `de.p1337.LoRaLab`. Der produktive Cloud-Pfad verwendet ausschließlich die drei Environment Secrets in `apple-signing`; private Schlüssel und P12-Dateien gehören nicht ins Repository.
-
-## Nächster Hardware-Forschungsschritt
-
-Mav23-Capture-Handler, tatsächliche Samplequelle und erreichbare Schnittstelle nachweisen. Der erfolgreich installierte Offline-Test öffnet keinen Baseband-Zugang.
+Details: [AUTOMATED_TESTS.md](AUTOMATED_TESTS.md), [SIGNING.md](SIGNING.md), [OTA_INSTALL.md](OTA_INSTALL.md).

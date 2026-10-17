@@ -5,7 +5,7 @@ output_dir="$project_dir/build"
 mkdir -p "$output_dir"
 xcodebuild -version
 xcrun swift "$project_dir/scripts/render-icon.swift" "$project_dir/Assets.xcassets/AppIcon.appiconset/AppIcon.png"
-xcrun swiftc -O "$project_dir/Sources/CSS.swift" "$project_dir/Sources/Diagnostics.swift" "$project_dir/Tests/main.swift" -o "$output_dir/css-tests"
+xcrun swiftc -O "$project_dir/Sources/CSS.swift" "$project_dir/Sources/Diagnostics.swift" "$project_dir/Sources/RuntimeAudit.swift" "$project_dir/Tests/main.swift" -o "$output_dir/css-tests"
 "$output_dir/css-tests" --json "$output_dir/diagnostics-report.json" | tee "$output_dir/test-results.txt"
 xcodebuild -project "$project_dir/LoRaLab.xcodeproj" -scheme LoRaLab \
   -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' \

@@ -1,4 +1,4 @@
-# Automatische Tests ab Version 0.2.0
+# Automatische Tests ab Version 0.3.0
 
 Die App startet bei jedem neuen App-Prozess einen begrenzten automatischen Software-Testlauf. Ein längerer Lauf ist über „Erweiterten Testlauf starten“ verfügbar. Die UI bleibt während der Berechnung bedienbar. Es werden weder Funkmodi umgeschaltet noch unbekannte Modembefehle aufgerufen.
 
@@ -37,3 +37,12 @@ Mit „Synthetische Referenz erzeugen und prüfen“ wird eine bekannte CF32LE-D
 ## Icon
 
 `scripts/render-icon.swift` erzeugt reproduzierbar ein opakes 1024px-PNG mit Chirp und Funkbögen. Es wird vor Simulator- und Gerätebuild im AppIcon-Asset-Katalog erzeugt; Xcode kompiliert die benötigten iOS-Größen. Der Quelltext ist die bearbeitbare Bildquelle. Keine privaten Schlüssel oder Signierdateien gehören zu den Testartefakten.
+
+
+## Neue Laufzeitprüfung und Zeitdiagnose
+
+Hosttests prüfen die Zustandsmaschine unabhängig von einer Wartezeit: ungültige Dauern/Zeitwerte, streng monotone Zeit, doppelte Statuswerte, sichtbare Zeitlücken, frühzeitigen Abbruch, Hintergrundunterbrechung, Endzustand und JSON-Roundtrip. Warten oder Metadaten dürfen niemals als RF-Aufnahme ausgegeben werden. Das echte iOS-Runtime-Modul wird im Simulator/Device-Target kompiliert; der Hostzweig behauptet keinen iPhone-Zugang.
+
+Die Simulator-App läuft mit echter Uhr mindestens60 Sekunden. Der Workflow liest ihren automatisch gespeicherten Bericht, prüft Schema3, Audit-Felder, Endzustand, monotone Abfragezeiten und0I/Q-Samples. Registry/Device-Pfadprüfungen werden dort ausdrücklich als Simulator ungeeignet übersprungen. Es ist kein XCUITest-Klicktest. Die Aufnahme echter Antennen-Samples, Carrier-Änderung, Entitlement-Umgehung und Ausnutzung einer Schwachstelle werden nicht behauptet.
+
+Der Screenshot `simulator-tests.png` zeigt ab0.3 den zuerst geöffneten Tab Funkpfad nach Ende der Zeitdiagnose. Hardwareergebnisse sind erst im vom Nutzer übermittelten Bericht des physischen Telefons bewertbar. Keine zusätzliche Hardware und keine neuen Apple-/GitHub-Secrets notwendig.

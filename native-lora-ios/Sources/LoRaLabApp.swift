@@ -1,6 +1,7 @@
 import SwiftUI
 import UniformTypeIdentifiers
 import Darwin
+import CoreTelephony
 
 @main
 struct LoRaLabApp: App {
@@ -8,10 +9,12 @@ struct LoRaLabApp: App {
 }
 
 struct LabSnapshot: Codable {
-    var schemaVersion = 2
+    var schemaVersion = 3
     var state = "completed"
     var suite: LabReport
     var importedFile: IQAnalysis?
+    var runtimeAudit: RuntimeAuditReport?
+    var accessSession: AccessSession?
 }
 
 @MainActor
@@ -28,6 +31,14 @@ final class LabModel: ObservableObject {
     @Published var rate = "250000"
     @Published var bandwidth = 250000
     @Published var sf = 11
+    @Published var audit: RuntimeAuditReport?
+    @Published var auditBusy = false
+    @Published var session: AccessSession?
+    @Published var sessionSeconds = 60
+    private var sessionTask: Task<Void, Never>?
+    private var automaticStarted = false
+    private var isForeground = true
+    private let telephony = CTTelephonyNetworkInfo()
 
     var environment: LabEnvironment {
         var size = 0
@@ -49,6 +60,72 @@ final class LabModel: ObservableObject {
     }
     var documents: URL { FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0] }
 
+    func startAutomatically() {
+        guard !automaticStarted else { return }
+        automaticStarted = true
+        run()
+        runAudit(startSessionAfterwards: true)
+    }
+
+    func runAudit(startSessionAfterwards: Bool = false) {
+        guard !auditBusy else { return }
+        auditBusy = true
+        let env = environment
+        Task {
+            let result = await Task.detached(priority: .userInitiated) { RuntimeAudit.run(environment: env) }.value
+            audit = result; auditBusy = false; saveReports()
+            if startSessionAfterwards && isForeground { startSession() }
+        }
+    }
+
+    func startSession() {
+        guard isForeground, session?.state != "running" else { return }
+        do {
+            session = try AccessSession(seconds: Double(sessionSeconds), startedUTC: ISO8601DateFormatter().string(from: Date()))
+        } catch { self.error = "Ungültige Diagnosedauer."; return }
+        let id = session!.runID
+        let start = ProcessInfo.processInfo.systemUptime
+        UIApplication.shared.isIdleTimerDisabled = true
+        sessionTask = Task {
+            while !Task.isCancelled && session?.runID == id && session?.state == "running" {
+                let elapsed = ProcessInfo.processInfo.systemUptime - start
+                let technologies = telephony.serviceCurrentRadioAccessTechnology?.values.map { String($0.prefix(80)) } ?? []
+                do {
+                    try session?.record(elapsed: elapsed, utc: ISO8601DateFormatter().string(from: Date()), technologies: technologies)
+                } catch {
+                    session?.stop(interrupted: true)
+                    self.error = "Zeitdiagnose: ungültiger Zeitwert."
+                }
+                saveReports()
+                if session?.state != "running" { break }
+                let remaining = (session?.requestedSeconds ?? 60) - elapsed
+                do { try await Task.sleep(nanoseconds: UInt64(max(0.005, min(1, remaining)) * 1_000_000_000)) }
+                catch { break }
+            }
+            if session?.runID == id {
+                UIApplication.shared.isIdleTimerDisabled = false
+                saveReports()
+            }
+        }
+    }
+
+    func stopSession(interrupted: Bool = false) {
+        session?.stop(interrupted: interrupted)
+        sessionTask?.cancel(); sessionTask = nil
+        UIApplication.shared.isIdleTimerDisabled = false
+        saveReports()
+    }
+
+    func background() {
+        isForeground = false
+        if session?.state == "running" { stopSession(interrupted: true) }
+    }
+
+    func foreground() {
+        isForeground = true
+        if automaticStarted && audit != nil && session == nil { startSession() }
+    }
+
     func run(extended: Bool = false) {
         guard !busy else { return }
         busy = true; error = nil
@@ -67,9 +144,11 @@ final class LabModel: ObservableObject {
         do {
             let encoder = JSONEncoder(); encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
             let json = documents.appendingPathComponent("LoRaLab-Latest.json")
-            try encoder.encode(LabSnapshot(suite: report, importedFile: analysis)).write(to: json, options: .atomic)
+            try encoder.encode(LabSnapshot(suite: report, importedFile: analysis, runtimeAudit: audit, accessSession: session)).write(to: json, options: .atomic)
             let text = documents.appendingPathComponent("LoRaLab-Latest.txt")
             var description = report.text
+            if let audit { description += "\n\n" + audit.text }
+            if let session { description += "\n\n" + session.text }
             if let analysis { description += "\n\nDateianalyse:\n\(analysis.note)\nSamples: \(analysis.sampleCount)\nFs: \(analysis.sampleRate)\nBin: \(analysis.symbolBin.map(String.init) ?? "nicht ausgewertet")" }
             try description.write(to: text, atomically: true, encoding: .utf8)
             jsonURL = json; textURL = text
@@ -119,9 +198,12 @@ final class LabModel: ObservableObject {
 struct LabView: View {
     @StateObject private var model = LabModel()
     @State private var importing = false
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         TabView {
+            NavigationStack { RadioView(model: model).navigationTitle("Funkpfad") }
+                .tabItem { Label("Funkpfad", systemImage: "antenna.radiowaves.left.and.right") }
             NavigationStack { dashboard.navigationTitle("LoRa Lab") }
                 .tabItem { Label("Tests", systemImage: "waveform.path.ecg") }
             NavigationStack { files.navigationTitle("I/Q untersuchen") }
@@ -130,7 +212,11 @@ struct LabView: View {
                 .tabItem { Label("Berichte", systemImage: "doc.text.magnifyingglass") }
         }
         .tint(.mint).preferredColorScheme(.dark)
-        .task { if model.report == nil { model.run() } }
+        .task { model.startAutomatically() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .background { model.background() }
+            else if phase == .active { model.foreground() }
+        }
         .fileImporter(isPresented: $importing, allowedContentTypes: [.data], allowsMultipleSelection: false) { response in
             do { if let url = try response.get().first { model.importFile(url) } }
             catch { model.fileMessage = error.localizedDescription }
@@ -158,7 +244,7 @@ struct LabView: View {
                 }
                 Button("Tests erneut starten") { model.run() }.disabled(model.busy)
                 Button("Erweiterten Testlauf starten") { model.run(extended: true) }.disabled(model.busy)
-                Text("Läuft bei jedem App-Start automatisch und speichert einen lokalen JSON-Bericht.")
+                Text("Reine Berechnung mit künstlichen Signalen. Die separate Zeitdiagnose findest du im Tab Funkpfad.")
                     .font(.caption).foregroundStyle(.secondary)
             }
             if let report = model.report {
@@ -248,11 +334,12 @@ struct LabView: View {
                 if let url = model.textURL { ShareLink("Textbericht teilen", item: url) }
                 Button("Berichte aktualisieren") { model.saveReports() }.disabled(model.report == nil)
                 if let error = model.error { Text(error).foregroundStyle(.red) }
-                Text("Teile den JSON-Bericht hier im Chat, damit ich den Gerätetest auswerten kann. Er enthält Modell, iOS, Build, Testmesswerte und gegebenenfalls Dateistatistik; keine Rohsamples, Dateinamen, Konten, Standortdaten oder dauerhafte Gerätekennung.")
+                Text("Teile den JSON-Bericht hier im Chat. Er enthält die Geräteprüfung, Fehlercodes, ausgewählte Berechtigungen und die Zeitdiagnose sowie Softwaretests und gegebenenfalls Dateistatistik. Keine Rohsamples, Konten, SIM-Kennung, Standorte oder dauerhafte Gerätekennung.")
                     .font(.caption).foregroundStyle(.secondary)
             }
             Section("Was ist automatisiert?") {
                 Label("Signaltests und Messbericht beim App-Start", systemImage: "iphone")
+                Label("Geräteprüfung und 60-Sekunden-Zeitdiagnose beim Start", systemImage: "timer")
                 Label("Tests, Simulator-Start, Signierung und Veröffentlichung in GitHub", systemImage: "gearshape.2")
                 Text("Der Simulator bestätigt keine Geräte-HF-Funktion. Dein echtes iPhone lässt sich aus diesem Chat nicht unbeaufsichtigt fernbedienen.")
                     .font(.caption).foregroundStyle(.secondary)
