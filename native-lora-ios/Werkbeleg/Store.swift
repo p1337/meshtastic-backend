@@ -47,7 +47,7 @@ import Security
         _ = try backup() // retain current snapshot locally before replacement
         data = restored; save()
     }
-    func sync() async {
+    func sync(discardLocal: Bool = false) async {
         guard !syncing else { return }
         let address = UserDefaults.standard.string(forKey: "teamURL") ?? ""
         guard let base = URL(string: address), base.scheme == "https", base.host != nil,
@@ -63,7 +63,7 @@ import Security
             guard let http = response as? HTTPURLResponse, http.statusCode == 200 else { throw TeamError.message("Teamserver: Zugriff fehlgeschlagen / Access denied") }
             let remote = try JSONDecoder().decode(TeamSnapshot.self, from: bytes); try remote.workspace.validate()
             canEdit = http.value(forHTTPHeaderField: "X-Role") != "reader"
-            if dirty {
+            if dirty && !discardLocal {
                 guard canEdit else { throw TeamError.message("Nur Leserechte. Lokale Änderungen bleiben erhalten.") }
                 guard remote.version == version else { throw TeamError.message("Versionskonflikt: lokale Daten bleiben erhalten. Sicherung exportieren; danach den Teamstand laden.") }
                 var put = get; put.httpMethod = "PUT"; put.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -80,7 +80,7 @@ import Security
         } catch { syncStatus = error.localizedDescription }
     }
     func loadTeamVersion() async {
-        do { _ = try backup(); dirty = false; try saveMeta(); await sync() }
+        do { _ = try backup(); await sync(discardLocal: true) }
         catch { self.error = error.localizedDescription }
     }
 }

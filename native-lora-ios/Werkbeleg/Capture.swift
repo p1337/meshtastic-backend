@@ -69,7 +69,7 @@ import UIKit
         let request = SFSpeechURLRecognitionRequest(url: url)
         recognition = recognizer.recognitionTask(with: request) { [weak self] result, error in
             Task { @MainActor in
-                if let result = result { self?.text = result.bestTranscription.formattedString }
+                if let result = result, result.isFinal { self?.text = result.bestTranscription.formattedString }
                 if error != nil { self?.status = "Audio gespeichert. Erkennung fehlgeschlagen; Text bitte eingeben." }
                 else if result?.isFinal == true { self?.status = L.t("Text bitte prüfen", "Please review the text", "Sprawdź tekst") }
             }

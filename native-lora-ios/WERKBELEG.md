@@ -4,8 +4,8 @@ Arbeitsname, keine Markenfreigabe. Eigenständige Implementierung, keine Überna
 
 ## Diese Version kann
 
-- Kunden mit Kontaktdaten und Adresse anlegen.
-- Aufträge mit Kunde, Baustellenadresse, zuständiger Person und Erledigt-Status anlegen.
+- Kunden mit Kontaktdaten und Adresse anlegen und bearbeiten.
+- Aufträge mit Kunde, Baustellenadresse, zuständiger Person und Erledigt-Status anlegen und bearbeiten.
 - Arbeitsberichte mit Text, bis zu zwölf optimierten JPEG-Fotos, einer bis zu zweiminütigen Sprachaufnahme und optionalem GPS-Schnappschuss erstellen.
 - Sprachaufnahme über Apples Speech API transkribieren; Verfügbarkeit ist sprach-/geräte-/netzabhängig. Text bleibt korrigierbar. Die API kann Apple-Server verwenden; UI informiert vor der Nutzung.
 - Fotozeit bei In-App-Kamera und Importzeit bei importierten Fotos unterscheiden. Keine behauptete EXIF- oder Manipulationsprüfung. Bilder werden auf maximal 1800 px verkleinert; Originaldateien werden nicht archiviert.
@@ -55,5 +55,5 @@ Tests: `python3 -m unittest discover -s native-lora-ios/team-server -p 'test_*.p
 
 1. Echtes iPhone: Kunden→Auftrag→Foto/Sprachaufnahme→Textprüfung→PDF→Cloud-Sicherung durchlaufen; auch verweigerte Berechtigungen und Flugmodus.
 2. Eigenen HTTPS-Teamserver einrichten; zwei echte Geräte mit separaten Tokens und absichtlichem Versionskonflikt prüfen.
-3. Für 20 Personen: Medien-Objektspeicher, Änderungen pro Datensatz, Konfliktauflösung, Rollen-/Einladungsoberfläche, Kundenbearbeitung und strukturierte Berichtsvorlagen ergänzen.
+3. Für 20 Personen: Medien-Objektspeicher, Änderungen pro Datensatz, Konfliktauflösung, Rollen-/Einladungsoberfläche und strukturierte Berichtsvorlagen ergänzen.
 4. WeatherKit mit korrekter Attribution, Sprachprüfung DE/EN/PL, Datenschutz und Bezahlmodell erst danach aktivieren.

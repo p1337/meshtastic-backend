@@ -10,6 +10,7 @@ import UniformTypeIdentifiers
         WindowGroup {
             RootView().environmentObject(store).tint(Color.orange)
                 .environment(\.locale, Locale(identifier: language))
+                .preferredColorScheme(.light)
                 .task {
                     if ProcessInfo.processInfo.arguments.contains("--werkbeleg-smoke") { Smoke.run() }
                 }
@@ -74,20 +75,23 @@ struct JobsView: View {
 struct CustomersView: View {
     @EnvironmentObject var store: WorkStore
     @State private var add = false
+    @State private var selected: Customer? = nil
     var body: some View {
         NavigationStack {
             List {
                 if store.data.customers.isEmpty { ContentUnavailableView(L.t("Noch keine Kunden", "No customers yet", "Brak klientów"), systemImage: "person.crop.circle.badge.plus") }
                 ForEach(store.data.customers) { c in
-                    VStack(alignment: .leading, spacing: 5) { Text(c.name).font(.headline); Text(c.address); if !c.contact.isEmpty { Text(c.contact).foregroundStyle(.secondary) } }
+                    Button { selected = c } label: { VStack(alignment: .leading, spacing: 5) { Text(c.name).font(.headline).foregroundStyle(.primary); Text(c.address).foregroundStyle(.primary); if !c.contact.isEmpty { Text(c.contact).foregroundStyle(.secondary) } } }
                 }
             }.navigationTitle(L.t("Kunden", "Customers", "Klienci"))
                 .toolbar { Button { add = true } label: { Image(systemName: "plus") }.disabled(!store.canEdit) }
                 .sheet(isPresented: $add) { NewCustomerView() }
+                .sheet(item: $selected) { NewCustomerView(editing: $0) }
         }
     }
 }
 struct NewCustomerView: View {
+    var editing: Customer? = nil
     @EnvironmentObject var store: WorkStore
     @Environment(\.dismiss) var dismiss
     @State var name = ""
@@ -96,12 +100,14 @@ struct NewCustomerView: View {
     var body: some View {
         NavigationStack {
             Form { TextField(L.t("Name / Firma", "Name / company", "Nazwa / firma"), text: $name); TextField(L.t("Adresse", "Address", "Adres"), text: $address, axis: .vertical); TextField(L.t("Telefon / E-Mail", "Phone / email", "Telefon / e-mail"), text: $contact) }
-                .navigationTitle(L.t("Neuer Kunde", "New customer", "Nowy klient"))
-                .toolbar { ToolbarItem(placement: .cancellationAction) { Button(L.t("Abbrechen", "Cancel", "Anuluj")) { dismiss() } }; ToolbarItem(placement: .confirmationAction) { Button(L.t("Speichern", "Save", "Zapisz")) { store.data.customers.append(Customer(name: name.trimmingCharacters(in: .whitespacesAndNewlines), address: address, contact: contact)); if store.save() { dismiss() } }.disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !store.canEdit) } }
+                .navigationTitle(editing == nil ? L.t("Neuer Kunde", "New customer", "Nowy klient") : L.t("Kunde bearbeiten", "Edit customer", "Edytuj klienta"))
+                .onAppear { if let c = editing { name = c.name; address = c.address; contact = c.contact } }
+                .toolbar { ToolbarItem(placement: .cancellationAction) { Button(L.t("Abbrechen", "Cancel", "Anuluj")) { dismiss() } }; ToolbarItem(placement: .confirmationAction) { Button(L.t("Speichern", "Save", "Zapisz")) { let c = Customer(id: editing?.id ?? UUID(), name: name.trimmingCharacters(in: .whitespacesAndNewlines), address: address, contact: contact); if let i = store.data.customers.firstIndex(where: { $0.id == c.id }) { store.data.customers[i] = c } else { store.data.customers.append(c) }; if store.save() { dismiss() } }.disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !store.canEdit) } }
         }
     }
 }
 struct NewJobView: View {
+    var editing: Job? = nil
     @EnvironmentObject var store: WorkStore
     @Environment(\.dismiss) var dismiss
     @State var title = ""
@@ -117,10 +123,11 @@ struct NewJobView: View {
                 TextField(L.t("Auftrag / Baustelle", "Job / site", "Zlecenie / budowa"), text: $title)
                 TextField(L.t("Baustellenadresse", "Site address", "Adres budowy"), text: $address, axis: .vertical)
                 TextField(L.t("Zuständig (Name)", "Assigned to (name)", "Osoba odpowiedzialna"), text: $person)
-            }.navigationTitle(L.t("Neuer Auftrag", "New job", "Nowe zlecenie"))
+            }.navigationTitle(editing == nil ? L.t("Neuer Auftrag", "New job", "Nowe zlecenie") : L.t("Auftrag bearbeiten", "Edit job", "Edytuj zlecenie"))
+                .onAppear { if let j = editing { title = j.title; address = j.address; person = j.assignedTo; customer = j.customerID } }
                 .sheet(isPresented: $newCustomer) { NewCustomerView() }
                 .toolbar { ToolbarItem(placement: .cancellationAction) { Button(L.t("Abbrechen", "Cancel", "Anuluj")) { dismiss() } }; ToolbarItem(placement: .confirmationAction) { Button(L.t("Anlegen", "Create", "Utwórz")) {
-                    if let c = customer { store.data.jobs.append(Job(customerID: c, title: title, address: address.isEmpty ? store.data.customers.first(where: { $0.id == c })?.address ?? "" : address, assignedTo: person)); if store.save() { dismiss() } }
+                    if let c = customer { let j = Job(id: editing?.id ?? UUID(), customerID: c, title: title, address: address.isEmpty ? store.data.customers.first(where: { $0.id == c })?.address ?? "" : address, assignedTo: person, completed: editing?.completed ?? false); if let i = store.data.jobs.firstIndex(where: { $0.id == j.id }) { store.data.jobs[i] = j } else { store.data.jobs.append(j) }; if store.save() { dismiss() } }
                 }.disabled(customer == nil || title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !store.canEdit) } }
         }
     }
@@ -129,6 +136,7 @@ struct JobView: View {
     @EnvironmentObject var store: WorkStore
     let jobID: UUID
     @State var add = false
+    @State var editJob = false
     var job: Job? { store.data.jobs.first { $0.id == jobID } }
     var body: some View {
         List {
@@ -146,6 +154,8 @@ struct JobView: View {
                 }
             }
         }.navigationTitle(job?.title ?? "").sheet(isPresented: $add) { NewReportView(jobID: jobID) }
+            .toolbar { Button { editJob = true } label: { Image(systemName: "pencil") }.disabled(!store.canEdit) }
+            .sheet(isPresented: $editJob) { if let j = job { NewJobView(editing: j) } }
     }
 }
 struct NewReportView: View {
@@ -189,7 +199,7 @@ struct NewReportView: View {
                     let r = Report(jobID: jobID, author: author, text: bodyText, photos: photos, audio: capture.audio, latitude: loc?.coordinate.latitude, longitude: loc?.coordinate.longitude, accuracy: loc?.horizontalAccuracy, locationAt: loc?.timestamp, weather: weather)
                     store.data.reports.append(r); if store.save() { capture.stop(); dismiss() }
                 }.disabled(capture.recording || !store.canEdit || (bodyText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && photos.isEmpty && capture.audio == nil)) } }
-                .onChange(of: capture.text) { _, text in bodyText = text }
+                .onChange(of: capture.text) { _, text in if !text.isEmpty { bodyText += (bodyText.isEmpty ? "" : "\n") + text } }
                 .onChange(of: selection) { _, items in Task {
                     for item in items {
                         if photos.count < 12, let data = try? await item.loadTransferable(type: Data.self), let image = UIImage(data: data), let jpg = image.reportJPEG() { photos.append(Evidence(data: jpg, source: "imported")) }
@@ -225,7 +235,7 @@ struct ReportDetail: View {
             }
         }.navigationTitle(L.t("Arbeitsbericht", "Work report", "Raport z prac"))
             .task { if let bytes = report?.audio { let u = FileManager.default.temporaryDirectory.appendingPathComponent(reportID.uuidString + ".m4a"); do { try bytes.write(to: u, options: [.atomic, .completeFileProtection]); audioURL = u } catch { store.error = error.localizedDescription } } }
-            .sheet(isPresented: $editing) { NavigationStack { TextEditor(text: $revisedText).padding().navigationTitle(L.t("Text korrigieren", "Edit text", "Popraw tekst")).toolbar { Button(L.t("Speichern", "Save", "Zapisz")) { if let i = store.data.reports.firstIndex(where: { $0.id == reportID }) { store.data.reports[i].text = revisedText; store.save(); pdf = nil }; editing = false } } } }
+            .sheet(isPresented: $editing) { NavigationStack { TextEditor(text: $revisedText).padding().navigationTitle(L.t("Text korrigieren", "Edit text", "Popraw tekst")).toolbar { Button(L.t("Speichern", "Save", "Zapisz")) { if let i = store.data.reports.firstIndex(where: { $0.id == reportID }) { store.data.reports[i].text = revisedText; if store.save() { pdf = nil; editing = false } } } } } }
     }
     func makePDF(_ r: Report) {
         guard let job = store.data.jobs.first(where: { $0.id == r.jobID }), let c = store.data.customers.first(where: { $0.id == job.customerID }) else { return }

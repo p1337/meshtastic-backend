@@ -1,3 +1,5 @@
+> **Aktuelles Projekt: Werkbeleg.** Die neue native Handwerker-App ist in [WERKBELEG.md](WERKBELEG.md) dokumentiert. Das LoRa-Forschungsprojekt bleibt gestoppt; die folgenden Abschnitte beschreiben die frühere Test-App.
+
 # LoRa Lab für iPhone
 
 Version **0.3.0 (Build13)**, erfolgreich Apple-signiert und veröffentlicht. Native Forschungs-App für das iPhone15ProMax. Noch kein nachgewiesener interner RF-I/Q-Zugang und kein Live-LoRa-Empfang.
