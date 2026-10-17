@@ -1,0 +1,37 @@
+name: Native LoRa Lab IPA
+on:
+  push:
+    branches: [codex/native-lora-ios]
+    paths: [native-lora-ios/**, .github/workflows/native-lora-ipa.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: native-lora-ipa-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build-ipa:
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Test CSS and build arm64 device IPA
+        run: bash native-lora-ios/scripts/build-ipa.sh
+      - name: Upload IPA and checksums
+        uses: actions/upload-artifact@v4
+        with:
+          name: LoRaLab-unsigned-IPA
+          path: |
+            native-lora-ios/build/LoRaLab-unsigned.ipa
+            native-lora-ios/build/SHA256SUMS.txt
+            native-lora-ios/build/test-results.txt
+          if-no-files-found: error
+      - name: Upload build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: LoRaLab-build-logs
+          path: native-lora-ios/build/*.log
+          if-no-files-found: ignore
