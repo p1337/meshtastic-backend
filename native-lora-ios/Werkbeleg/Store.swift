@@ -133,14 +133,25 @@ enum TeamError: LocalizedError {
     var errorDescription: String? { if case let .message(s) = self { return s }; return nil }
 }
 enum KeychainToken {
+    #if targetEnvironment(simulator)
+    // Explicit test double: unsigned simulator apps cannot exercise device Keychain ACLs.
+    static var testStorageEnabled = false
+    static var testToken: String? = nil
+    #endif
     static let service = "de.p1337.werkbeleg.team"
     static func read() -> String? {
+        #if targetEnvironment(simulator)
+        if testStorageEnabled { return testToken }
+        #endif
         let q: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service, kSecReturnData as String: true, kSecMatchLimit as String: kSecMatchLimitOne]
         var item: CFTypeRef?
         guard SecItemCopyMatching(q as CFDictionary, &item) == errSecSuccess, let bytes = item as? Data else { return nil }
         return String(data: bytes, encoding: .utf8)
     }
     static func save(_ token: String) throws {
+        #if targetEnvironment(simulator)
+        if testStorageEnabled { testToken = token.isEmpty ? nil : token; return }
+        #endif
         let q: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service]
         SecItemDelete(q as CFDictionary)
         guard !token.isEmpty else { return }

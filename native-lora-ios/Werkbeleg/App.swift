@@ -315,6 +315,9 @@ enum Smoke {
                   try store.undoLastImport() == 1, store.data.customers == [c] else { throw ModelError.invalid }
             output["customerImportAndUndoVerified"] = true
             #if targetEnvironment(simulator)
+            KeychainToken.testStorageEnabled = true
+            defer { KeychainToken.testStorageEnabled = false; KeychainToken.testToken = nil }
+            output["keychainServiceTested"] = false
             let previousURL = UserDefaults.standard.string(forKey: "teamURL"), previousToken = KeychainToken.read()
             defer {
                 if let previousURL { UserDefaults.standard.set(previousURL, forKey: "teamURL") } else { UserDefaults.standard.removeObject(forKey: "teamURL") }

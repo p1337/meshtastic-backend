@@ -92,10 +92,10 @@ enum ContactImporter {
             for c in chars { if c == "\"" { quoted.toggle() }; if c == "\n" && !quoted { break }; if !quoted && counts[c] != nil { counts[c, default: 0] += 1 } }
             delim = [Character(";"), Character(","), Character("\t")].max(by: { counts[$0, default: 0] < counts[$1, default: 0] }) ?? ";"
         }
-        var rows: [[String]] = [], row: [String] = [], field = "", quoted = false, closed = false, i = 0
+        var rows: [[String]] = [], row: [String] = [], field = "", quoted = false, closed = false, i = 0, fieldLength = 0
         func appendField() throws {
             guard field.count <= 4096, row.count < 80 else { throw ImportFailure.message("Max. 80 Spalten und 4096 Zeichen je Feld / Max. 80 columns and 4096 characters per field") }
-            row.append(field); field = ""; closed = false
+            row.append(field); field = ""; fieldLength = 0; closed = false
         }
         func appendRow() throws {
             try appendField()
@@ -107,17 +107,17 @@ enum ContactImporter {
             let c = chars[i]
             if quoted {
                 if c == "\"" {
-                    if i + 1 < chars.count && chars[i + 1] == "\"" { field.append("\""); i += 1 }
+                    if i + 1 < chars.count && chars[i + 1] == "\"" { field.append("\""); fieldLength += 1; i += 1 }
                     else { quoted = false; closed = true }
-                } else { field.append(c) }
+                } else { field.append(c); fieldLength += 1 }
             } else if c == delim { try appendField() }
             else if c == "\n" { try appendRow() }
             else if c == "\"" && field.isEmpty && !closed { quoted = true }
             else {
                 guard !closed, c != "\"", c != "\0" else { throw ImportFailure.message(L.t("Ungültige CSV-Anführungszeichen oder Steuerzeichen.", "Invalid CSV quotes or control character.", "Nieprawidłowy CSV lub znak sterujący.")) }
-                field.append(c)
+                field.append(c); fieldLength += 1
             }
-            guard field.count <= 4096 else { throw ImportFailure.message("Feld zu lang / Field too long") }
+            guard fieldLength <= 4096 else { throw ImportFailure.message("Feld zu lang / Field too long") }
             i += 1
         }
         guard !quoted else { throw ImportFailure.message("CSV: Anführungszeichen nicht geschlossen / Unclosed quote") }
