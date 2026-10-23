@@ -10,6 +10,8 @@ Stand: 23.10.2026. Ergebnis: **Software-Prototyp möglich; Zielkombination auf r
 
 **C: kein vorhandener öffentlicher Eingabe-Endpunkt gefunden.** Die geprüften Quellen enthalten BLE, UI-Gesten, interne Events, MQTT und Backend-Kommunikation. Diese sind kein dokumentierter lokaler Steuervertrag für eine zweite iOS-App. Der Vorschlag in `INCYCLIST_INTEGRATION.md` bevorzugt ein eingebettetes Modul; eine spätere IPC-Schnittstelle ist ausdrücklich ein Vorschlag.
 
+Zusätzlich geprüft: `incyclist/documentation@c2069a99c7144c51f90750bf3def6efec1210ea3` und `incyclist/web-ui@063dd1790f5ad95abc4ca01f010787d1b3fe44db`. Die mobile Info.plist nennt `_openbikecontrol._tcp` als erlaubten Bonjour-Typ und registriert `incyclist://`. Das allein ist kein implementierter Schaltendpunkt. Der geprüfte mDNS-Binding-/Direct-Connect-Pfad sucht Direct-Connect-Trainerdienste; ein OpenBikeControl-Eingabehandler oder URL-Gangkommando ist in diesen Quellständen nicht nachgewiesen.
+
 ## Quellenstand (tatsächlich geklont und gelesen)
 
 | Projekt | Commit | Relevante Dateien / Ergebnis |

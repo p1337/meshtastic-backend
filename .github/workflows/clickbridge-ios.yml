@@ -2,9 +2,9 @@ name: ClickBridge build and software tests
 on:
   push:
     branches: [codex/clickbridge-ios]
-    paths: [clickbridge-ios/**, .github/workflows/clickbridge-ios.yml]
+    paths: [clickbridge-ios/App/**, clickbridge-ios/Sources/**, clickbridge-ios/Resources/**, clickbridge-ios/Tests/**, clickbridge-ios/Package.swift, clickbridge-ios/ClickBridge.xcodeproj/**, clickbridge-ios/scripts/generate_project.py, clickbridge-ios/scripts/test-simulator.sh, clickbridge-ios/scripts/build-unsigned.sh, clickbridge-ios/scripts/audit-signing.py, clickbridge-ios/THIRD_PARTY_NOTICES.md, .github/workflows/clickbridge-ios.yml]
   pull_request:
-    paths: [clickbridge-ios/**, .github/workflows/clickbridge-ios.yml]
+    paths: [clickbridge-ios/App/**, clickbridge-ios/Sources/**, clickbridge-ios/Resources/**, clickbridge-ios/Tests/**, clickbridge-ios/Package.swift, clickbridge-ios/ClickBridge.xcodeproj/**, clickbridge-ios/scripts/generate_project.py, clickbridge-ios/scripts/test-simulator.sh, clickbridge-ios/scripts/build-unsigned.sh, clickbridge-ios/scripts/audit-signing.py, clickbridge-ios/THIRD_PARTY_NOTICES.md, .github/workflows/clickbridge-ios.yml]
   workflow_dispatch:
 permissions:
   contents: read

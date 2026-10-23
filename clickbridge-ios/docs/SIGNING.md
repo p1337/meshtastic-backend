@@ -23,4 +23,6 @@ Der GitHub-Connector erlaubt hier Quellcode/Branches/PRs, aber keine Einrichtung
 
 Aktuell erzeugt CI ausdrücklich `ClickBridge-UNSIGNED.ipa`. Sie ist **ohne erneute Signierung nicht installierbar**. Es wird keine funktionierende OTA-Installation behauptet und die bestehende Werkbeleg-Installationsseite wird nicht ersetzt.
 
+Tatsächliche Prüfung: [Lauf 40021688060](https://github.com/p1337/meshtastic-backend/actions/runs/40021688060), Job `signing-audit`, bestand am 23.10.2026. Zertifikat-/Passwortwerte vorhanden, Profil nicht abgelaufen und Ad-hoc-Profil vorhanden, aber **`matchingProfile=false`** für ClickBridge. Separates ClickBridge-Profil nicht vorhanden. Dies ist eine Profilkompatibilitätsprüfung, keine erneute kryptographische Prüfung des P12 und keine Signierung.
+
 Für einen Incyclist-Fork gilt dessen eigene Bundle-ID/Signierung. ClickBridge-Profile lösen nicht automatisch die Signierung einer veränderten Incyclist-App.

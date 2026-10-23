@@ -20,7 +20,8 @@ export function ClickBridgeControls({ simulate = false }: { simulate?: boolean }
                 adapter?.isControllable() && adapter.isStarted() && !adapter.isStopped() && !adapter.isPaused()).length,
             virtualShiftingEnabled: () => {
                 const mode = service.getCyclingMode();
-                return !!mode?.isSIM() && ['Mixed', 'Incyclist', 'SmartTrainer', 'Enabled'].includes(String(mode.getSetting('virtshift')));
+                const config = mode?.getConfig();
+                return !!config?.isSIM && !config.isERG && ['Mixed', 'Incyclist', 'SmartTrainer', 'Enabled'].includes(String(mode?.getSetting('virtshift')));
             },
             busy: () => service.isUpdateBusy(),
             sendUpdate: request => service.sendUpdate(request),

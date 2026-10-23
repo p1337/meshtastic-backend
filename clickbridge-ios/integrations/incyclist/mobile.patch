@@ -1,4 +1,4 @@
-From 962aced537a1f73f85aabb9ffe9af5e3ddc29470 Mon Sep 17 00:00:00 2001
+From fbaf403c2ff00aee86538c0fdd7059f964725a50 Mon Sep 17 00:00:00 2001
 From: Codex <codex@openai.com>
 Date: Fri, 23 Oct 2026 23:43:43 +0300
 Subject: [PATCH] feat(ios): embed ClickBridge controller input through
@@ -22,12 +22,12 @@ Subject: [PATCH] feat(ios): embed ClickBridge controller input through
  ios/Incyclist/AppDelegate.swift               |   1 +
  ios/Incyclist/Info.plist                      |  36 +-
  ios/Podfile                                   |   2 +-
- .../clickbridge/ClickBridgeControls.tsx       |  56 +++
+ .../clickbridge/ClickBridgeControls.tsx       |  57 +++
  src/integrations/clickbridge/shiftRouter.d.ts |  12 +
  src/integrations/clickbridge/shiftRouter.js   |  49 ++
  .../clickbridge/shiftRouter.test.cjs          |  71 +++
  src/pages/RidePage/RidePage.tsx               |  11 +-
- 22 files changed, 1542 insertions(+), 27 deletions(-)
+ 22 files changed, 1543 insertions(+), 27 deletions(-)
  create mode 100644 clickbridge-kit/LICENSE
  create mode 100644 clickbridge-kit/Package.swift
  create mode 100644 clickbridge-kit/Sources/ClickBridgeBLE/ControllerHub.swift
@@ -1662,10 +1662,10 @@ index 928d1bd..e441514 100644
  cpu_arch = `uname -m`.strip 
 diff --git a/src/integrations/clickbridge/ClickBridgeControls.tsx b/src/integrations/clickbridge/ClickBridgeControls.tsx
 new file mode 100644
-index 0000000..e379c73
+index 0000000..586d208
 --- /dev/null
 +++ b/src/integrations/clickbridge/ClickBridgeControls.tsx
-@@ -0,0 +1,56 @@
+@@ -0,0 +1,57 @@
 +import React, { useEffect, useState } from 'react';
 +import { NativeModules, NativeEventEmitter, Platform, Pressable, Text, StyleSheet } from 'react-native';
 +import { useDeviceRide } from 'incyclist-services';
@@ -1688,7 +1688,8 @@ index 0000000..e379c73
 +                adapter?.isControllable() && adapter.isStarted() && !adapter.isStopped() && !adapter.isPaused()).length,
 +            virtualShiftingEnabled: () => {
 +                const mode = service.getCyclingMode();
-+                return !!mode?.isSIM() && ['Mixed', 'Incyclist', 'SmartTrainer', 'Enabled'].includes(String(mode.getSetting('virtshift')));
++                const config = mode?.getConfig();
++                return !!config?.isSIM && !config.isERG && ['Mixed', 'Incyclist', 'SmartTrainer', 'Enabled'].includes(String(mode?.getSetting('virtshift')));
 +            },
 +            busy: () => service.isUpdateBusy(),
 +            sendUpdate: request => service.sendUpdate(request),
