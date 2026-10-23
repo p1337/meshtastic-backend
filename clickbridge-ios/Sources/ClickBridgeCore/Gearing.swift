@@ -32,7 +32,7 @@ public struct GearConfiguration: Codable, Equatable, Sendable {
     public func validate() throws {
         guard (2...64).contains(count) else { throw GearError.invalidCount }
         guard ratios.allSatisfy({ $0.isFinite && (0.05...20).contains($0) }),
-              zip(ratios, ratios.dropFirst()).allSatisfy({ $0 < $1 }) else { throw GearError.invalidRatios }
+              zip(ratios, ratios.dropFirst()).allSatisfy({ $0.0 < $0.1 }) else { throw GearError.invalidRatios }
         guard (1...count).contains(startGear) else { throw GearError.invalidStart }
         guard shiftInterval.isFinite, (0...2).contains(shiftInterval),
               debounce.isFinite, (0.01...0.5).contains(debounce),

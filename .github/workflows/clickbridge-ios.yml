@@ -1,0 +1,50 @@
+name: ClickBridge build and software tests
+on:
+  push:
+    branches: [codex/clickbridge-ios]
+    paths: [clickbridge-ios/**, .github/workflows/clickbridge-ios.yml]
+  pull_request:
+    paths: [clickbridge-ios/**, .github/workflows/clickbridge-ios.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: clickbridge-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  software-tests:
+    runs-on: macos-15
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Swift Package unit tests
+        working-directory: clickbridge-ios
+        run: |
+          set -euo pipefail
+          mkdir -p build
+          swift --version | tee build/swift-version.txt
+          swift test --parallel 2>&1 | tee build/unit-tests.log
+      - name: Verify deterministic Xcode project generation
+        working-directory: clickbridge-ios
+        run: |
+          python3 scripts/generate_project.py
+          git diff --exit-code -- ClickBridge.xcodeproj
+          plutil -lint Resources/Info.plist Resources/PrivacyInfo.xcprivacy ClickBridge.xcodeproj/project.pbxproj
+      - name: Build and launch actual iOS Simulator app
+        run: bash clickbridge-ios/scripts/test-simulator.sh
+      - name: Build unsigned device IPA
+        run: bash clickbridge-ios/scripts/build-unsigned.sh
+      - name: Upload software evidence and unsigned IPA
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ClickBridge-software-evidence-and-UNSIGNED-IPA
+          path: |
+            clickbridge-ios/build/swift-version.txt
+            clickbridge-ios/build/unit-tests.log
+            clickbridge-ios/build/simulator/
+            clickbridge-ios/build/device/
+          if-no-files-found: error
+          retention-days: 30
