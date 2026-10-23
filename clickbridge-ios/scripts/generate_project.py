@@ -32,7 +32,8 @@ for path in sorted((ROOT / "App").glob("*.swift")):
     ref = obj(rel, "PBXFileReference", lastKnownFileType="sourcecode.swift", path=rel, sourceTree="<group>")
     children.append(ref)
     sources.append(obj(rel + ":build", "PBXBuildFile", fileRef=ref))
-for path, kind in [("Resources/Assets.xcassets", "folder.assetcatalog"), ("Resources/PrivacyInfo.xcprivacy", "text.xml")]:
+for path, kind in [("Resources/Assets.xcassets", "folder.assetcatalog"), ("Resources/PrivacyInfo.xcprivacy", "text.xml"),
+                   ("THIRD_PARTY_NOTICES.md", "text")]:
     ref = obj(path, "PBXFileReference", lastKnownFileType=kind, path=path, sourceTree="<group>")
     children.append(ref)
     resources.append(obj(path + ":build", "PBXBuildFile", fileRef=ref))

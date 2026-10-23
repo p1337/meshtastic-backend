@@ -192,6 +192,7 @@ struct SettingsView: View {
                 Text("Bluetooth-Hintergrundbetrieb und Wiederherstellung sind vorbereitet. iOS garantiert keine dauerhafte Ausführung. Nach erzwungenem Beenden die App manuell öffnen.")
                 Text("Kein Konto, keine Werbung und keine automatische Datenübertragung. Diagnose bleibt auf dem Gerät; ein Export erfolgt nur auf Wunsch.")
                 Text("Unabhängiges Projekt. Zwift und Incyclist sind Marken ihrer jeweiligen Inhaber.")
+                NavigationLink("Lizenzen und Hinweise") { LicenseView() }
             }.font(.footnote)
         }
         .navigationTitle("Einstellungen")
@@ -212,6 +213,18 @@ struct SettingsView: View {
         }
         do { draft.ratios = values; try model.save(draft); saved = true }
         catch { model.message = "Ungültige Einstellungen: Übersetzungen müssen positiv und aufsteigend sein." }
+    }
+}
+
+private struct LicenseView: View {
+    private var notices: String {
+        guard let url = Bundle.main.url(forResource: "THIRD_PARTY_NOTICES", withExtension: "md"),
+              let text = try? String(contentsOf: url, encoding: .utf8) else { return "Lizenzdatei nicht gefunden." }
+        return text
+    }
+    var body: some View {
+        ScrollView { Text(notices).font(.footnote).textSelection(.enabled).padding() }
+            .navigationTitle("Lizenzen")
     }
 }
 

@@ -1,0 +1,41 @@
+name: ClickBridge embedded Incyclist native build
+on:
+  push:
+    branches: [codex/clickbridge-ios]
+    paths: [clickbridge-ios/integrations/**, clickbridge-ios/Sources/**, .github/workflows/clickbridge-incyclist.yml]
+  pull_request:
+    paths: [clickbridge-ios/integrations/**, clickbridge-ios/Sources/**, .github/workflows/clickbridge-incyclist.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: clickbridge-incyclist-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  embedded-native-build:
+    runs-on: macos-26
+    timeout-minutes: 50
+    env:
+      # Match the audited upstream's own tested toolchain pin.
+      DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Checkout audited public Incyclist source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: incyclist/mobile
+          ref: 1969e6442a9ae807b1f9ae0b9cd865400d7d6873
+          path: _upstream-incyclist
+          persist-credentials: false
+      - name: Install and build embedded integration
+        run: bash clickbridge-ios/scripts/build-incyclist.sh "$GITHUB_WORKSPACE/_upstream-incyclist"
+      - name: Upload native build evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ClickBridge-Incyclist-native-evidence
+          path: clickbridge-ios/build/incyclist/
+          if-no-files-found: warn
+          retention-days: 30

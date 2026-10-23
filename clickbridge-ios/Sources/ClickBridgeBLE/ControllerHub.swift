@@ -50,7 +50,9 @@ public struct ControllerSnapshot: Identifiable {
 }
 
 /// One central, independent per-peripheral sessions. Never connects to trainers.
-@MainActor public final class ControllerHub: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeripheralDelegate {
+// CoreBluetooth uses the main queue (queue:nil). Imported ObjC delegate requirements
+// predate Swift actor annotations; retain their runtime main-actor check explicitly.
+@MainActor public final class ControllerHub: NSObject, ObservableObject, @preconcurrency CBCentralManagerDelegate, @preconcurrency CBPeripheralDelegate {
     @Published public private(set) var devices: [ControllerSnapshot] = []
     @Published public private(set) var bluetoothStatus = "Bluetooth wird initialisiert"
     @Published public private(set) var scanning = false

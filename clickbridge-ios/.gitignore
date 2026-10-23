@@ -8,3 +8,4 @@ xcuserdata/
 *.p12
 *.ipa
 *.xcarchive/
+__pycache__/
