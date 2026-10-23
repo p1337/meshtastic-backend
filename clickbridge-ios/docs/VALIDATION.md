@@ -50,6 +50,18 @@ Commit `80342d06d825f2c1c437bfbf4c2ef4e9d15eec6a`, [GitHub Actions 40025744713](
 
 Dies prüft Syntax und Typen, **nicht** das vollständige Incyclist-Linking, die Modulregistrierung zur Laufzeit oder Hardware. Der vollständige neue Build `40025436038` wartet zum Zeitpunkt dieses Eintrags noch auf einen macOS-Runner und bleibt unbestanden.
 
+Beweisartefakt der bestandenen Brückenprüfung: `12532118690`, ZIP-SHA-256 `c183513ab7c1a1b54ea128b319fd8b7cf65f59c2c71d591b688331837a23d691`.
+
+## Erneute Prüfung des ausgelieferten Integrationspatches
+
+Der aktuelle `mobile.patch` wurde zusätzlich auf einem neu angelegten, sauberen Worktree von `incyclist/mobile@1969e6442a9ae807b1f9ae0b9cd865400d7d6873` mit `git apply --check` geprüft und angewendet. Danach `git diff --check` und alle sieben Node-Routingtests erfolgreich. Alle 14 eingebetteten Core-/BLE-/Brücken-/Router-/Paket-/Lizenzdateien stimmen bytegenau mit dem aktuellen ClickBridge-Quellstand überein.
+
+SHA-256 des geprüften Patches: `d6853e1b4b966138962fdc5b7253999715028ff44ca8f13ebfdb32c2f6678b75`.
+
+## Abschließender erneuter App-Lauf
+
+[Lauf 40025436023](https://github.com/p1337/meshtastic-backend/actions/runs/40025436023), Commit `e4e44400a46da17d6e3c8515e47ae4197c34d5af`: Softwarejob `120660320674` und Signing-Audit `120660320998` beide **success**. Alle Schritte einschließlich Swift-/Routingtests, Projektgenerierung, Simulatorstart, unsignierter Geräte-IPA und Artefakt-Upload erfolgreich. Der Lauf verwendet die korrigierte CI-Fehlerweitergabe (`set -euo pipefail`). Der Produktquellcode entspricht dem zuvor unabhängig heruntergeladenen und geprüften Stand; die spätere Header-Harness-Korrektur wurde separat in Lauf `40025744713` geprüft.
+
 ## Nicht getestete Punkte
 
 Alle zehn Hardwareabnahmepunkte in TEST_PLAN.md: **NICHT GETESTET**. Ebenfalls nicht getestet: iOS 27 auf Roberts iPhone, zwei reale gleichzeitige BLE-Verbindungen, linker 60-Sekunden-/24-Stunden-Effekt, echte Widerstandsänderung, erhaltene Streckensimulation, 60-Minuten-Fahrt, physische Reconnects, Anruf, Sperrbildschirm und Systembeendigung.

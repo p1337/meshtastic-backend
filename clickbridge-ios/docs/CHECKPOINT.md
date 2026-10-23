@@ -46,4 +46,8 @@ Dies sind Softwareprüfungen. Keine simulierten Controller wurden als echte Hard
 
 Der kleine Brücken-Compilecheck ist bestanden und das Protokoll des abgebrochenen Vollbuilds heruntergeladen/geprüft. Als Nächstes vollständigen Incyclist-Build fertig prüfen; jeden neuen Compilerfehler beheben und diesen Stand aktualisieren. Danach PR-Beschreibung und VALIDATION.md mit belegten Ergebnissen abgleichen.
 
+Zusätzlicher gesicherter Nachweis: Aktueller Integrationspatch auf einem frischen Original-Worktree erfolgreich geprüft und angewendet; sieben Routingtests bestanden; alle 14 eingebetteten Quell-/Paket-/Lizenzdateien bytegenau mit dem aktuellen Stand verglichen. Patch-Prüfsumme steht in VALIDATION.md. Die PR-Beschreibung wurde auf die tatsächlich bestandenen Prüfungen und offenen Blocker aktualisiert.
+
+Abschließender App-Lauf [40025436023](https://github.com/p1337/meshtastic-backend/actions/runs/40025436023) ebenfalls **bestanden**: beide Jobs erfolgreich, einschließlich aller Tests, Simulatorstart, unsignierter Geräte-IPA und Artefakt-Upload. Damit sind eigenständiger App-Build und schmale native Brückenkompilierung grün; der volle Incyclist-Build `40025436038` bleibt in der Runner-Warteschlange und ist nicht bestanden.
+
 Kein Live-Schalten, keine D100-Koexistenz und keine Verkaufsreife werden aus diesen Softwareprüfungen abgeleitet. Dafür gelten weiterhin alle Hardwarekriterien des Auftrags.
