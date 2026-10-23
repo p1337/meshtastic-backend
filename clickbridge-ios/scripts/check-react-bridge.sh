@@ -8,7 +8,7 @@ check_dir="$kit_root/build/react-bridge-check"
 mkdir -p "$check_dir/headers/React"
 python3 - "$upstream_root" "$check_dir" <<'PY'
 from pathlib import Path
-import base64,hashlib,io,json,sys,tarfile,urllib.request
+import base64,hashlib,io,json,re,sys,tarfile,urllib.request
 root,out=map(Path,sys.argv[1:])
 lock=json.loads((root/'package-lock.json').read_text())
 entry=lock['packages']['node_modules/react-native']
@@ -16,10 +16,26 @@ with urllib.request.urlopen(entry['resolved'],timeout=30) as response: raw=respo
 expected=entry['integrity'].removeprefix('sha512-')
 assert base64.b64encode(hashlib.sha512(raw).digest()).decode()==expected
 with tarfile.open(fileobj=io.BytesIO(raw),mode='r:gz') as archive:
+    headers={}
     for member in archive.getmembers():
-        if member.isfile() and '/React/' in member.name and member.name.endswith('.h'):
-            name=Path(member.name).name
-            (out/'headers/React'/name).write_bytes(archive.extractfile(member).read())
+        if member.isfile() and member.name.endswith('.h'):
+            headers[member.name]=archive.extractfile(member).read()
+    byname={Path(name).name: data for name,data in headers.items()}
+    for name,data in byname.items():
+        (out/'headers/React'/name).write_bytes(data)
+        (out/'headers'/name).write_bytes(data)
+    # CocoaPods normally supplies these header namespaces (e.g. RCTDeprecation).
+    # Recreate their real, integrity-checked headers without inventing declarations.
+    for data in headers.values():
+        for spec in re.findall(rb'#(?:import|include)\s*[<"]([A-Za-z0-9_.\-/]+/[^>"\s]+\.h)[>"]',data):
+            rel=Path(spec.decode())
+            if rel.is_absolute() or '..' in rel.parts: continue
+            exact=next((v for k,v in headers.items() if k.endswith('/'+rel.as_posix())),None)
+            content=exact if exact is not None else byname.get(rel.name)
+            if content is not None:
+                destination=out/'headers'/rel
+                destination.parent.mkdir(parents=True,exist_ok=True)
+                destination.write_bytes(content)
 (out/'headers/module.modulemap').write_text('module React { header "React/RCTEventEmitter.h" header "React/RCTUtils.h" export * }\n')
 (out/'header-source.json').write_text(json.dumps({'reactNative':entry['version'],'npmIntegrityVerified':True},indent=2)+'\n')
 PY

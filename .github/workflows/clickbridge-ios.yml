@@ -3,8 +3,6 @@ on:
   push:
     branches: [codex/clickbridge-ios]
     paths: [clickbridge-ios/App/**, clickbridge-ios/Sources/**, clickbridge-ios/Resources/**, clickbridge-ios/Tests/**, clickbridge-ios/Package.swift, clickbridge-ios/ClickBridge.xcodeproj/**, clickbridge-ios/scripts/generate_project.py, clickbridge-ios/scripts/test-simulator.sh, clickbridge-ios/scripts/build-unsigned.sh, clickbridge-ios/scripts/audit-signing.py, clickbridge-ios/THIRD_PARTY_NOTICES.md, .github/workflows/clickbridge-ios.yml]
-  pull_request:
-    paths: [clickbridge-ios/App/**, clickbridge-ios/Sources/**, clickbridge-ios/Resources/**, clickbridge-ios/Tests/**, clickbridge-ios/Package.swift, clickbridge-ios/ClickBridge.xcodeproj/**, clickbridge-ios/scripts/generate_project.py, clickbridge-ios/scripts/test-simulator.sh, clickbridge-ios/scripts/build-unsigned.sh, clickbridge-ios/scripts/audit-signing.py, clickbridge-ios/THIRD_PARTY_NOTICES.md, .github/workflows/clickbridge-ios.yml]
   workflow_dispatch:
 permissions:
   contents: read
@@ -28,7 +26,9 @@ jobs:
           swift test --parallel 2>&1 | tee build/unit-tests.log
       - name: Incyclist routing unit tests
         working-directory: clickbridge-ios
-        run: node --test integrations/incyclist/shiftRouter.test.cjs | tee build/routing-tests.log
+        run: |
+          set -euo pipefail
+          node --test integrations/incyclist/shiftRouter.test.cjs | tee build/routing-tests.log
       - name: Verify deterministic Xcode project generation
         working-directory: clickbridge-ios
         run: |

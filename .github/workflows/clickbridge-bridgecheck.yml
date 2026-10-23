@@ -1,6 +1,7 @@
 name: ClickBridge React Native bridge compile check
 on:
-  pull_request:
+  push:
+    branches: [codex/clickbridge-ios]
     paths: [clickbridge-ios/integrations/**, clickbridge-ios/Sources/**, clickbridge-ios/scripts/check-react-bridge.sh, .github/workflows/clickbridge-bridgecheck.yml]
   workflow_dispatch:
 permissions:

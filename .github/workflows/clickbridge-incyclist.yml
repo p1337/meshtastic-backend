@@ -3,8 +3,6 @@ on:
   push:
     branches: [codex/clickbridge-ios]
     paths: [clickbridge-ios/integrations/**, clickbridge-ios/Sources/**, clickbridge-ios/Package.swift, clickbridge-ios/scripts/build-incyclist.sh, .github/workflows/clickbridge-incyclist.yml]
-  pull_request:
-    paths: [clickbridge-ios/integrations/**, clickbridge-ios/Sources/**, clickbridge-ios/Package.swift, clickbridge-ios/scripts/build-incyclist.sh, .github/workflows/clickbridge-incyclist.yml]
   workflow_dispatch:
 permissions:
   contents: read
