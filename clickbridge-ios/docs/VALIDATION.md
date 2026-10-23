@@ -40,6 +40,16 @@ Installer auf den exakt geprüften Incyclist-Commit angewendet; aktueller lokale
 
 Der erste Integrationslauf `40021687860` fand eine TypeScript-Deklarationsabweichung (`ICyclingMode` deklariert `getConfig()`, aber nicht `isSIM()`). Der Adapter verwendet jetzt die deklarierte Konfiguration. Es wurde keine Typprüfung unterdrückt und kein unsicherer Cast als Reparatur eingesetzt. Folgeprüfung: `40022206781`.
 
+Dieser Folgelauf wurde durch eine zusätzliche PR-Auslösung abgebrochen. Das heruntergeladene Artefakt `12531209463` wurde unabhängig geprüft (ZIP-SHA-256 `67bdeda4751933a291a2d95440771d4fb7ef193df6bcd58ff39e34b1a05f2115`). Es belegt: sieben Routingtests bestanden, TypeScript-Prüfung ohne Fehler, CocoaPods mit 120 installierten Pods abgeschlossen; der native Build befand sich noch in der Kompilierung. Kein fertiges Incyclist-Binary daraus abgeleitet. Die drei Workflows verwenden ab `e4e4440` nur passende Branch-Pushes und manuelle Auslösung, damit reine Dokumentations-Updates keine erneuten PR-Builds starten.
+
+## Tatsächlich bestandene native Brückenkompilierung
+
+Commit `80342d06d825f2c1c437bfbf4c2ef4e9d15eec6a`, [GitHub Actions 40025744713](https://github.com/p1337/meshtastic-backend/actions/runs/40025744713), Job `120661364592`: **success**.
+
+`check-react-bridge.sh` lädt die im geprüften Incyclist-Lockfile festgelegten React-Native-0.83.10-Header, prüft deren npm-SHA-512-Integrität, baut das echte ClickBridge-Swift-Package für arm64-iOS-Simulator und kompiliert die tatsächliche Swift-/Objective-C-Brücke gegen diese Header. Keine Mock-API oder erfundenen React-Deklarationen. Das anfängliche fehlende Header-Namespace sowie eine Kollision mit dem Standardheader `float.h` im Prüfharness sind behoben.
+
+Dies prüft Syntax und Typen, **nicht** das vollständige Incyclist-Linking, die Modulregistrierung zur Laufzeit oder Hardware. Der vollständige neue Build `40025436038` wartet zum Zeitpunkt dieses Eintrags noch auf einen macOS-Runner und bleibt unbestanden.
+
 ## Nicht getestete Punkte
 
 Alle zehn Hardwareabnahmepunkte in TEST_PLAN.md: **NICHT GETESTET**. Ebenfalls nicht getestet: iOS 27 auf Roberts iPhone, zwei reale gleichzeitige BLE-Verbindungen, linker 60-Sekunden-/24-Stunden-Effekt, echte Widerstandsänderung, erhaltene Streckensimulation, 60-Minuten-Fahrt, physische Reconnects, Anruf, Sperrbildschirm und Systembeendigung.

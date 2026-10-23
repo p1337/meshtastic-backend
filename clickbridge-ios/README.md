@@ -27,6 +27,7 @@ Die Incyclist-Integration läuft als eingebettetes Modul in einer geänderten In
 
 ## Dokumentation
 
+- [Aktueller, fortsetzbarer Arbeitsstand](docs/CHECKPOINT.md)
 - [Machbarkeit](docs/FEASIBILITY.md)
 - [Architektur](docs/ARCHITECTURE.md)
 - [BLE-Protokoll](docs/BLE_PROTOCOL.md)

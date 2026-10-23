@@ -39,11 +39,11 @@ Dies sind Softwareprüfungen. Keine simulierten Controller wurden als echte Hard
 1. **Alle zehn Hardware-Abnahmepunkte sind NICHT GETESTET.** Hier sind kein reales iPhone, keine Click-V2-Controller und kein D100 angeschlossen. iOS 27, zwei gleichzeitige Verbindungen, Hintergrundverhalten und 60-Minuten-Fahrt müssen am Gerät geprüft werden. Anleitung: [TEST_PLAN.md](TEST_PLAN.md).
 2. **Separate Apple-Signierung fehlt.** Vorhandene Zertifikat-/Passwortwerte und ein nicht abgelaufenes Ad-hoc-Profil wurden erkannt. Das Profil passt nicht zu `de.p1337.ClickBridge`. Es wurde keine signierte oder installierbare zweite IPA erzeugt.
 3. **Vollständiger Incyclist-Nativbuild noch nicht bestanden.** Der erste Lauf fand einen TypeScript-Fehler; dieser ist korrigiert. Folgelauf `40022206781` wurde nach ungefähr 20 Minuten von einem weiteren PR-Ereignis abgebrochen. Ein Abbruch ist kein bestandener Build.
-4. Der zusätzliche kleine Brücken-Compilecheck fand zunächst einen fehlenden echten React-Native-Header im Prüfharness (`RCTDeprecation.h`). Die Header-Aufbereitung ist korrigiert; die tatsächliche Swift-/ObjC-Brücke muss anschließend ohne Ersatzdeklarationen kompilieren.
-5. Die Workflows werden auf Branch-Push statt zusätzlicher PR-Auslösung umgestellt, damit reine Dokumentations-Updates keine laufenden Nativbuilds erneut abbrechen.
+4. **Native Swift-/ObjC-Brückenkompilierung inzwischen bestanden:** [Lauf 40025744713](https://github.com/p1337/meshtastic-backend/actions/runs/40025744713), Commit `80342d0`. Die echten React-Native-0.83.10-Header wurden gegen npm-SHA-512 geprüft; keine Ersatzdeklarationen. Fehlendes Header-Namespace und Standardheader-Kollision im Prüfharness sind behoben. Diese schmale Prüfung ersetzt nicht den Vollbuild oder einen Laufzeittest.
+5. Die Workflows verwenden ab `e4e4440` Branch-Push statt zusätzlicher PR-Auslösung. Reine Dokumentations-Updates starten daher keinen erneuten Build. Neuer Vollbuild `40025436038` wartet noch auf einen macOS-Runner.
 
 ## Nächste konkrete Arbeit
 
-CI-Korrekturen sichern; Ergebnisse des schnellen Brücken-Compilechecks auswerten; Protokoll des abgebrochenen Vollbuilds herunterladen; vollständigen Incyclist-Build fertig prüfen; jeden neuen Compilerfehler beheben und diesen Stand aktualisieren. Danach PR-Beschreibung und VALIDATION.md mit belegten Ergebnissen abgleichen.
+Der kleine Brücken-Compilecheck ist bestanden und das Protokoll des abgebrochenen Vollbuilds heruntergeladen/geprüft. Als Nächstes vollständigen Incyclist-Build fertig prüfen; jeden neuen Compilerfehler beheben und diesen Stand aktualisieren. Danach PR-Beschreibung und VALIDATION.md mit belegten Ergebnissen abgleichen.
 
 Kein Live-Schalten, keine D100-Koexistenz und keine Verkaufsreife werden aus diesen Softwareprüfungen abgeleitet. Dafür gelten weiterhin alle Hardwarekriterien des Auftrags.
