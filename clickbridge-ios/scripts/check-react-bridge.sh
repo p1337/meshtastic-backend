@@ -8,8 +8,10 @@ check_dir="$kit_root/build/react-bridge-check"
 mkdir -p "$check_dir/headers/React"
 python3 - "$upstream_root" "$check_dir" <<'PY'
 from pathlib import Path
-import base64,hashlib,io,json,re,sys,tarfile,urllib.request
+import base64,hashlib,io,json,re,shutil,sys,tarfile,urllib.request
 root,out=map(Path,sys.argv[1:])
+shutil.rmtree(out/'headers',ignore_errors=True)
+(out/'headers/React').mkdir(parents=True)
 lock=json.loads((root/'package-lock.json').read_text())
 entry=lock['packages']['node_modules/react-native']
 with urllib.request.urlopen(entry['resolved'],timeout=30) as response: raw=response.read()
@@ -23,7 +25,8 @@ with tarfile.open(fileobj=io.BytesIO(raw),mode='r:gz') as archive:
     byname={Path(name).name: data for name,data in headers.items()}
     for name,data in byname.items():
         (out/'headers/React'/name).write_bytes(data)
-        (out/'headers'/name).write_bytes(data)
+    # Keep generic filenames (e.g. renderer/graphics/float.h) out of the root
+    # include path: flattening them there shadows Apple's standard C headers.
     # CocoaPods normally supplies these header namespaces (e.g. RCTDeprecation).
     # Recreate their real, integrity-checked headers without inventing declarations.
     for data in headers.values():
