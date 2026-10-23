@@ -17,7 +17,19 @@ public enum ClickGATT {
 public enum PacketError: Error, Equatable, CustomStringConvertible {
     case empty, tooLarge, truncated, varintOverflow, invalidField, unsupportedWire
     case missingBitmap, duplicateBitmap, invalidValue
-    public var description: String { String(reflecting: self) }
+    public var description: String {
+        switch self {
+        case .empty: return "Leeres Paket"
+        case .tooLarge: return "Paket größer als 512 Bytes"
+        case .truncated: return "Unvollständiges Paket"
+        case .varintOverflow: return "Protobuf-Varint-Überlauf"
+        case .invalidField: return "Ungültige Protobuf-Feldnummer"
+        case .unsupportedWire: return "Nicht unterstützter Protobuf-Wire-Typ"
+        case .missingBitmap: return "Tasten-Bitmap fehlt"
+        case .duplicateBitmap: return "Mehrdeutige Tasten-Bitmap"
+        case .invalidValue: return "Ungültiger Protokollwert"
+        }
+    }
 }
 
 public enum ClickPacket: Equatable, Sendable {
