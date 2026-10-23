@@ -1,0 +1,10 @@
+.build/
+.swiftpm/
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.mobileprovision
+*.p12
+*.ipa
+*.xcarchive/
