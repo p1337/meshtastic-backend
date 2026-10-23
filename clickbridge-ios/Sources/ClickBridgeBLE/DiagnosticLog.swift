@@ -38,7 +38,7 @@ public struct DiagnosticEntry: Identifiable, Codable, Sendable {
             if !FileManager.default.fileExists(atPath: file.path) {
                 try Data().write(to: file, options: .atomic)
                 #if os(iOS)
-                try FileManager.default.setAttributes([.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication], atPath: file.path)
+                try FileManager.default.setAttributes([.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication], ofItemAtPath: file.path)
                 #endif
             }
             let encoder = JSONEncoder(); encoder.dateEncodingStrategy = .iso8601
