@@ -19,6 +19,8 @@ xcodebuild -project ClickBridge.xcodeproj -scheme ClickBridge -destination 'gene
 
 Projektgenerierung benötigt weder Homebrew noch XcodeGen. `scripts/test-simulator.sh` baut und startet die tatsächliche App im Simulator und exportiert einen Screenshot; dieser ist kein BLE-Hardwaretest. GitHub Actions baut auch eine unsignierte Geräte-IPA. Eine zweite, separat installierbare App benötigt ein zu `de.p1337.ClickBridge` passendes Provisioning-Profil.
 
+Der vorbereitete signierte Workflow veröffentlicht ClickBridge nach erfolgreicher Profil- und Signaturprüfung gemeinsam mit Werkbeleg unter `https://p1337.github.io/meshtastic-backend/`. Ohne das getrennte Apple-Profil wird die vorhandene Store-Seite nicht verändert.
+
 ## Geräteprüfung
 
 App öffnen, Bluetooth erlauben, beide Clicks aufwecken, „Suchen“ wählen. Geräte anhand der Herstellerdaten oder durch einzelne Tastentests zuordnen. Bei gleichen Namen die angezeigte lokale Kennung verwenden. Nach Handshake je Seite die Schaltfläche drücken und Diagnose exportieren. Der Standalone-Modus zeigt „Keine Incyclist-Verbindung“ und bestätigt keine Gänge.

@@ -23,6 +23,10 @@ Der GitHub-Connector erlaubt hier Quellcode/Branches/PRs, aber keine Einrichtung
 
 Aktuell erzeugt CI ausdrücklich `ClickBridge-UNSIGNED.ipa`. Sie ist **ohne erneute Signierung nicht installierbar**. Es wird keine funktionierende OTA-Installation behauptet und die bestehende Werkbeleg-Installationsseite wird nicht ersetzt.
 
+Der Workflow `.github/workflows/clickbridge-store.yml` ist für die getrennte Distribution vorbereitet. Er akzeptiert ausschließlich `CLICKBRIDGE_ADHOC_PROFILE_BASE64`, prüft die Bindung an `de.p1337.ClickBridge`, importiert das vorhandene Distribution-P12 in einen temporären Schlüsselbund, archiviert mit manueller Signierung und prüft anschließend Codesign-Authority, Team, eingebettetes Profil, Bundle-ID und arm64-Binary. Erst danach erzeugt er den OTA-Eintrag unter `/clickbridge/`.
+
+Die gemeinsame Store-Seite behält den letzten veröffentlichten Werkbeleg-Build: Manifest und IPA werden vor dem neuen Deployment erneut geladen und gegen die veröffentlichte SHA-256-Prüfsumme geprüft. ClickBridge und Werkbeleg bleiben getrennte Apps. Wenn das ClickBridge-Profil fehlt oder nicht passt, bricht der Workflow vor Signierung und Pages-Deployment ab; die bestehende Werkbeleg-Seite bleibt online.
+
 Tatsächliche Prüfung: [Lauf 40021688060](https://github.com/p1337/meshtastic-backend/actions/runs/40021688060), Job `signing-audit`, bestand am 23.10.2026. Zertifikat-/Passwortwerte vorhanden, Profil nicht abgelaufen und Ad-hoc-Profil vorhanden, aber **`matchingProfile=false`** für ClickBridge. Separates ClickBridge-Profil nicht vorhanden. Dies ist eine Profilkompatibilitätsprüfung, keine erneute kryptographische Prüfung des P12 und keine Signierung.
 
 Für einen Incyclist-Fork gilt dessen eigene Bundle-ID/Signierung. ClickBridge-Profile lösen nicht automatisch die Signierung einer veränderten Incyclist-App.

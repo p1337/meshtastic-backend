@@ -50,4 +50,10 @@ Zusätzlicher gesicherter Nachweis: Aktueller Integrationspatch auf einem frisch
 
 Abschließender App-Lauf [40025436023](https://github.com/p1337/meshtastic-backend/actions/runs/40025436023) ebenfalls **bestanden**: beide Jobs erfolgreich, einschließlich aller Tests, Simulatorstart, unsignierter Geräte-IPA und Artefakt-Upload. Damit sind eigenständiger App-Build und schmale native Brückenkompilierung grün; der volle Incyclist-Build `40025436038` bleibt in der Runner-Warteschlange und ist nicht bestanden.
 
+## Eigener Zwei-App-Store
+
+Am 24.10.2026 wurde der signierte Distributionspfad ergänzt: `.github/workflows/clickbridge-store.yml`, `scripts/build-signed-ipa.sh` und `scripts/prepare-store.py`. Der Store-Generator wurde lokal mit einer synthetischen ClickBridge-Test-IPA gegen die tatsächlich veröffentlichte Werkbeleg-Version 1.2.0/Build 24 ausgeführt. Werkbeleg-Manifest und -IPA wurden erneut geladen, der veröffentlichte SHA-256-Wert verifiziert und eine vollständige Zwei-App-Seite mit getrennten Manifesten erzeugt.
+
+Eine reale ClickBridge-Veröffentlichung bleibt blockiert, bis im vorhandenen GitHub-Environment `apple-signing` das Apple-ausgestellte Secret `CLICKBRIDGE_ADHOC_PROFILE_BASE64` für `de.p1337.ClickBridge` vorhanden ist und Roberts iPhone enthält. Der Workflow veröffentlicht bei fehlender oder falscher Signierung nichts und lässt den bestehenden Werkbeleg-Store unverändert.
+
 Kein Live-Schalten, keine D100-Koexistenz und keine Verkaufsreife werden aus diesen Softwareprüfungen abgeleitet. Dafür gelten weiterhin alle Hardwarekriterien des Auftrags.

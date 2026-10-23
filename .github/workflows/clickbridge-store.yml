@@ -1,0 +1,95 @@
+name: ClickBridge signed IPA and private app store
+on:
+  push:
+    branches: [codex/clickbridge-ios]
+    paths:
+      - clickbridge-ios/App/**
+      - clickbridge-ios/Sources/**
+      - clickbridge-ios/Resources/**
+      - clickbridge-ios/Tests/**
+      - clickbridge-ios/Package.swift
+      - clickbridge-ios/ClickBridge.xcodeproj/**
+      - clickbridge-ios/scripts/build-signed-ipa.sh
+      - clickbridge-ios/scripts/prepare-store.py
+      - clickbridge-ios/scripts/generate_project.py
+      - .github/workflows/clickbridge-store.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: clickbridge-store-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build-sign-store:
+    runs-on: macos-15
+    timeout-minutes: 35
+    environment: apple-signing
+    steps:
+      - name: Require separate ClickBridge Apple profile
+        env:
+          IOS_DISTRIBUTION_P12_BASE64: ${{ secrets.IOS_DISTRIBUTION_P12_BASE64 }}
+          IOS_P12_PASSWORD: ${{ secrets.IOS_P12_PASSWORD }}
+          CLICKBRIDGE_ADHOC_PROFILE_BASE64: ${{ secrets.CLICKBRIDGE_ADHOC_PROFILE_BASE64 }}
+        run: |
+          set -euo pipefail
+          missing=0
+          for name in IOS_DISTRIBUTION_P12_BASE64 IOS_P12_PASSWORD CLICKBRIDGE_ADHOC_PROFILE_BASE64; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing signing value $name in apple-signing."
+              missing=1
+            fi
+          done
+          test "$missing" = 0
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Run software regression tests
+        working-directory: clickbridge-ios
+        run: |
+          set -euo pipefail
+          swift test --parallel
+          node --test integrations/incyclist/shiftRouter.test.cjs
+          python3 scripts/generate_project.py
+          git diff --exit-code -- ClickBridge.xcodeproj
+      - name: Archive, Apple-sign and verify ClickBridge
+        env:
+          IOS_DISTRIBUTION_P12_BASE64: ${{ secrets.IOS_DISTRIBUTION_P12_BASE64 }}
+          IOS_P12_PASSWORD: ${{ secrets.IOS_P12_PASSWORD }}
+          CLICKBRIDGE_ADHOC_PROFILE_BASE64: ${{ secrets.CLICKBRIDGE_ADHOC_PROFILE_BASE64 }}
+        run: bash clickbridge-ios/scripts/build-signed-ipa.sh
+      - name: Upload verified signed IPA
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ClickBridge-Apple-signed-IPA
+          path: |
+            clickbridge-ios/build/signed/ClickBridge-Apple-signed.ipa
+            clickbridge-ios/build/signed/SHA256SUMS.txt
+            clickbridge-ios/build/signed/signature-verification.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Prepare verified two-app installation store
+        run: |
+          python3 clickbridge-ios/scripts/prepare-store.py \
+            --build-directory clickbridge-ios/build/signed \
+            --base-url https://p1337.github.io/meshtastic-backend \
+            --build-id "${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+            --output clickbridge-ios/build/store
+      - name: Upload installation store
+        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b
+        with:
+          path: clickbridge-ios/build/store
+  deploy-store:
+    needs: build-sign-store
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publish private two-app store
+        id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e
