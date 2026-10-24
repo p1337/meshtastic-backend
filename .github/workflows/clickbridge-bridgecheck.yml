@@ -1,0 +1,33 @@
+name: ClickBridge React Native bridge compile check
+on:
+  push:
+    branches: [codex/clickbridge-ios]
+    paths: [clickbridge-ios/integrations/**, clickbridge-ios/Sources/**, clickbridge-ios/scripts/check-react-bridge.sh, .github/workflows/clickbridge-bridgecheck.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  bridge-compile:
+    runs-on: macos-15
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: incyclist/mobile
+          ref: 1969e6442a9ae807b1f9ae0b9cd865400d7d6873
+          path: _upstream-incyclist
+          persist-credentials: false
+      - name: Check actual Swift and Objective-C React Native bridge
+        run: bash clickbridge-ios/scripts/check-react-bridge.sh "$GITHUB_WORKSPACE/_upstream-incyclist"
+      - name: Upload compile evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ClickBridge-React-Native-glue-compile
+          path: |
+            clickbridge-ios/build/react-bridge-check/*.log
+            clickbridge-ios/build/react-bridge-check/*.json
+          retention-days: 30

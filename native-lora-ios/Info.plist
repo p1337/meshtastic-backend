@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>de</string>
+	<key>CFBundleDisplayName</key>
+	<string>Werkbeleg</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.2.0</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>Werkbeleg invitations</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>werkbeleg</string>
+			</array>
+		</dict>
+	</array>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Fotos für deine Arbeitsberichte aufnehmen. / Take photos for work reports.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Deinen selbst gewählten Teamserver im lokalen Netzwerk erreichen. / Connect to your selected team server on your local network.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Den Standort auf deinen Wunsch im Bericht festhalten. / Record your location in a report when requested.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Sprachberichte aufnehmen. / Record spoken work reports.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Sprachberichte ausschließlich auf diesem Gerät in Text umwandeln, wenn die Sprache unterstützt wird. / Transcribe work reports on this device only, when supported.</string>
+	<key>UILaunchScreen</key>
+	<dict/>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+</dict>
+</plist>
