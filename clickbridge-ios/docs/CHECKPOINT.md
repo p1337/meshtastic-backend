@@ -56,4 +56,6 @@ Am 24.10.2026 wurde der signierte Distributionspfad ergänzt: `.github/workflows
 
 Eine reale ClickBridge-Veröffentlichung bleibt blockiert, bis im vorhandenen GitHub-Environment `apple-signing` das Apple-ausgestellte Secret `CLICKBRIDGE_ADHOC_PROFILE_BASE64` für `de.p1337.ClickBridge` vorhanden ist und Roberts iPhone enthält. Der Workflow veröffentlicht bei fehlender oder falscher Signierung nichts und lässt den bestehenden Werkbeleg-Store unverändert.
 
+Echte Ausführung: [GitHub Actions 40038784603](https://github.com/p1337/meshtastic-backend/actions/runs/40038784603) und der nach der Baumkorrektur erneut gestartete Lauf `40048693616` stoppten im ersten Schritt mit `Missing signing value CLICKBRIDGE_ADHOC_PROFILE_BASE64`. Build, Signierung und Pages-Deployment wurden übersprungen. Das vorhandene Distribution-P12 und Passwort sind verfügbar; nur das getrennte Apple-Profil fehlt. Die öffentliche Werkbeleg-Seite blieb unverändert erreichbar.
+
 Kein Live-Schalten, keine D100-Koexistenz und keine Verkaufsreife werden aus diesen Softwareprüfungen abgeleitet. Dafür gelten weiterhin alle Hardwarekriterien des Auftrags.
