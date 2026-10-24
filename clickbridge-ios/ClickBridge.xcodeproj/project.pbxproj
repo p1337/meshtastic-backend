@@ -1,0 +1,266 @@
+// !$*UTF8*$!
+{
+	"archiveVersion" = "1";
+	"classes" = {
+	};
+	"objectVersion" = "56";
+	"objects" = {
+		"EA2EAF456EBC3F745451C011" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "App/ClickBridgeApp.swift";
+			"sourceTree" = "<group>";
+		};
+		"E113C08A73B0FD008FA4276A" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "EA2EAF456EBC3F745451C011";
+		};
+		"81AE9575558025BBA573C320" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "App/Views.swift";
+			"sourceTree" = "<group>";
+		};
+		"F4D42F43F23EA219A6B906C0" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "81AE9575558025BBA573C320";
+		};
+		"28DCF63E1EB5F53BA96138B3" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "folder.assetcatalog";
+			"path" = "Resources/Assets.xcassets";
+			"sourceTree" = "<group>";
+		};
+		"BCB65F91D5FFDD3B31C9282B" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "28DCF63E1EB5F53BA96138B3";
+		};
+		"5F2C0BAFF5ECE16FF3ADD729" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "text.xml";
+			"path" = "Resources/PrivacyInfo.xcprivacy";
+			"sourceTree" = "<group>";
+		};
+		"E7E860432747C8D7014BBFE3" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "5F2C0BAFF5ECE16FF3ADD729";
+		};
+		"D448B8E7FEFE6C0BFADADC15" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "text";
+			"path" = "THIRD_PARTY_NOTICES.md";
+			"sourceTree" = "<group>";
+		};
+		"C5E3857A2920C4D68EC05CA2" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "D448B8E7FEFE6C0BFADADC15";
+		};
+		"BC4A71180870F7945155FBB0" = {
+			"isa" = "XCLocalSwiftPackageReference";
+			"relativePath" = ".";
+		};
+		"247BEF7C89F4E6710B2ADA85" = {
+			"isa" = "XCSwiftPackageProductDependency";
+			"package" = "BC4A71180870F7945155FBB0";
+			"productName" = "ClickBridgeCore";
+		};
+		"03FCEF2E4EEF7A2304EBF8FA" = {
+			"isa" = "PBXBuildFile";
+			"productRef" = "247BEF7C89F4E6710B2ADA85";
+		};
+		"5406C13FC6DC166620549CCD" = {
+			"isa" = "XCSwiftPackageProductDependency";
+			"package" = "BC4A71180870F7945155FBB0";
+			"productName" = "ClickBridgeBLE";
+		};
+		"82EF18C2EF4E4430794E26A8" = {
+			"isa" = "PBXBuildFile";
+			"productRef" = "5406C13FC6DC166620549CCD";
+		};
+		"A172CEDCAE47474B615C54D5" = {
+			"isa" = "PBXFileReference";
+			"explicitFileType" = "wrapper.application";
+			"includeInIndex" = "0";
+			"path" = "ClickBridge.app";
+			"sourceTree" = "BUILT_PRODUCTS_DIR";
+		};
+		"0A3E27B8CA818264D75C8D81" = {
+			"isa" = "PBXGroup";
+			"children" = (
+				"A172CEDCAE47474B615C54D5",
+			);
+			"name" = "Products";
+			"sourceTree" = "<group>";
+		};
+		"19F479106CE8C3BA8C106518" = {
+			"isa" = "PBXGroup";
+			"children" = (
+				"EA2EAF456EBC3F745451C011",
+				"81AE9575558025BBA573C320",
+				"28DCF63E1EB5F53BA96138B3",
+				"5F2C0BAFF5ECE16FF3ADD729",
+				"D448B8E7FEFE6C0BFADADC15",
+				"0A3E27B8CA818264D75C8D81",
+			);
+			"sourceTree" = "<group>";
+		};
+		"878A52FC5FF6A57D50B7B870" = {
+			"isa" = "PBXSourcesBuildPhase";
+			"buildActionMask" = "2147483647";
+			"files" = (
+				"E113C08A73B0FD008FA4276A",
+				"F4D42F43F23EA219A6B906C0",
+			);
+			"runOnlyForDeploymentPostprocessing" = "0";
+		};
+		"41D311A605520FC7B8B9A980" = {
+			"isa" = "PBXResourcesBuildPhase";
+			"buildActionMask" = "2147483647";
+			"files" = (
+				"BCB65F91D5FFDD3B31C9282B",
+				"E7E860432747C8D7014BBFE3",
+				"C5E3857A2920C4D68EC05CA2",
+			);
+			"runOnlyForDeploymentPostprocessing" = "0";
+		};
+		"E2AA269EB967A8853A258BFA" = {
+			"isa" = "PBXFrameworksBuildPhase";
+			"buildActionMask" = "2147483647";
+			"files" = (
+				"03FCEF2E4EEF7A2304EBF8FA",
+				"82EF18C2EF4E4430794E26A8",
+			);
+			"runOnlyForDeploymentPostprocessing" = "0";
+		};
+		"2B23A31EEC75B029432F2445" = {
+			"isa" = "XCBuildConfiguration";
+			"name" = "Debug";
+			"buildSettings" = {
+				"SDKROOT" = "iphoneos";
+				"IPHONEOS_DEPLOYMENT_TARGET" = "18.0";
+				"SWIFT_VERSION" = "5.0";
+				"CLANG_ENABLE_MODULES" = "YES";
+				"ENABLE_USER_SCRIPT_SANDBOXING" = "YES";
+				"DEBUG_INFORMATION_FORMAT" = "dwarf";
+				"SWIFT_OPTIMIZATION_LEVEL" = "-Onone";
+			};
+		};
+		"EDDA600A3F771F810A8065C9" = {
+			"isa" = "XCBuildConfiguration";
+			"name" = "Debug";
+			"buildSettings" = {
+				"PRODUCT_BUNDLE_IDENTIFIER" = "de.p1337.ClickBridge";
+				"PRODUCT_NAME" = "$(TARGET_NAME)";
+				"INFOPLIST_FILE" = "Resources/Info.plist";
+				"GENERATE_INFOPLIST_FILE" = "NO";
+				"CODE_SIGN_STYLE" = "Automatic";
+				"TARGETED_DEVICE_FAMILY" = "1,2";
+				"MARKETING_VERSION" = "0.1.0";
+				"CURRENT_PROJECT_VERSION" = "1";
+				"ASSETCATALOG_COMPILER_APPICON_NAME" = "AppIcon";
+				"SWIFT_EMIT_LOC_STRINGS" = "YES";
+				"LD_RUNPATH_SEARCH_PATHS" = "$(inherited) @executable_path/Frameworks";
+				"ENABLE_PREVIEWS" = "YES";
+				"SUPPORTED_PLATFORMS" = "iphoneos iphonesimulator";
+			};
+		};
+		"07CA1E69F6068DEA30A4DA6B" = {
+			"isa" = "XCBuildConfiguration";
+			"name" = "Release";
+			"buildSettings" = {
+				"SDKROOT" = "iphoneos";
+				"IPHONEOS_DEPLOYMENT_TARGET" = "18.0";
+				"SWIFT_VERSION" = "5.0";
+				"CLANG_ENABLE_MODULES" = "YES";
+				"ENABLE_USER_SCRIPT_SANDBOXING" = "YES";
+				"DEBUG_INFORMATION_FORMAT" = "dwarf-with-dsym";
+				"SWIFT_OPTIMIZATION_LEVEL" = "-O";
+			};
+		};
+		"594BCDCC96599D88EF772A08" = {
+			"isa" = "XCBuildConfiguration";
+			"name" = "Release";
+			"buildSettings" = {
+				"PRODUCT_BUNDLE_IDENTIFIER" = "de.p1337.ClickBridge";
+				"PRODUCT_NAME" = "$(TARGET_NAME)";
+				"INFOPLIST_FILE" = "Resources/Info.plist";
+				"GENERATE_INFOPLIST_FILE" = "NO";
+				"CODE_SIGN_STYLE" = "Automatic";
+				"TARGETED_DEVICE_FAMILY" = "1,2";
+				"MARKETING_VERSION" = "0.1.0";
+				"CURRENT_PROJECT_VERSION" = "1";
+				"ASSETCATALOG_COMPILER_APPICON_NAME" = "AppIcon";
+				"SWIFT_EMIT_LOC_STRINGS" = "YES";
+				"LD_RUNPATH_SEARCH_PATHS" = "$(inherited) @executable_path/Frameworks";
+				"ENABLE_PREVIEWS" = "YES";
+				"SUPPORTED_PLATFORMS" = "iphoneos iphonesimulator";
+			};
+		};
+		"B4E10CAA9C5E22150B71559C" = {
+			"isa" = "XCConfigurationList";
+			"buildConfigurations" = (
+				"2B23A31EEC75B029432F2445",
+				"07CA1E69F6068DEA30A4DA6B",
+			);
+			"defaultConfigurationIsVisible" = "0";
+			"defaultConfigurationName" = "Release";
+		};
+		"4A807E8A027297B0B93701FB" = {
+			"isa" = "XCConfigurationList";
+			"buildConfigurations" = (
+				"EDDA600A3F771F810A8065C9",
+				"594BCDCC96599D88EF772A08",
+			);
+			"defaultConfigurationIsVisible" = "0";
+			"defaultConfigurationName" = "Release";
+		};
+		"34A04005BCAF206EEC990BD9" = {
+			"isa" = "PBXNativeTarget";
+			"buildConfigurationList" = "4A807E8A027297B0B93701FB";
+			"buildPhases" = (
+				"878A52FC5FF6A57D50B7B870",
+				"E2AA269EB967A8853A258BFA",
+				"41D311A605520FC7B8B9A980",
+			);
+			"buildRules" = (
+			);
+			"dependencies" = (
+			);
+			"name" = "ClickBridge";
+			"productName" = "ClickBridge";
+			"productReference" = "A172CEDCAE47474B615C54D5";
+			"productType" = "com.apple.product-type.application";
+			"packageProductDependencies" = (
+				"247BEF7C89F4E6710B2ADA85",
+				"5406C13FC6DC166620549CCD",
+			);
+		};
+		"244210E48437B6556980A702" = {
+			"isa" = "PBXProject";
+			"attributes" = {
+				"LastUpgradeCheck" = "1600";
+				"BuildIndependentTargetsInParallel" = "YES";
+			};
+			"buildConfigurationList" = "B4E10CAA9C5E22150B71559C";
+			"compatibilityVersion" = "Xcode 14.0";
+			"developmentRegion" = "de";
+			"hasScannedForEncodings" = "0";
+			"knownRegions" = (
+				"de",
+				"en",
+				"Base",
+			);
+			"mainGroup" = "19F479106CE8C3BA8C106518";
+			"productRefGroup" = "0A3E27B8CA818264D75C8D81";
+			"projectDirPath" = "";
+			"projectRoot" = "";
+			"targets" = (
+				"34A04005BCAF206EEC990BD9",
+			);
+			"packageReferences" = (
+				"BC4A71180870F7945155FBB0",
+			);
+		};
+	};
+	"rootObject" = "244210E48437B6556980A702";
+}

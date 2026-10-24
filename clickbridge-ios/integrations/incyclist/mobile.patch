@@ -1,0 +1,1909 @@
+From fbaf403c2ff00aee86538c0fdd7059f964725a50 Mon Sep 17 00:00:00 2001
+From: Codex <codex@openai.com>
+Date: Fri, 23 Oct 2026 23:43:43 +0300
+Subject: [PATCH] feat(ios): embed ClickBridge controller input through
+ existing Incyclist shifting
+
+---
+ clickbridge-kit/LICENSE                       |  21 +
+ clickbridge-kit/Package.swift                 |  17 +
+ .../ClickBridgeBLE/ControllerHub.swift        | 418 ++++++++++++++++++
+ .../ClickBridgeBLE/DiagnosticLog.swift        |  62 +++
+ .../ClickBridgeCore/ClickProtocol.swift       | 136 ++++++
+ .../Sources/ClickBridgeCore/Controller.swift  | 161 +++++++
+ .../Sources/ClickBridgeCore/Gearing.swift     | 105 +++++
+ clickbridge-kit/THIRD_PARTY_NOTICES.md        |  27 ++
+ .../ClickBridgeCoreTests/CoreTests.swift      | 174 ++++++++
+ .../Fixtures/reference-vectors.json           |  10 +
+ ios/ClickBridge/ClickBridgeModule.m           |   8 +
+ ios/ClickBridge/ClickBridgeModule.swift       | 128 ++++++
+ ios/ClickBridge/THIRD_PARTY_NOTICES.md        |  27 ++
+ ios/Incyclist.xcodeproj/project.pbxproj       |  37 +-
+ ios/Incyclist/AppDelegate.swift               |   1 +
+ ios/Incyclist/Info.plist                      |  36 +-
+ ios/Podfile                                   |   2 +-
+ .../clickbridge/ClickBridgeControls.tsx       |  57 +++
+ src/integrations/clickbridge/shiftRouter.d.ts |  12 +
+ src/integrations/clickbridge/shiftRouter.js   |  49 ++
+ .../clickbridge/shiftRouter.test.cjs          |  71 +++
+ src/pages/RidePage/RidePage.tsx               |  11 +-
+ 22 files changed, 1543 insertions(+), 27 deletions(-)
+ create mode 100644 clickbridge-kit/LICENSE
+ create mode 100644 clickbridge-kit/Package.swift
+ create mode 100644 clickbridge-kit/Sources/ClickBridgeBLE/ControllerHub.swift
+ create mode 100644 clickbridge-kit/Sources/ClickBridgeBLE/DiagnosticLog.swift
+ create mode 100644 clickbridge-kit/Sources/ClickBridgeCore/ClickProtocol.swift
+ create mode 100644 clickbridge-kit/Sources/ClickBridgeCore/Controller.swift
+ create mode 100644 clickbridge-kit/Sources/ClickBridgeCore/Gearing.swift
+ create mode 100644 clickbridge-kit/THIRD_PARTY_NOTICES.md
+ create mode 100644 clickbridge-kit/Tests/ClickBridgeCoreTests/CoreTests.swift
+ create mode 100644 clickbridge-kit/Tests/ClickBridgeCoreTests/Fixtures/reference-vectors.json
+ create mode 100644 ios/ClickBridge/ClickBridgeModule.m
+ create mode 100644 ios/ClickBridge/ClickBridgeModule.swift
+ create mode 100644 ios/ClickBridge/THIRD_PARTY_NOTICES.md
+ create mode 100644 src/integrations/clickbridge/ClickBridgeControls.tsx
+ create mode 100644 src/integrations/clickbridge/shiftRouter.d.ts
+ create mode 100644 src/integrations/clickbridge/shiftRouter.js
+ create mode 100644 src/integrations/clickbridge/shiftRouter.test.cjs
+
+diff --git a/clickbridge-kit/LICENSE b/clickbridge-kit/LICENSE
+new file mode 100644
+index 0000000..360af57
+--- /dev/null
++++ b/clickbridge-kit/LICENSE
+@@ -0,0 +1,21 @@
++MIT License
++
++Copyright (c) 2026 ClickBridge contributors
++
++Permission is hereby granted, free of charge, to any person obtaining a copy
++of this software and associated documentation files (the "Software"), to deal
++in the Software without restriction, including without limitation the rights
++to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++copies of the Software, and to permit persons to whom the Software is
++furnished to do so, subject to the following conditions:
++
++The above copyright notice and this permission notice shall be included in all
++copies or substantial portions of the Software.
++
++THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
++AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
++SOFTWARE.
+diff --git a/clickbridge-kit/Package.swift b/clickbridge-kit/Package.swift
+new file mode 100644
+index 0000000..ba6e741
+--- /dev/null
++++ b/clickbridge-kit/Package.swift
+@@ -0,0 +1,17 @@
++// swift-tools-version: 5.10
++import PackageDescription
++
++let package = Package(
++    name: "ClickBridgeKit",
++    platforms: [.iOS("18.0"), .macOS(.v14)],
++    products: [
++        .library(name: "ClickBridgeCore", targets: ["ClickBridgeCore"]),
++        .library(name: "ClickBridgeBLE", targets: ["ClickBridgeBLE"])
++    ],
++    targets: [
++        .target(name: "ClickBridgeCore"),
++        .target(name: "ClickBridgeBLE", dependencies: ["ClickBridgeCore"]),
++        .testTarget(name: "ClickBridgeCoreTests", dependencies: ["ClickBridgeCore"],
++                    resources: [.copy("Fixtures")])
++    ]
++)
+diff --git a/clickbridge-kit/Sources/ClickBridgeBLE/ControllerHub.swift b/clickbridge-kit/Sources/ClickBridgeBLE/ControllerHub.swift
+new file mode 100644
+index 0000000..43421c0
+--- /dev/null
++++ b/clickbridge-kit/Sources/ClickBridgeBLE/ControllerHub.swift
+@@ -0,0 +1,418 @@
++#if canImport(CoreBluetooth)
++import Foundation
++import Combine
++@preconcurrency import CoreBluetooth
++import ClickBridgeCore
++
++public struct ControllerSnapshot: Identifiable {
++    public let id: UUID
++    public var name: String
++    public var suggestedSide: ControllerSide?
++    public var assignedSide: ControllerSide?
++    public var phase: SessionPhase = .discovered
++    public var battery: Int?
++    public var firmware: String?
++    public var hardware: String?
++    public var rssi: Int?
++    public var issue: String?
++    public var lastInput: Date?
++    public var lastButton: String?
++    public var gatt: [String] = []
++    public var shortID: String { String(id.uuidString.suffix(8)) }
++}
++
++@MainActor private final class PeripheralSession {
++    let peripheral: CBPeripheral
++    var snapshot: ControllerSnapshot
++    var machine = SessionMachine()
++    var tracker = ButtonTracker()
++    var reconnect = ReconnectPolicy()
++    var service: CBService?
++    var write: CBCharacteristic?
++    var subscriptions: Set<CBUUID> = []
++    var writes: [Data] = []
++    var deadline: DispatchWorkItem?
++    var retry: DispatchWorkItem?
++    var handshakeStarted = false
++    var connectedAt: Date?
++    var lastKeepAlive: Date?
++
++    init(_ peripheral: CBPeripheral, name: String) {
++        self.peripheral = peripheral
++        snapshot = ControllerSnapshot(id: peripheral.identifier, name: name)
++    }
++    func resetTransport() {
++        deadline?.cancel(); retry?.cancel()
++        service = nil; write = nil; subscriptions.removeAll(); writes.removeAll()
++        handshakeStarted = false; connectedAt = nil; lastKeepAlive = nil
++        tracker.reset(); snapshot.lastInput = nil; snapshot.lastButton = nil
++    }
++}
++
++/// One central, independent per-peripheral sessions. Never connects to trainers.
++// CoreBluetooth uses the main queue (queue:nil). Imported ObjC delegate requirements
++// predate Swift actor annotations; retain their runtime main-actor check explicitly.
++@MainActor public final class ControllerHub: NSObject, ObservableObject, @preconcurrency CBCentralManagerDelegate, @preconcurrency CBPeripheralDelegate {
++    @Published public private(set) var devices: [ControllerSnapshot] = []
++    @Published public private(set) var bluetoothStatus = "Bluetooth wird initialisiert"
++    @Published public private(set) var scanning = false
++    @Published public private(set) var registry: ControllerRegistry
++    public let log: DiagnosticLog
++    public var onButton: ((UUID, ControllerSide, ButtonEvent) -> Void)?
++    public var debounce: TimeInterval = 0.08
++    public var longPress: TimeInterval = 0.6
++    private var central: CBCentralManager!
++    private var sessions: [UUID: PeripheralSession] = [:]
++    private var wanted: Set<UUID>
++    private let defaults: UserDefaults
++    private let namespace: String
++    private var scanWanted = false
++    private static let notifyID = CBUUID(string: ClickGATT.notify)
++    private static let indicateID = CBUUID(string: ClickGATT.indicate)
++    private static let services = [CBUUID(string: ClickGATT.service), CBUUID(string: ClickGATT.legacyService)]
++
++    public init(namespace: String = "ClickBridge") {
++        self.namespace = namespace
++        defaults = .standard
++        if let data = defaults.data(forKey: namespace + ".registry"),
++           let stored = try? JSONDecoder().decode(ControllerRegistry.self, from: data),
++           stored.left == nil || stored.left != stored.right {
++            registry = stored
++        } else { registry = ControllerRegistry() }
++        wanted = Set((defaults.stringArray(forKey: namespace + ".wanted") ?? []).compactMap(UUID.init(uuidString:)))
++        log = DiagnosticLog(namespace: namespace)
++        super.init()
++        central = CBCentralManager(delegate: self, queue: nil, options: [
++            CBCentralManagerOptionRestoreIdentifierKey: namespace + ".central.v1",
++            CBCentralManagerOptionShowPowerAlertKey: true
++        ])
++    }
++
++    public func scan() {
++        scanWanted = true
++        guard central.state == .poweredOn else { return }
++        central.scanForPeripherals(withServices: Self.services, options: [CBCentralManagerScanOptionAllowDuplicatesKey: false])
++        scanning = true; log.record("BLE", "Suche nach FC82 / Legacy-Service")
++    }
++    public func stopScan() { scanWanted = false; central.stopScan(); scanning = false }
++
++    public func assign(_ id: UUID, to side: ControllerSide) throws {
++        try registry.assign(id, to: side)
++        persist(); publish(); log.record("Zuordnung", "\(side.rawValue) = \(short(id))")
++        connect(id)
++    }
++    public func forget(_ side: ControllerSide) {
++        if let id = registry.id(for: side) { disconnect(id) }
++        registry.remove(side); persist(); publish()
++    }
++    public func connect(_ id: UUID) {
++        guard let session = sessions[id], registry.side(for: id) != nil else { return }
++        wanted.insert(id); persist(); session.reconnect.succeeded(); session.retry?.cancel()
++        connectSession(session)
++    }
++    private func connectSession(_ session: PeripheralSession) {
++        guard central.state == .poweredOn, wanted.contains(session.peripheral.identifier) else { return }
++        if session.peripheral.state == .connecting { return }
++        if session.peripheral.state == .connected {
++            if session.machine.phase == .attention { configure(session) }
++            return
++        }
++        session.resetTransport()
++        _ = session.machine.advance(to: .connecting)
++        session.snapshot.issue = nil
++        central.connect(session.peripheral, options: nil)
++        log.record("BLE", "Verbinden \(short(session.peripheral.identifier))")
++        deadline(session, after: 25, message: "Verbindungsaufbau ohne Antwort")
++        publish()
++    }
++    public func disconnect(_ id: UUID) {
++        wanted.remove(id); persist()
++        guard let session = sessions[id] else { return }
++        session.resetTransport(); _ = session.machine.advance(to: .disconnected)
++        central.cancelPeripheralConnection(session.peripheral); publish()
++    }
++
++    /// Call when foreground resumes. This performs no continuous background scheduling.
++    public func checkHealth() {
++        for session in sessions.values where session.peripheral.state == .connected {
++            if session.machine.phase == .receiving || session.machine.phase == .awaitingInput {
++                if let connected = session.connectedAt, Date().timeIntervalSince(connected) > 60,
++                   registry.side(for: session.peripheral.identifier) == .left {
++                    session.snapshot.issue = "Linken Controller jetzt testen: zeitabhängige Sperre ist möglich."
++                }
++                if Date().timeIntervalSince(session.lastKeepAlive ?? .distantPast) > 20 {
++                    enqueue(ClickGATT.readDeviceInfo, session)
++                    session.lastKeepAlive = Date()
++                }
++            }
++        }
++        publish()
++    }
++    private func persist() {
++        if let data = try? JSONEncoder().encode(registry) { defaults.set(data, forKey: namespace + ".registry") }
++        defaults.set(wanted.map(\.uuidString), forKey: namespace + ".wanted")
++    }
++    private func short(_ id: UUID) -> String { String(id.uuidString.suffix(8)) }
++    private func publish() {
++        devices = sessions.values.map {
++            $0.snapshot.phase = $0.machine.phase
++            $0.snapshot.assignedSide = registry.side(for: $0.peripheral.identifier)
++            return $0.snapshot
++        }.sorted { $0.id.uuidString < $1.id.uuidString }
++    }
++    private func fail(_ session: PeripheralSession, _ message: String) {
++        session.deadline?.cancel(); session.machine.fail(message); session.snapshot.issue = message
++        session.tracker.reset(); session.writes.removeAll()
++        log.record("Fehler", "\(short(session.peripheral.identifier)): \(message)"); publish()
++    }
++    private func deadline(_ session: PeripheralSession, after seconds: TimeInterval, message: String) {
++        session.deadline?.cancel()
++        let task = DispatchWorkItem { [weak self, weak session] in
++            guard let self, let session else { return }
++            self.fail(session, message)
++            if session.peripheral.state == .connecting { self.central.cancelPeripheralConnection(session.peripheral) }
++        }
++        session.deadline = task
++        DispatchQueue.main.asyncAfter(deadline: .now() + seconds, execute: task)
++    }
++    private func configure(_ session: PeripheralSession) {
++        session.resetTransport()
++        session.machine = SessionMachine()
++        _ = session.machine.advance(to: .connecting)
++        _ = session.machine.advance(to: .discovering)
++        session.connectedAt = Date(); session.snapshot.issue = nil; session.snapshot.gatt = []
++        session.peripheral.delegate = self
++        session.peripheral.discoverServices(nil)
++        deadline(session, after: 20, message: "GATT-Discovery unvollständig")
++        publish()
++    }
++    private func scheduleReconnect(_ session: PeripheralSession) {
++        guard wanted.contains(session.peripheral.identifier), central.state == .poweredOn else { return }
++        guard let delay = session.reconnect.nextDelay() else {
++            fail(session, "Wiederverbindung nach 8 Versuchen gestoppt. Erneut verbinden."); return
++        }
++        log.record("Reconnect", "\(short(session.peripheral.identifier)) in \(Int(delay)) s; Ausführung im Hintergrund nicht garantiert")
++        let task = DispatchWorkItem { [weak self, weak session] in
++            guard let self, let session else { return }
++            self.connectSession(session)
++        }
++        session.retry = task
++        DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: task)
++    }
++
++    public func centralManagerDidUpdateState(_ central: CBCentralManager) {
++        switch central.state {
++        case .poweredOn:
++            bluetoothStatus = "Bluetooth bereit"
++            let identifiers = wanted.filter { registry.side(for: $0) != nil }
++            for peripheral in central.retrievePeripherals(withIdentifiers: Array(identifiers)) {
++                if sessions[peripheral.identifier] == nil {
++                    sessions[peripheral.identifier] = PeripheralSession(peripheral, name: peripheral.name ?? "Zwift Click")
++                }
++                if let session = sessions[peripheral.identifier] {
++                    if peripheral.state == .connected { configure(session) } else { connectSession(session) }
++                }
++            }
++            if scanWanted { scan() }
++        case .poweredOff: bluetoothStatus = "Bluetooth ausgeschaltet"
++        case .unauthorized: bluetoothStatus = "Bluetooth-Zugriff verweigert · iOS-Einstellungen prüfen"
++        case .unsupported: bluetoothStatus = "Bluetooth nicht unterstützt"
++        case .resetting: bluetoothStatus = "Bluetooth wird zurückgesetzt"
++        default: bluetoothStatus = "Bluetooth-Status unbekannt"
++        }
++        if central.state != .poweredOn {
++            scanning = false
++            for session in sessions.values {
++                session.resetTransport(); _ = session.machine.advance(to: .disconnected)
++            }
++        }
++        log.record("BLE", bluetoothStatus); publish()
++    }
++    public func centralManager(_ central: CBCentralManager, willRestoreState dict: [String: Any]) {
++        let restored = dict[CBCentralManagerRestoredStatePeripheralsKey] as? [CBPeripheral] ?? []
++        for peripheral in restored {
++            let session = PeripheralSession(peripheral, name: peripheral.name ?? "Zwift Click")
++            sessions[peripheral.identifier] = session; peripheral.delegate = self
++            guard wanted.contains(peripheral.identifier), registry.side(for: peripheral.identifier) != nil else {
++                central.cancelPeripheralConnection(peripheral); continue
++            }
++            if peripheral.state == .connected { configure(session) }
++            else { _ = session.machine.advance(to: .connecting) }
++        }
++        log.record("Restoration", "\(restored.count) Peripherals wiederhergestellt; GATT wird neu geprüft")
++        publish()
++    }
++    public func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral,
++                               advertisementData: [String: Any], rssi RSSI: NSNumber) {
++        let manufacturer = advertisementData[CBAdvertisementDataManufacturerDataKey] as? Data
++        let identity = manufacturer.flatMap { ManufacturerIdentity(data: $0) }
++        let name = advertisementData[CBAdvertisementDataLocalNameKey] as? String ?? peripheral.name ?? "Unbekannt"
++        guard identity != nil || name.lowercased().contains("zwift click") else { return }
++        let session = sessions[peripheral.identifier] ?? PeripheralSession(peripheral, name: name)
++        session.snapshot.suggestedSide = identity?.side
++        session.snapshot.rssi = RSSI.intValue
++        sessions[peripheral.identifier] = session
++        log.record("Gefunden", "\(name) \(short(peripheral.identifier)) Typ=\(identity?.side.rawValue ?? "unbekannt")")
++        if wanted.contains(peripheral.identifier) { connectSession(session) }
++        publish()
++    }
++    public func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
++        guard let session = sessions[peripheral.identifier] else { return }
++        guard wanted.contains(peripheral.identifier) else { central.cancelPeripheralConnection(peripheral); return }
++        log.record("BLE", "Verbunden \(short(peripheral.identifier))")
++        configure(session)
++    }
++    public func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
++        guard let session = sessions[peripheral.identifier] else { return }
++        session.resetTransport(); _ = session.machine.advance(to: .disconnected)
++        session.snapshot.issue = error?.localizedDescription ?? "Verbindung fehlgeschlagen"
++        log.record("Fehler", session.snapshot.issue!); scheduleReconnect(session); publish()
++    }
++    public func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
++        guard let session = sessions[peripheral.identifier] else { return }
++        session.resetTransport(); _ = session.machine.advance(to: .disconnected)
++        session.snapshot.issue = error?.localizedDescription
++        log.record("BLE", "Getrennt \(short(peripheral.identifier)): \(error?.localizedDescription ?? "ohne Systemfehler")")
++        scheduleReconnect(session); publish()
++    }
++
++    public func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
++        guard let session = sessions[peripheral.identifier], session.machine.phase == .discovering else { return }
++        if let error { fail(session, error.localizedDescription); return }
++        let services = peripheral.services ?? []
++        session.service = services.first { $0.uuid == Self.services[0] } ?? services.first { $0.uuid == Self.services[1] }
++        guard session.service != nil else { fail(session, "FC82 / proprietärer Service fehlt. Firmware oder Sperre prüfen."); return }
++        for service in services {
++            session.snapshot.gatt.append("Service \(service.uuid.uuidString)")
++            peripheral.discoverCharacteristics(nil, for: service)
++        }
++        _ = session.machine.advance(to: .subscribing); publish()
++    }
++    public func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
++        guard let session = sessions[peripheral.identifier] else { return }
++        guard session.machine.phase != .disconnected, session.machine.phase != .attention else { return }
++        if let error { fail(session, error.localizedDescription); return }
++        for characteristic in service.characteristics ?? [] {
++            let uuid = characteristic.uuid
++            let description = "\(uuid.uuidString) properties=0x\(String(characteristic.properties.rawValue, radix: 16))"
++            session.snapshot.gatt.append(description); log.record("GATT", "\(short(peripheral.identifier)) \(description)")
++            if service === session.service {
++                if uuid == CBUUID(string: ClickGATT.write) { session.write = characteristic }
++                if uuid == Self.notifyID || uuid == Self.indicateID {
++                    guard characteristic.properties.contains(.notify) || characteristic.properties.contains(.indicate) else {
++                        fail(session, "Notify/Indicate-Eigenschaft fehlt: \(uuid)"); return
++                    }
++                    if characteristic.isNotifying { session.subscriptions.insert(uuid) }
++                    else { peripheral.setNotifyValue(true, for: characteristic) }
++                }
++            }
++            if [ClickGATT.battery, ClickGATT.firmware, ClickGATT.hardware].contains(uuid.uuidString) {
++                if characteristic.properties.contains(.read) { peripheral.readValue(for: characteristic) }
++                if uuid == CBUUID(string: ClickGATT.battery), characteristic.properties.contains(.notify) {
++                    peripheral.setNotifyValue(true, for: characteristic)
++                }
++            }
++        }
++        tryInitialize(session); publish()
++    }
++    public func peripheral(_ peripheral: CBPeripheral, didUpdateNotificationStateFor characteristic: CBCharacteristic, error: Error?) {
++        guard let session = sessions[peripheral.identifier] else { return }
++        if let error { fail(session, error.localizedDescription); return }
++        if characteristic.uuid == Self.notifyID || characteristic.uuid == Self.indicateID {
++            guard characteristic.service === session.service else { return }
++            guard characteristic.isNotifying else { fail(session, "Protokoll-Subscription beendet"); return }
++            session.subscriptions.insert(characteristic.uuid); tryInitialize(session)
++        }
++        publish()
++    }
++    private func tryInitialize(_ session: PeripheralSession) {
++        guard !session.handshakeStarted, session.machine.phase == .subscribing, session.write != nil,
++              session.subscriptions.contains(Self.notifyID), session.subscriptions.contains(Self.indicateID) else { return }
++        session.handshakeStarted = true
++        _ = session.machine.advance(to: .initializing)
++        enqueue(ClickGATT.initialize, session)
++        deadline(session, after: 10, message: "Kein RideOn-Handshake. Firmware/Sperre prüfen; keine Tastenausgabe freigegeben.")
++    }
++    private func enqueue(_ data: Data, _ session: PeripheralSession) {
++        guard data == ClickGATT.initialize || data == ClickGATT.readDeviceInfo else {
++            fail(session, "Nicht freigegebenes Kommando blockiert"); return
++        }
++        guard session.writes.count < 4 else { fail(session, "BLE-Schreibwarteschlange voll"); return }
++        session.writes.append(data); flush(session)
++    }
++    private func flush(_ session: PeripheralSession) {
++        guard let characteristic = session.write, session.peripheral.state == .connected else { return }
++        let noResponse = characteristic.properties.contains(.writeWithoutResponse)
++        guard noResponse || characteristic.properties.contains(.write) else { fail(session, "Schreib-Characteristic nicht beschreibbar"); return }
++        while let data = session.writes.first {
++            if noResponse && !session.peripheral.canSendWriteWithoutResponse { return }
++            let type: CBCharacteristicWriteType = noResponse ? .withoutResponse : .withResponse
++            guard data.count <= session.peripheral.maximumWriteValueLength(for: type) else { fail(session, "Kommando größer als ATT-Schreibgrenze"); return }
++            session.writes.removeFirst()
++            session.peripheral.writeValue(data, for: characteristic, type: type)
++            log.record("TX", "\(short(session.peripheral.identifier)) \(data.hex) (Transportauftrag, keine Ausführungsbestätigung)")
++            if !noResponse { return }
++        }
++    }
++    public func peripheralIsReady(toSendWriteWithoutResponse peripheral: CBPeripheral) {
++        if let session = sessions[peripheral.identifier] { flush(session) }
++    }
++    public func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: Error?) {
++        guard let session = sessions[peripheral.identifier] else { return }
++        if let error { fail(session, error.localizedDescription) } else { flush(session) }
++    }
++    public func peripheral(_ peripheral: CBPeripheral, didModifyServices invalidatedServices: [CBService]) {
++        guard let session = sessions[peripheral.identifier] else { return }
++        log.record("GATT", "Services invalidiert \(short(peripheral.identifier)); erneute Discovery")
++        configure(session)
++    }
++    public func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
++        guard let session = sessions[peripheral.identifier] else { return }
++        if let error { log.record("GATT-Fehler", error.localizedDescription); return }
++        guard let data = characteristic.value else { return }
++        let uuid = characteristic.uuid
++        if uuid == CBUUID(string: ClickGATT.battery) {
++            if data.count == 1, let value = data.first, value <= 100 { session.snapshot.battery = Int(value) }
++            else { log.record("Paketfehler", "Ungültiger Standard-Batteriestatus") }
++        } else if uuid == CBUUID(string: ClickGATT.firmware) {
++            session.snapshot.firmware = String(data: data, encoding: .utf8)
++        } else if uuid == CBUUID(string: ClickGATT.hardware) {
++            session.snapshot.hardware = String(data: data, encoding: .utf8)
++        } else if (uuid == Self.notifyID || uuid == Self.indicateID), characteristic.service === session.service {
++            log.record("RX", "\(short(peripheral.identifier)) \(uuid.uuidString) \(data.prefix(512).hex)")
++            do { process(try ClickPacketDecoder.decode(data), session) }
++            catch { log.record("Paketfehler", "\(short(peripheral.identifier)) \(error)") }
++        }
++        publish()
++    }
++    private func process(_ packet: ClickPacket, _ session: PeripheralSession) {
++        switch packet {
++        case .handshake:
++            guard session.machine.phase == .initializing else { return }
++            session.deadline?.cancel(); session.reconnect.succeeded()
++            _ = session.machine.advance(to: .awaitingInput)
++            log.record("Protokoll", "Handshake erhalten \(short(session.peripheral.identifier)); Tasten und Langzeitbetrieb noch zu prüfen")
++        case .encryptionRequired: fail(session, "Verschlüsselter Handshake erforderlich; Firmware hier nicht unterstützt.")
++        case .buttons(let all, let bitmap):
++            guard session.machine.phase == .awaitingInput || session.machine.phase == .receiving,
++                  let side = registry.side(for: session.peripheral.identifier) else { return }
++            let pressed = Set(all.filter { $0.side == side })
++            session.tracker.debounce = debounce; session.tracker.longPress = longPress
++            let events = session.tracker.update(pressed, at: ProcessInfo.processInfo.systemUptime)
++            for event in events {
++                if event.phase == .down {
++                    session.snapshot.lastInput = Date(); session.snapshot.lastButton = event.button.label
++                    session.snapshot.issue = nil; _ = session.machine.advance(to: .receiving)
++                }
++                log.record("Taste", "\(side.rawValue) \(event.button.label) \(event.phase.rawValue) Dauer=\(event.duration) bitmap=\(String(bitmap, radix: 16))")
++                onButton?(session.peripheral.identifier, side, event)
++            }
++        case .battery(let level): session.snapshot.battery = level
++        case .stopped: fail(session, "Controller meldet Protokoll-Stop. Zeitabhängige Click-V2-Sperre möglich.")
++        case .lostControl: fail(session, "Controller meldet Kontrollverlust.")
++        case .idle: break
++        case .unknown(let opcode, _): log.record("Unbekannt", "Opcode 0x\(String(opcode, radix: 16)); keine Aktion")
++        }
++    }
++}
++#endif
+diff --git a/clickbridge-kit/Sources/ClickBridgeBLE/DiagnosticLog.swift b/clickbridge-kit/Sources/ClickBridgeBLE/DiagnosticLog.swift
+new file mode 100644
+index 0000000..f6e4d36
+--- /dev/null
++++ b/clickbridge-kit/Sources/ClickBridgeBLE/DiagnosticLog.swift
+@@ -0,0 +1,62 @@
++#if canImport(CoreBluetooth)
++import Foundation
++import Combine
++
++public struct DiagnosticEntry: Identifiable, Codable, Sendable {
++    public let id: UUID
++    public let time: Date
++    public let category: String
++    public let message: String
++}
++
++@MainActor public final class DiagnosticLog: ObservableObject {
++    @Published public private(set) var entries: [DiagnosticEntry] = []
++    public private(set) var storageError: String?
++    private let directory: URL
++    private let file: URL
++    private let maximumBytes = 2 * 1024 * 1024
++
++    public init(namespace: String) {
++        directory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
++            .appendingPathComponent(namespace, isDirectory: true)
++        file = directory.appendingPathComponent("ble.jsonl")
++        do { try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true) }
++        catch { storageError = error.localizedDescription }
++    }
++
++    public func record(_ category: String, _ message: String) {
++        let entry = DiagnosticEntry(id: UUID(), time: Date(), category: category,
++                                    message: String(message.prefix(3000)))
++        entries.append(entry)
++        if entries.count > 600 { entries.removeFirst(entries.count - 600) }
++        do {
++            if let size = try? file.resourceValues(forKeys: [.fileSizeKey]).fileSize, size >= maximumBytes {
++                let previous = directory.appendingPathComponent("ble.previous.jsonl")
++                try? FileManager.default.removeItem(at: previous)
++                try FileManager.default.moveItem(at: file, to: previous)
++            }
++            if !FileManager.default.fileExists(atPath: file.path) {
++                try Data().write(to: file, options: .atomic)
++                #if os(iOS)
++                try FileManager.default.setAttributes([.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication], ofItemAtPath: file.path)
++                #endif
++            }
++            let encoder = JSONEncoder(); encoder.dateEncodingStrategy = .iso8601
++            var data = try encoder.encode(entry); data.append(0x0A)
++            let handle = try FileHandle(forWritingTo: file)
++            defer { try? handle.close() }
++            try handle.seekToEnd(); try handle.write(contentsOf: data)
++        } catch { storageError = error.localizedDescription }
++    }
++
++    public func export() throws -> URL {
++        let destination = FileManager.default.temporaryDirectory.appendingPathComponent("ClickBridge-Diagnose.jsonl")
++        var output = Data("{\"notice\":\"BLE software observations only; no hardware acceptance claim\"}\n".utf8)
++        let previous = directory.appendingPathComponent("ble.previous.jsonl")
++        if let old = try? Data(contentsOf: previous) { output.append(old) }
++        if FileManager.default.fileExists(atPath: file.path) { output.append(try Data(contentsOf: file)) }
++        try output.write(to: destination, options: .atomic)
++        return destination
++    }
++}
++#endif
+diff --git a/clickbridge-kit/Sources/ClickBridgeCore/ClickProtocol.swift b/clickbridge-kit/Sources/ClickBridgeCore/ClickProtocol.swift
+new file mode 100644
+index 0000000..96f0d62
+--- /dev/null
++++ b/clickbridge-kit/Sources/ClickBridgeCore/ClickProtocol.swift
+@@ -0,0 +1,136 @@
++import Foundation
++
++// Wire constants and active-low bitmap interpretation reference TrainerHUD (MIT).
++// See THIRD_PARTY_NOTICES.md. Parser and error handling are implemented independently.
++public enum ClickGATT {
++    public static let service = "FC82"
++    public static let legacyService = "00000001-19CA-4651-86E5-FA29DCDD09D1"
++    public static let notify = "00000002-19CA-4651-86E5-FA29DCDD09D1"
++    public static let write = "00000003-19CA-4651-86E5-FA29DCDD09D1"
++    public static let indicate = "00000004-19CA-4651-86E5-FA29DCDD09D1"
++    public static let battery = "2A19", firmware = "2A26", hardware = "2A27"
++    /// Only these source-backed application commands are transmitted.
++    public static let initialize = Data([0x52, 0x69, 0x64, 0x65, 0x4F, 0x6E])
++    public static let readDeviceInfo = Data([0x00, 0x08, 0x00])
++}
++
++public enum PacketError: Error, Equatable, CustomStringConvertible {
++    case empty, tooLarge, truncated, varintOverflow, invalidField, unsupportedWire
++    case missingBitmap, duplicateBitmap, invalidValue
++    public var description: String {
++        switch self {
++        case .empty: return "Leeres Paket"
++        case .tooLarge: return "Paket größer als 512 Bytes"
++        case .truncated: return "Unvollständiges Paket"
++        case .varintOverflow: return "Protobuf-Varint-Überlauf"
++        case .invalidField: return "Ungültige Protobuf-Feldnummer"
++        case .unsupportedWire: return "Nicht unterstützter Protobuf-Wire-Typ"
++        case .missingBitmap: return "Tasten-Bitmap fehlt"
++        case .duplicateBitmap: return "Mehrdeutige Tasten-Bitmap"
++        case .invalidValue: return "Ungültiger Protokollwert"
++        }
++    }
++}
++
++public enum ClickPacket: Equatable, Sendable {
++    case handshake
++    case encryptionRequired
++    case buttons(Set<ClickButton>, bitmap: UInt32)
++    case battery(Int)
++    case idle
++    case stopped
++    case lostControl
++    case unknown(UInt8, Data)
++}
++
++private struct Field {
++    let number: UInt64
++    let wire: UInt8
++    let value: UInt64?
++}
++
++/// Bounded protobuf wire reader. Incomplete frames are never decoded as presses.
++private enum Wire {
++    static func fields(_ data: Data) throws -> [Field] {
++        let bytes = Array(data)
++        var i = 0
++        func varint() throws -> UInt64 {
++            var value: UInt64 = 0
++            for index in 0..<10 {
++                guard i < bytes.count else { throw PacketError.truncated }
++                let byte = bytes[i]; i += 1
++                if index == 9, byte > 1 { throw PacketError.varintOverflow }
++                value |= UInt64(byte & 0x7F) << UInt64(index * 7)
++                if byte & 0x80 == 0 { return value }
++            }
++            throw PacketError.varintOverflow
++        }
++        func skip(_ count: Int) throws {
++            guard count <= bytes.count - i else { throw PacketError.truncated }
++            i += count
++        }
++        var result: [Field] = []
++        while i < bytes.count {
++            let tag = try varint()
++            let number = tag >> 3
++            guard number > 0, number <= 536_870_911 else { throw PacketError.invalidField }
++            let wire = UInt8(tag & 7)
++            var value: UInt64?
++            switch wire {
++            case 0: value = try varint()
++            case 1: try skip(8)
++            case 2:
++                let count = try varint()
++                guard count <= UInt64(bytes.count - i) else { throw PacketError.truncated }
++                try skip(Int(count))
++            case 5: try skip(4)
++            default: throw PacketError.unsupportedWire
++            }
++            result.append(Field(number: number, wire: wire, value: value))
++        }
++        return result
++    }
++}
++
++public enum ClickPacketDecoder {
++    public static func decode(_ data: Data) throws -> ClickPacket {
++        guard !data.isEmpty else { throw PacketError.empty }
++        guard data.count <= 512 else { throw PacketError.tooLarge }
++        if data.starts(with: ClickGATT.initialize) {
++            if data.count > 8 { return .encryptionRequired }
++            if data == ClickGATT.initialize || data == ClickGATT.initialize + Data([0x02, 0x03]) {
++                return .handshake
++            }
++            throw PacketError.invalidValue
++        }
++        let opcode = data[data.startIndex]
++        let payload = Data(data.dropFirst())
++        switch opcode {
++        case 0x23:
++            let fields = try Wire.fields(payload)
++            let maps = fields.filter { $0.number == 1 }
++            guard !maps.isEmpty else { throw PacketError.missingBitmap }
++            guard maps.count == 1 else { throw PacketError.duplicateBitmap }
++            guard let raw = maps[0].value, raw <= UInt64(UInt32.max) else { throw PacketError.invalidValue }
++            let bitmap = UInt32(raw)
++            let pressed = Set(ClickButton.allCases.filter { bitmap & $0.rawValue == 0 })
++            return .buttons(pressed, bitmap: bitmap)
++        case 0x19:
++            let fields = try Wire.fields(payload).filter { $0.number == 2 }
++            guard fields.count == 1, let percent = fields[0].value, percent <= 100 else { throw PacketError.invalidValue }
++            return .battery(Int(percent))
++        case 0x15: return .idle
++        case 0xFE: return .lostControl
++        case 0xFF:
++            if data == Data([0xFF, 0x05, 0x00, 0xEA, 0x05]) || data == Data([0xFF, 0x05, 0x00, 0xFA, 0x05]) {
++                return .stopped
++            }
++            return .unknown(opcode, payload)
++        default: return .unknown(opcode, payload)
++        }
++    }
++}
++
++public extension Data {
++    var hex: String { map { String(format: "%02X", $0) }.joined(separator: " ") }
++}
+diff --git a/clickbridge-kit/Sources/ClickBridgeCore/Controller.swift b/clickbridge-kit/Sources/ClickBridgeCore/Controller.swift
+new file mode 100644
+index 0000000..3698f47
+--- /dev/null
++++ b/clickbridge-kit/Sources/ClickBridgeCore/Controller.swift
+@@ -0,0 +1,161 @@
++import Foundation
++
++public enum ControllerSide: String, Codable, CaseIterable, Sendable {
++    case left, right
++    public var label: String { self == .left ? "Links" : "Rechts" }
++}
++
++public enum ClickButton: UInt32, Codable, CaseIterable, Sendable {
++    case left = 1, up = 2, right = 4, down = 8
++    case a = 16, b = 32, y = 64, z = 128
++    case minus = 256, plus = 4096
++
++    public var label: String {
++        switch self {
++        case .left: return "←"
++        case .up: return "↑"
++        case .right: return "→"
++        case .down: return "↓"
++        case .a: return "A"
++        case .b: return "B"
++        case .y: return "Y"
++        case .z: return "Z"
++        case .minus: return "−"
++        case .plus: return "+"
++        }
++    }
++    public var side: ControllerSide {
++        switch self {
++        case .left, .up, .right, .down, .minus: return .left
++        default: return .right
++        }
++    }
++}
++
++public struct ManufacturerIdentity: Equatable, Sendable {
++    public let side: ControllerSide
++    public init?(data: Data) {
++        let bytes = Array(data)
++        guard bytes.count >= 3, bytes[0] == 0x4A, bytes[1] == 0x09 else { return nil }
++        switch bytes[2] {
++        case 0x0A: side = .right
++        case 0x0B: side = .left
++        default: return nil
++        }
++    }
++}
++
++public enum AssignmentError: Error, Equatable { case sideOccupied, deviceAlreadyAssigned }
++
++public struct ControllerRegistry: Codable, Equatable, Sendable {
++    public private(set) var left: UUID?
++    public private(set) var right: UUID?
++    public init() {}
++    public func id(for side: ControllerSide) -> UUID? { side == .left ? left : right }
++    public func side(for id: UUID) -> ControllerSide? {
++        if left == id { return .left }
++        if right == id { return .right }
++        return nil
++    }
++    public mutating func assign(_ id: UUID, to side: ControllerSide) throws {
++        if let current = self.side(for: id), current != side { throw AssignmentError.deviceAlreadyAssigned }
++        if let current = self.id(for: side), current != id { throw AssignmentError.sideOccupied }
++        if side == .left { left = id } else { right = id }
++    }
++    public mutating func remove(_ side: ControllerSide) {
++        if side == .left { left = nil } else { right = nil }
++    }
++}
++
++public enum ButtonPhase: String, Codable, Sendable { case down, up, longPress }
++public struct ButtonEvent: Equatable, Sendable {
++    public let button: ClickButton
++    public let phase: ButtonPhase
++    public let duration: TimeInterval
++}
++
++/// Leading-edge presses, duplicate-frame suppression and long press on release.
++/// No timer or guessed release: a missing release is not a second press.
++public struct ButtonTracker: Sendable {
++    public var debounce: TimeInterval = 0.08
++    public var longPress: TimeInterval = 0.6
++    private var held: [ClickButton: TimeInterval] = [:]
++    private var lastAccepted: [ClickButton: TimeInterval] = [:]
++    private var previous: Set<ClickButton> = []
++    public init() {}
++
++    public mutating func update(_ pressed: Set<ClickButton>, at now: TimeInterval) -> [ButtonEvent] {
++        var events: [ButtonEvent] = []
++        for button in previous.subtracting(pressed).sorted(by: { $0.rawValue < $1.rawValue }) {
++            if let start = held.removeValue(forKey: button) {
++                let duration = max(0, now - start)
++                events.append(ButtonEvent(button: button, phase: .up, duration: duration))
++                if duration >= longPress {
++                    events.append(ButtonEvent(button: button, phase: .longPress, duration: duration))
++                }
++            }
++        }
++        for button in pressed.subtracting(previous).sorted(by: { $0.rawValue < $1.rawValue }) {
++            guard now - (lastAccepted[button] ?? -.infinity) >= debounce else { continue }
++            held[button] = now
++            lastAccepted[button] = now
++            events.append(ButtonEvent(button: button, phase: .down, duration: 0))
++        }
++        previous = pressed
++        return events
++    }
++    public mutating func reset() {
++        held.removeAll(); previous.removeAll(); lastAccepted.removeAll()
++    }
++}
++
++public struct ReconnectPolicy: Equatable, Sendable {
++    public private(set) var failures = 0
++    public let maximumAttempts: Int
++    public init(maximumAttempts: Int = 8) { self.maximumAttempts = max(1, maximumAttempts) }
++    public mutating func nextDelay() -> TimeInterval? {
++        guard failures < maximumAttempts else { return nil }
++        let delay = min(60.0, pow(2.0, Double(failures)))
++        failures += 1
++        return delay
++    }
++    public mutating func succeeded() { failures = 0 }
++}
++
++public enum SessionPhase: String, Codable, Sendable {
++    case discovered, connecting, discovering, subscribing, initializing
++    case awaitingInput, receiving, attention, disconnected
++    public var label: String {
++        switch self {
++        case .discovered: return "Gefunden"
++        case .connecting: return "Verbinden"
++        case .discovering: return "GATT prüfen"
++        case .subscribing: return "Notifications aktivieren"
++        case .initializing: return "Initialisieren"
++        case .awaitingInput: return "Handshake erhalten · Taste drücken"
++        case .receiving: return "Tasten empfangen"
++        case .attention: return "Prüfung erforderlich"
++        case .disconnected: return "Getrennt"
++        }
++    }
++}
++
++public struct SessionMachine: Sendable {
++    public private(set) var phase: SessionPhase = .discovered
++    public private(set) var reason: String?
++    public init() {}
++    @discardableResult public mutating func advance(to next: SessionPhase) -> Bool {
++        let permitted: Bool
++        switch (phase, next) {
++        case (_, .disconnected), (_, .attention): permitted = true
++        case (.discovered, .connecting), (.disconnected, .connecting), (.attention, .connecting),
++             (.connecting, .discovering), (.discovering, .subscribing),
++             (.subscribing, .initializing), (.initializing, .awaitingInput),
++             (.awaitingInput, .receiving), (.receiving, .receiving): permitted = true
++        default: permitted = false
++        }
++        if permitted { phase = next; reason = nil }
++        return permitted
++    }
++    public mutating func fail(_ message: String) { phase = .attention; reason = message }
++}
+diff --git a/clickbridge-kit/Sources/ClickBridgeCore/Gearing.swift b/clickbridge-kit/Sources/ClickBridgeCore/Gearing.swift
+new file mode 100644
+index 0000000..e4e5e52
+--- /dev/null
++++ b/clickbridge-kit/Sources/ClickBridgeCore/Gearing.swift
+@@ -0,0 +1,105 @@
++import Foundation
++
++public enum ShiftDirection: Int, Codable, CaseIterable, Sendable {
++    case down = -1, up = 1
++    public var label: String { self == .up ? "Hochschalten" : "Herunterschalten" }
++}
++
++public struct ButtonBinding: Codable, Equatable, Sendable {
++    public var button: ClickButton
++    public var direction: ShiftDirection
++    public init(button: ClickButton, direction: ShiftDirection) { self.button = button; self.direction = direction }
++}
++
++public enum GearError: Error, Equatable {
++    case invalidCount, invalidRatios, invalidStart, invalidTiming, invalidBindings
++    case noIntegration, busy, rateLimited, boundary, staleAcknowledgement
++}
++
++public struct GearConfiguration: Codable, Equatable, Sendable {
++    public var ratios: [Double]
++    public var startGear: Int
++    public var shiftInterval: TimeInterval
++    public var debounce: TimeInterval
++    public var longPress: TimeInterval
++    public var bindings: [ButtonBinding]
++    public var count: Int { ratios.count }
++    public static var standard: GearConfiguration {
++        GearConfiguration(ratios: (0..<24).map { 0.75 * pow(6.0, Double($0) / 23.0) },
++                          startGear: 12, shiftInterval: 0.12, debounce: 0.08, longPress: 0.6,
++                          bindings: [.init(button: .minus, direction: .down), .init(button: .plus, direction: .up)])
++    }
++    public func validate() throws {
++        guard (2...64).contains(count) else { throw GearError.invalidCount }
++        guard ratios.allSatisfy({ $0.isFinite && (0.05...20).contains($0) }),
++              zip(ratios, ratios.dropFirst()).allSatisfy({ $0.0 < $0.1 }) else { throw GearError.invalidRatios }
++        guard (1...count).contains(startGear) else { throw GearError.invalidStart }
++        guard shiftInterval.isFinite, (0...2).contains(shiftInterval),
++              debounce.isFinite, (0.01...0.5).contains(debounce),
++              longPress.isFinite, (0.3...3).contains(longPress) else { throw GearError.invalidTiming }
++        guard Set(bindings.map(\.button)).count == bindings.count else { throw GearError.invalidBindings }
++    }
++    public func direction(for event: ButtonEvent) -> ShiftDirection? {
++        guard event.phase == .down else { return nil }
++        return bindings.first { $0.button == event.button }?.direction
++    }
++    public mutating func resize(_ count: Int) throws {
++        guard (2...64).contains(count), let low = ratios.first, let high = ratios.last else { throw GearError.invalidCount }
++        ratios = (0..<count).map { low * pow(high / low, Double($0) / Double(count - 1)) }
++        startGear = min(count, max(1, startGear))
++        try validate()
++    }
++}
++
++public struct ShiftRequest: Equatable, Sendable {
++    public let id: UUID
++    public let gear: Int
++    public let ratio: Double
++    public let direction: ShiftDirection
++}
++
++/// A transport acceptance is not a measurement of physical trainer resistance.
++public enum DeliveryEvidence: String, Codable, Sendable { case softwareAccepted }
++
++public struct GearEngine: Sendable {
++    public let configuration: GearConfiguration
++    public private(set) var acceptedGear: Int?
++    public private(set) var pending: ShiftRequest?
++    private var lastAcceptedAt: TimeInterval?
++
++    public init(configuration: GearConfiguration = .standard, lastAcceptedGear: Int? = nil) throws {
++        try configuration.validate()
++        self.configuration = configuration
++        acceptedGear = lastAcceptedGear.flatMap { (1...configuration.count).contains($0) ? $0 : nil }
++    }
++    public mutating func request(_ direction: ShiftDirection, at now: TimeInterval, integrationAvailable: Bool) throws -> ShiftRequest {
++        guard integrationAvailable else { throw GearError.noIntegration }
++        guard pending == nil else { throw GearError.busy }
++        if let lastAcceptedAt, now - lastAcceptedAt < configuration.shiftInterval { throw GearError.rateLimited }
++        let gear = (acceptedGear ?? configuration.startGear) + direction.rawValue
++        guard (1...configuration.count).contains(gear) else { throw GearError.boundary }
++        let request = ShiftRequest(id: UUID(), gear: gear, ratio: configuration.ratios[gear - 1], direction: direction)
++        pending = request
++        return request
++    }
++    public mutating func acknowledge(_ request: ShiftRequest, evidence: DeliveryEvidence, at now: TimeInterval) throws {
++        guard pending == request else { throw GearError.staleAcknowledgement }
++        acceptedGear = request.gear; lastAcceptedAt = now; pending = nil
++    }
++    public mutating func reject(_ request: ShiftRequest) {
++        if pending?.id == request.id { pending = nil }
++    }
++}
++
++public struct SavedSettings: Codable, Equatable, Sendable {
++    public var gearing: GearConfiguration = .standard
++    /// Last software-accepted gear; it is never presented as a live trainer readout.
++    public var lastAcceptedGear: Int?
++    public init() {}
++    public static func restore(from data: Data?) -> SavedSettings {
++        guard let data, var result = try? JSONDecoder().decode(SavedSettings.self, from: data),
++              (try? result.gearing.validate()) != nil else { return SavedSettings() }
++        if let gear = result.lastAcceptedGear, !(1...result.gearing.count).contains(gear) { result.lastAcceptedGear = nil }
++        return result
++    }
++}
+diff --git a/clickbridge-kit/THIRD_PARTY_NOTICES.md b/clickbridge-kit/THIRD_PARTY_NOTICES.md
+new file mode 100644
+index 0000000..ddb498d
+--- /dev/null
++++ b/clickbridge-kit/THIRD_PARTY_NOTICES.md
+@@ -0,0 +1,27 @@
++# Third-party notices
++
++Protocol facts and two capture vectors are referenced from TrainerHUD, commit fd57f0eb1dd2e15a734e0e976ff6eb7fcb7e3df0. The robust wire parser, BLE lifecycle, UI, gear model and integration adapter are ClickBridge implementations. No BikeControl non-commercial/proprietary code or swiftcontrol GPL code is included.
++
++## TrainerHUD (MIT)
++
++MIT License
++
++Copyright (c) 2026 Hugo Bourret-Desmarais
++
++Permission is hereby granted, free of charge, to any person obtaining a copy
++of this software and associated documentation files (the "Software"), to deal
++in the Software without restriction, including without limitation the rights
++to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++copies of the Software, and to permit persons to whom the Software is
++furnished to do so, subject to the following conditions:
++
++The above copyright notice and this permission notice shall be included in all
++copies or substantial portions of the Software.
++
++THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
++AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
++SOFTWARE.
+diff --git a/clickbridge-kit/Tests/ClickBridgeCoreTests/CoreTests.swift b/clickbridge-kit/Tests/ClickBridgeCoreTests/CoreTests.swift
+new file mode 100644
+index 0000000..7e5d14c
+--- /dev/null
++++ b/clickbridge-kit/Tests/ClickBridgeCoreTests/CoreTests.swift
+@@ -0,0 +1,174 @@
++import XCTest
++@testable import ClickBridgeCore
++
++final class DecoderTests: XCTestCase {
++    func testReferenceVectors() throws {
++        struct Vector: Decodable { let name: String; let hex: String; let buttons: [String] }
++        struct File: Decodable { let vectors: [Vector] }
++        let url = try XCTUnwrap(Bundle.module.url(forResource: "reference-vectors", withExtension: "json", subdirectory: "Fixtures"))
++        let file = try JSONDecoder().decode(File.self, from: Data(contentsOf: url))
++        for vector in file.vectors {
++            let data = Data(vector.hex.split(separator: " ").map { UInt8($0, radix: 16)! })
++            guard case .buttons(let buttons, _) = try ClickPacketDecoder.decode(data) else { return XCTFail(vector.name) }
++            let names = buttons.map { String(describing: $0) }.sorted()
++            XCTAssertEqual(names, vector.buttons.sorted(), vector.name)
++        }
++    }
++    func testEveryButtonAndCombinations() throws {
++        for button in ClickButton.allCases {
++            let packet = try ClickPacketDecoder.decode(frame(~button.rawValue))
++            XCTAssertEqual(packet, .buttons([button], bitmap: ~button.rawValue))
++        }
++        XCTAssertEqual(try ClickPacketDecoder.decode(frame(~(ClickButton.minus.rawValue | ClickButton.plus.rawValue))),
++                       .buttons([.minus, .plus], bitmap: ~(ClickButton.minus.rawValue | ClickButton.plus.rawValue)))
++    }
++    func testMalformedNeverBecomesAllPressed() {
++        let invalid: [[UInt8]] = [[], [0x23], [0x23, 0x08], [0x23, 0x00],
++            [0x23, 0x08, 0xFF], [0x23, 0x0A, 0x00], [0x23, 0x0B],
++            [0x23, 0x08, 0x00, 0x08, 0x00], [0x23, 0x12, 0x80, 0x80, 0x80, 0x01]]
++        for bytes in invalid { XCTAssertThrowsError(try ClickPacketDecoder.decode(Data(bytes)), Data(bytes).hex) }
++        XCTAssertThrowsError(try ClickPacketDecoder.decode(Data(repeating: 0, count: 513)))
++        XCTAssertThrowsError(try ClickPacketDecoder.decode(Data([0x23, 0x08] + Array(repeating: 0xFF, count: 10))))
++    }
++    func testEveryTruncationOfBitmapFails() {
++        let bytes = frame(~ClickButton.minus.rawValue)
++        for count in 1..<bytes.count { XCTAssertThrowsError(try ClickPacketDecoder.decode(Data(bytes.prefix(count)))) }
++    }
++    func testHandshakeRequiresSupportedReply() throws {
++        XCTAssertEqual(try ClickPacketDecoder.decode(ClickGATT.initialize), .handshake)
++        XCTAssertEqual(try ClickPacketDecoder.decode(ClickGATT.initialize + Data([2, 3])), .handshake)
++        XCTAssertEqual(try ClickPacketDecoder.decode(ClickGATT.initialize + Data([2, 3, 1])), .encryptionRequired)
++        XCTAssertThrowsError(try ClickPacketDecoder.decode(ClickGATT.initialize + Data([1])))
++    }
++    func testBatteryBoundsAndUnknown() throws {
++        XCTAssertEqual(try ClickPacketDecoder.decode(Data([0x19, 0x10, 100])), .battery(100))
++        XCTAssertThrowsError(try ClickPacketDecoder.decode(Data([0x19, 0x10, 101])))
++        XCTAssertThrowsError(try ClickPacketDecoder.decode(Data([0x19, 0x08, 12])))
++        XCTAssertEqual(try ClickPacketDecoder.decode(Data([0x99, 1])), .unknown(0x99, Data([1])))
++        XCTAssertEqual(try ClickPacketDecoder.decode(Data([0xFF, 0x05, 0x00, 0xEA, 0x05])), .stopped)
++        XCTAssertEqual(try ClickPacketDecoder.decode(Data([0xFE])), .lostControl)
++    }
++    func testUnknownFieldsAreSkippedWithoutLosingBitmap() throws {
++        let base = frame(UInt32.max)
++        XCTAssertEqual(try ClickPacketDecoder.decode(base + Data([0x12, 0x02, 0x00, 0x00])), .buttons([], bitmap: .max))
++    }
++    func testManufacturerIdentityUsesThirdByte() {
++        XCTAssertEqual(ManufacturerIdentity(data: Data([0x4A, 9, 0x0A]))?.side, .right)
++        XCTAssertEqual(ManufacturerIdentity(data: Data([0x4A, 9, 0x0B]))?.side, .left)
++        XCTAssertNil(ManufacturerIdentity(data: Data([0x4A, 9])))
++        XCTAssertNil(ManufacturerIdentity(data: Data([0x4A, 9, 9])))
++        XCTAssertNil(ManufacturerIdentity(data: Data([0, 9, 0x0A])))
++    }
++    private func frame(_ bitmap: UInt32) -> Data {
++        var bytes: [UInt8] = [0x23, 0x08]
++        var value = bitmap
++        repeat {
++            var byte = UInt8(value & 127); value >>= 7
++            if value != 0 { byte |= 128 }; bytes.append(byte)
++        } while value != 0
++        return Data(bytes)
++    }
++}
++
++final class ControllerTests: XCTestCase {
++    func testPersistentDistinctAssignments() throws {
++        let left = UUID(), right = UUID()
++        var registry = ControllerRegistry()
++        try registry.assign(left, to: .left); try registry.assign(right, to: .right)
++        let copy = try JSONDecoder().decode(ControllerRegistry.self, from: JSONEncoder().encode(registry))
++        XCTAssertEqual(copy.side(for: left), .left); XCTAssertEqual(copy.id(for: .right), right)
++        XCTAssertThrowsError(try registry.assign(left, to: .right))
++        XCTAssertThrowsError(try registry.assign(UUID(), to: .left))
++        registry.remove(.left); try registry.assign(UUID(), to: .left)
++    }
++    func testDuplicatePressesDebounceAndLongRelease() {
++        var tracker = ButtonTracker()
++        XCTAssertEqual(tracker.update([.minus], at: 1).map(\.phase), [.down])
++        XCTAssertTrue(tracker.update([.minus], at: 1.1).isEmpty)
++        XCTAssertEqual(tracker.update([], at: 1.7).map(\.phase), [.up, .longPress])
++        XCTAssertTrue(tracker.update([], at: 1.8).isEmpty)
++        XCTAssertEqual(tracker.update([.minus], at: 2).map(\.phase), [.down])
++        _ = tracker.update([], at: 2.01)
++        XCTAssertTrue(tracker.update([.minus], at: 2.02).isEmpty)
++    }
++    func testTwoIndependentControllersAndReset() {
++        var left = ButtonTracker(), right = ButtonTracker()
++        XCTAssertEqual(left.update([.minus], at: 0).count, 1)
++        XCTAssertEqual(right.update([.plus], at: 0).count, 1)
++        left.reset()
++        XCTAssertEqual(left.update([.minus], at: 2).count, 1)
++        XCTAssertTrue(right.update([.plus], at: 2).isEmpty)
++    }
++    func testBoundedReconnectAndSuccessfulReset() {
++        var policy = ReconnectPolicy()
++        XCTAssertEqual((0..<8).compactMap { _ in policy.nextDelay() }, [1, 2, 4, 8, 16, 32, 60, 60])
++        XCTAssertNil(policy.nextDelay()); policy.succeeded(); XCTAssertEqual(policy.nextDelay(), 1)
++    }
++    func testSessionRejectsLateInputAfterDisconnect() {
++        var state = SessionMachine()
++        XCTAssertFalse(state.advance(to: .receiving))
++        let phases: [SessionPhase] = [.connecting, .discovering, .subscribing, .initializing, .awaitingInput, .receiving]
++        for phase in phases {
++            XCTAssertTrue(state.advance(to: phase))
++        }
++        XCTAssertTrue(state.advance(to: .disconnected))
++        XCTAssertFalse(state.advance(to: .receiving)); XCTAssertFalse(state.advance(to: .awaitingInput))
++        XCTAssertTrue(state.advance(to: .connecting))
++        state.fail("test failure"); XCTAssertEqual(state.reason, "test failure")
++    }
++}
++
++final class GearTests: XCTestCase {
++    func testNoIntegrationMeansNoGearChange() throws {
++        var engine = try GearEngine()
++        XCTAssertThrowsError(try engine.request(.up, at: 0, integrationAvailable: false)) { XCTAssertEqual($0 as? GearError, .noIntegration) }
++        XCTAssertNil(engine.acceptedGear); XCTAssertNil(engine.pending)
++    }
++    func testAcceptedOnlyAfterMatchingAcknowledgement() throws {
++        var engine = try GearEngine()
++        let request = try engine.request(.up, at: 0, integrationAvailable: true)
++        XCTAssertEqual(request.gear, 13); XCTAssertNil(engine.acceptedGear)
++        XCTAssertThrowsError(try engine.request(.down, at: 1, integrationAvailable: true))
++        try engine.acknowledge(request, evidence: .softwareAccepted, at: 1)
++        XCTAssertEqual(engine.acceptedGear, 13)
++        XCTAssertThrowsError(try engine.acknowledge(request, evidence: .softwareAccepted, at: 2))
++        XCTAssertThrowsError(try engine.request(.up, at: 1.01, integrationAvailable: true))
++    }
++    func testRejectedRequestDoesNotChangeSavedGear() throws {
++        var engine = try GearEngine(lastAcceptedGear: 8)
++        let request = try engine.request(.down, at: 1, integrationAvailable: true)
++        engine.reject(request)
++        XCTAssertEqual(engine.acceptedGear, 8); XCTAssertNil(engine.pending)
++    }
++    func testBothLimitsAndRatioIndex() throws {
++        for (start, direction) in [(1, ShiftDirection.down), (24, ShiftDirection.up)] {
++            var engine = try GearEngine(lastAcceptedGear: start)
++            XCTAssertThrowsError(try engine.request(direction, at: 0, integrationAvailable: true))
++        }
++        var engine = try GearEngine(lastAcceptedGear: 23)
++        let request = try engine.request(.up, at: 0, integrationAvailable: true)
++        XCTAssertEqual(request.ratio, GearConfiguration.standard.ratios[23])
++    }
++    func testConfigurationValidationAndResize() throws {
++        var config = GearConfiguration.standard; try config.validate()
++        try config.resize(32); XCTAssertEqual(config.count, 32); try config.validate()
++        config.ratios[1] = config.ratios[0]; XCTAssertThrowsError(try config.validate())
++        config = .standard; config.startGear = 25; XCTAssertThrowsError(try config.validate())
++        config = .standard; config.ratios[0] = .nan; XCTAssertThrowsError(try config.validate())
++        config = .standard; config.shiftInterval = -1; XCTAssertThrowsError(try config.validate())
++        config = .standard; config.bindings.append(config.bindings[0]); XCTAssertThrowsError(try config.validate())
++    }
++    func testSettingsRoundtripAndCorruptionRecovery() throws {
++        var saved = SavedSettings(); saved.lastAcceptedGear = 19
++        XCTAssertEqual(SavedSettings.restore(from: try JSONEncoder().encode(saved)), saved)
++        XCTAssertEqual(SavedSettings.restore(from: Data("bad".utf8)), SavedSettings())
++        saved.gearing.ratios = [-1, 0]
++        XCTAssertEqual(SavedSettings.restore(from: try JSONEncoder().encode(saved)), SavedSettings())
++    }
++    func testOnlyPressEdgeShifts() {
++        let config = GearConfiguration.standard
++        XCTAssertEqual(config.direction(for: ButtonEvent(button: .minus, phase: .down, duration: 0)), .down)
++        XCTAssertEqual(config.direction(for: ButtonEvent(button: .plus, phase: .down, duration: 0)), .up)
++        XCTAssertNil(config.direction(for: ButtonEvent(button: .minus, phase: .longPress, duration: 2)))
++    }
++}
+diff --git a/clickbridge-kit/Tests/ClickBridgeCoreTests/Fixtures/reference-vectors.json b/clickbridge-kit/Tests/ClickBridgeCoreTests/Fixtures/reference-vectors.json
+new file mode 100644
+index 0000000..b3f9841
+--- /dev/null
++++ b/clickbridge-kit/Tests/ClickBridgeCoreTests/Fixtures/reference-vectors.json
+@@ -0,0 +1,10 @@
++{
++  "notice": "No local hardware capture. First two payloads are capture vectors from TrainerHUD SelfTest.swift (MIT); remaining vectors are synthetic protocol fixtures.",
++  "upstream": "hugoBourretDesmarais/TrainerHUD@fd57f0eb1dd2e15a734e0e976ff6eb7fcb7e3df0",
++  "vectors": [
++    {"name":"upstream-ride-navigation-left", "origin":"upstream capture; not proven Click V2", "hex":"23 08 FE FF FF FF 0F 1A 04 08 00 10 00 1A 04 08 01 10 00 1A 04 08 02 10 00 1A 04 08 03 10 00", "buttons":["left"]},
++    {"name":"upstream-ride-idle", "origin":"upstream capture; not proven Click V2", "hex":"23 08 FF FF FF FF 0F 1A 04 08 00 10 00 1A 04 08 01 10 00", "buttons":[]},
++    {"name":"generated-click-v2-minus", "origin":"synthetic", "hex":"23 08 FF FD 03", "buttons":["minus"]},
++    {"name":"generated-click-v2-plus", "origin":"synthetic", "hex":"23 08 FF DF 03", "buttons":["plus"]}
++  ]
++}
+diff --git a/ios/ClickBridge/ClickBridgeModule.m b/ios/ClickBridge/ClickBridgeModule.m
+new file mode 100644
+index 0000000..5a6d359
+--- /dev/null
++++ b/ios/ClickBridge/ClickBridgeModule.m
+@@ -0,0 +1,8 @@
++#import <React/RCTBridgeModule.h>
++#import <React/RCTEventEmitter.h>
++
++@interface RCT_EXTERN_MODULE(ClickBridgeModule, RCTEventEmitter)
++RCT_EXTERN_METHOD(arm:(BOOL)enabled resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject)
++RCT_EXTERN_METHOD(report:(NSString *)identifier result:(NSString *)result)
++RCT_EXTERN_METHOD(presentSetup)
++@end
+diff --git a/ios/ClickBridge/ClickBridgeModule.swift b/ios/ClickBridge/ClickBridgeModule.swift
+new file mode 100644
+index 0000000..93bd4ec
+--- /dev/null
++++ b/ios/ClickBridge/ClickBridgeModule.swift
+@@ -0,0 +1,128 @@
++import Foundation
++import UIKit
++import SwiftUI
++import Combine
++import React
++import ClickBridgeCore
++import ClickBridgeBLE
++
++/// Instantiated by AppDelegate before React Native so BLE restoration can attach early.
++@MainActor final class ClickBridgeHost {
++    static let shared = ClickBridgeHost()
++    let hub = ControllerHub(namespace: "Incyclist.ClickBridge")
++    var emit: ((String, [String: Any]) -> Void)?
++    private var session: String?
++
++    private init() {
++        hub.onButton = { [weak self] _, side, event in
++            guard let self, let session = self.session,
++                  let direction = GearConfiguration.standard.direction(for: event) else { return }
++            self.emit?("ClickBridgeShift", [
++                "id": UUID().uuidString, "session": session, "direction": direction.rawValue,
++                "emittedAtMs": Date().timeIntervalSince1970 * 1000,
++                "side": side.rawValue
++            ])
++        }
++    }
++    func arm(_ enabled: Bool) -> String {
++        let token = UUID().uuidString
++        session = enabled ? token : nil
++        hub.log.record("Incyclist", enabled ? "Schaltereignisse für neue Fahrsitzung freigegeben" : "Schaltereignisse gesperrt")
++        return token
++    }
++}
++
++@objc(ClickBridgeModule)
++final class ClickBridgeModule: RCTEventEmitter {
++    override static func requiresMainQueueSetup() -> Bool { true }
++    override var methodQueue: DispatchQueue! { DispatchQueue.main }
++    override func supportedEvents() -> [String]! { ["ClickBridgeShift"] }
++
++    override func startObserving() {
++        Task { @MainActor [weak self] in
++            ClickBridgeHost.shared.emit = { [weak self] name, body in
++                self?.sendEvent(withName: name, body: body)
++            }
++        }
++    }
++    override func stopObserving() {
++        Task { @MainActor in
++            _ = ClickBridgeHost.shared.arm(false)
++            ClickBridgeHost.shared.emit = nil
++        }
++    }
++    @objc(arm:resolver:rejecter:)
++    func arm(_ enabled: Bool, resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
++        Task { @MainActor in resolve(ClickBridgeHost.shared.arm(enabled)) }
++    }
++    @objc(report:result:)
++    func report(_ id: String, result: String) {
++        Task { @MainActor in
++            ClickBridgeHost.shared.hub.log.record("Incyclist-Weiterleitung", "\(id.prefix(8)) \(result.prefix(1500))")
++        }
++    }
++    @objc(presentSetup)
++    func presentSetup() {
++        Task { @MainActor in
++            guard let presenter = RCTPresentedViewController() else { return }
++            let screen = UIHostingController(rootView: ClickBridgeSetup(hub: ClickBridgeHost.shared.hub))
++            screen.modalPresentationStyle = .formSheet
++            presenter.present(screen, animated: true)
++        }
++    }
++}
++
++private struct ClickBridgeSetup: View {
++    @ObservedObject var hub: ControllerHub
++    @Environment(\.dismiss) private var dismiss
++    @State private var error: String?
++    @State private var export: URL?
++    var body: some View {
++        NavigationStack {
++            List {
++                Section {
++                    Text(hub.bluetoothStatus)
++                    Button(hub.scanning ? "Suche beenden" : "Click V2 suchen") {
++                        if hub.scanning { hub.stopScan() } else { hub.scan() }
++                    }
++                    Text("Incyclist bleibt alleiniger Trainercontroller. Virtuelle Schaltung in den Incyclist-Geräteeinstellungen aktivieren. Dieser Adapter nutzt dessen Gangtabelle.")
++                        .font(.footnote)
++                }
++                ForEach(hub.devices) { device in
++                    Section(device.assignedSide?.label ?? "Nicht zugeordnet") {
++                        Text("\(device.name) · \(device.shortID)")
++                        Text(device.phase.label)
++                        Text("Batterie \(device.battery.map { "\($0) %" } ?? "unbekannt") · Firmware \(device.firmware ?? "unbekannt")")
++                            .font(.caption)
++                        if let issue = device.issue { Text(issue).foregroundStyle(.orange) }
++                        if let side = device.assignedSide {
++                            Button("Verbinden / erneut versuchen") { hub.connect(device.id) }
++                            Button("Trennen") { hub.disconnect(device.id) }
++                            Button("Zuordnung aufheben", role: .destructive) { hub.forget(side) }
++                        } else {
++                            ForEach(ControllerSide.allCases, id: \.self) { side in
++                                Button("Als \(side.label) zuweisen") {
++                                    do { try hub.assign(device.id, to: side) }
++                                    catch { self.error = "Zuordnung belegt. Vorher bestehende Zuordnung aufheben." }
++                                }
++                            }
++                        }
++                        if let last = device.lastButton { Text("Letzte Taste: \(last)") }
++                    }
++                }
++                Section {
++                    Text("Zwei Controller, D100-Fahrwirkung und 60-Minuten-Stabilität sind noch nicht auf Hardware bestätigt. Beim linken Click V2 ist eine zeitabhängige Sperre möglich.")
++                        .font(.footnote)
++                    Button("Diagnoseexport vorbereiten") {
++                        do { export = try hub.log.export() } catch { self.error = error.localizedDescription }
++                    }
++                    if let export { ShareLink("Diagnose teilen", item: export) }
++                    if let error { Text(error).foregroundStyle(.orange) }
++                }
++            }
++            .navigationTitle("ClickBridge")
++            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Fertig") { dismiss() } } }
++            .onAppear { hub.checkHealth() }
++        }
++    }
++}
+diff --git a/ios/ClickBridge/THIRD_PARTY_NOTICES.md b/ios/ClickBridge/THIRD_PARTY_NOTICES.md
+new file mode 100644
+index 0000000..ddb498d
+--- /dev/null
++++ b/ios/ClickBridge/THIRD_PARTY_NOTICES.md
+@@ -0,0 +1,27 @@
++# Third-party notices
++
++Protocol facts and two capture vectors are referenced from TrainerHUD, commit fd57f0eb1dd2e15a734e0e976ff6eb7fcb7e3df0. The robust wire parser, BLE lifecycle, UI, gear model and integration adapter are ClickBridge implementations. No BikeControl non-commercial/proprietary code or swiftcontrol GPL code is included.
++
++## TrainerHUD (MIT)
++
++MIT License
++
++Copyright (c) 2026 Hugo Bourret-Desmarais
++
++Permission is hereby granted, free of charge, to any person obtaining a copy
++of this software and associated documentation files (the "Software"), to deal
++in the Software without restriction, including without limitation the rights
++to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++copies of the Software, and to permit persons to whom the Software is
++furnished to do so, subject to the following conditions:
++
++The above copyright notice and this permission notice shall be included in all
++copies or substantial portions of the Software.
++
++THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
++AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
++SOFTWARE.
+diff --git a/ios/Incyclist.xcodeproj/project.pbxproj b/ios/Incyclist.xcodeproj/project.pbxproj
+index 2141466..43c2cdc 100644
+--- a/ios/Incyclist.xcodeproj/project.pbxproj
++++ b/ios/Incyclist.xcodeproj/project.pbxproj
+@@ -23,6 +23,11 @@
+ 		DFA5700A2FB3000000000004 /* RCTStreetViewComponentView.mm in Sources */ = {isa = PBXBuildFile; fileRef = DFA5700A2FB3000000000003 /* RCTStreetViewComponentView.mm */; };
+ 		DFA5700B2FB3000000000004 /* RCTSatelliteViewComponentView.mm in Sources */ = {isa = PBXBuildFile; fileRef = DFA5700B2FB3000000000003 /* RCTSatelliteViewComponentView.mm */; };
+ 		DFA5700C2FB3000000000002 /* MapKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DFA5700C2FB3000000000001 /* MapKit.framework */; };
++		8BBC8F64DC854E8A4CFDA0FD = {isa = PBXBuildFile; fileRef = CEB01FB1A911636C8E6DF4AD; };
++		6502AE3B4B7CB7E7BA346543 = {isa = PBXBuildFile; fileRef = 338CBA2870D7A3919303B1D7; };
++		E1B87A456AF203AB8EDE6F8F = {isa = PBXBuildFile; fileRef = AF6CB50731E9FFA8C52688DA; };
++		D17FE7F24A458A353A1F5831 = {isa = PBXBuildFile; productRef = D72EEBCE0C086EC32764ACD7; };
++		5FC54B4E6E15F73847265CCE = {isa = PBXBuildFile; productRef = A0639425BFF2A4FB2FF3451E; };
+ /* End PBXBuildFile section */
+ 
+ /* Begin PBXFileReference section */
+@@ -51,6 +56,9 @@
+ 		DFFF0FC02F819D9000109CC5 /* Incyclist.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = Incyclist.entitlements; path = Incyclist/Incyclist.entitlements; sourceTree = "<group>"; };
+ 		E9D6821723439ED529EBAFF2 /* Pods-Incyclist.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Incyclist.debug.xcconfig"; path = "Target Support Files/Pods-Incyclist/Pods-Incyclist.debug.xcconfig"; sourceTree = "<group>"; };
+ 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
++		CEB01FB1A911636C8E6DF4AD = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClickBridge/ClickBridgeModule.swift; sourceTree = SOURCE_ROOT; };
++		338CBA2870D7A3919303B1D7 = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ClickBridge/ClickBridgeModule.m; sourceTree = SOURCE_ROOT; };
++		AF6CB50731E9FFA8C52688DA = {isa = PBXFileReference; lastKnownFileType = text; path = ClickBridge/THIRD_PARTY_NOTICES.md; sourceTree = SOURCE_ROOT; };
+ /* End PBXFileReference section */
+ 
+ /* Begin PBXFrameworksBuildPhase section */
+@@ -58,6 +66,8 @@
+ 			isa = PBXFrameworksBuildPhase;
+ 			buildActionMask = 2147483647;
+ 			files = (
++				D17FE7F24A458A353A1F5831,
++				5FC54B4E6E15F73847265CCE,
+ 				DF6FB3E12F76C8C300067D3E /* MapLibre in Frameworks */,
+ 				DFA5700C2FB3000000000002 /* MapKit.framework in Frameworks */,
+ 				BCC41758932FA2AB91CC0385 /* libPods-Incyclist.a in Frameworks */,
+@@ -70,6 +80,9 @@
+ 		13B07FAE1A68108700A75B9A /* Incyclist */ = {
+ 			isa = PBXGroup;
+ 			children = (
++				CEB01FB1A911636C8E6DF4AD,
++				338CBA2870D7A3919303B1D7,
++				AF6CB50731E9FFA8C52688DA,
+ 				DF1E4354305B3A6800590588 /* ExternalFileAccess */,
+ 				DF295F9B2FB26ABD008468D0 /* FullScreenViewController.swift */,
+ 				DFFF0FC02F819D9000109CC5 /* Incyclist.entitlements */,
+@@ -205,6 +218,8 @@
+ 			);
+ 			name = Incyclist;
+ 			packageProductDependencies = (
++				D72EEBCE0C086EC32764ACD7,
++				A0639425BFF2A4FB2FF3451E,
+ 				545B78D46B72D3C354028E49 /* MapLibre */,
+ 			);
+ 			productName = Incyclist;
+@@ -234,6 +249,7 @@
+ 			);
+ 			mainGroup = 83CBB9F61A601CBA00E9B192;
+ 			packageReferences = (
++				C77B49B95030F5C564E81869,
+ 				94207865CDFC7E08124CE788 /* XCRemoteSwiftPackageReference "maplibre-gl-native-distribution" */,
+ 			);
+ 			productRefGroup = 83CBBA001A601CBA00E9B192 /* Products */;
+@@ -250,6 +266,7 @@
+ 			isa = PBXResourcesBuildPhase;
+ 			buildActionMask = 2147483647;
+ 			files = (
++				E1B87A456AF203AB8EDE6F8F,
+ 				81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */,
+ 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
+ 				2D9A8C398F708075935385E9 /* PrivacyInfo.xcprivacy in Resources */,
+@@ -391,6 +408,8 @@
+ 			isa = PBXSourcesBuildPhase;
+ 			buildActionMask = 2147483647;
+ 			files = (
++				8BBC8F64DC854E8A4CFDA0FD,
++				6502AE3B4B7CB7E7BA346543,
+ 				DF2F0E642FA9F4D700340FFD /* FolderAccessModule.swift in Sources */,
+ 				DF2F0E652FA9F4D700340FFD /* FolderAccessModule.m in Sources */,
+ 				DF1E4355305B3A6800590588 /* ExternalFileAccessModule.m in Sources */,
+@@ -423,7 +442,7 @@
+ 				ENABLE_BITCODE = NO;
+ 				INFOPLIST_FILE = Incyclist/Info.plist;
+ 				INFOPLIST_KEY_CFBundleDisplayName = Incyclist;
+-				IPHONEOS_DEPLOYMENT_TARGET = 15.5;
++				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+ 				LD_RUNPATH_SEARCH_PATHS = (
+ 					"$(inherited)",
+ 					"@executable_path/Frameworks",
+@@ -460,7 +479,7 @@
+ 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 33ZL4TD87Q;
+ 				INFOPLIST_FILE = Incyclist/Info.plist;
+ 				INFOPLIST_KEY_CFBundleDisplayName = Incyclist;
+-				IPHONEOS_DEPLOYMENT_TARGET = 15.5;
++				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+ 				LD_RUNPATH_SEARCH_PATHS = (
+ 					"$(inherited)",
+ 					"@executable_path/Frameworks",
+@@ -533,7 +552,7 @@
+ 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+ 				GCC_WARN_UNUSED_FUNCTION = YES;
+ 				GCC_WARN_UNUSED_VARIABLE = YES;
+-				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
++				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+ 				LD_RUNPATH_SEARCH_PATHS = (
+ 					/usr/lib/swift,
+ 					"$(inherited)",
+@@ -604,7 +623,7 @@
+ 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+ 				GCC_WARN_UNUSED_FUNCTION = YES;
+ 				GCC_WARN_UNUSED_VARIABLE = YES;
+-				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
++				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+ 				LD_RUNPATH_SEARCH_PATHS = (
+ 					/usr/lib/swift,
+ 					"$(inherited)",
+@@ -674,7 +693,7 @@
+ 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+ 				GCC_WARN_UNUSED_FUNCTION = YES;
+ 				GCC_WARN_UNUSED_VARIABLE = YES;
+-				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
++				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+ 				LD_RUNPATH_SEARCH_PATHS = (
+ 					/usr/lib/swift,
+ 					"$(inherited)",
+@@ -713,7 +732,7 @@
+ 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 33ZL4TD87Q;
+ 				INFOPLIST_FILE = Incyclist/Info.plist;
+ 				INFOPLIST_KEY_CFBundleDisplayName = Incyclist;
+-				IPHONEOS_DEPLOYMENT_TARGET = 15.5;
++				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+ 				LD_RUNPATH_SEARCH_PATHS = (
+ 					"$(inherited)",
+ 					"@executable_path/Frameworks",
+@@ -760,6 +779,10 @@
+ 		};
+ /* End XCConfigurationList section */
+ 
++/* Begin XCLocalSwiftPackageReference section */
++		C77B49B95030F5C564E81869 = {isa = XCLocalSwiftPackageReference; relativePath = "../clickbridge-kit"; };
++/* End XCLocalSwiftPackageReference section */
++
+ /* Begin XCRemoteSwiftPackageReference section */
+ 		94207865CDFC7E08124CE788 /* XCRemoteSwiftPackageReference "maplibre-gl-native-distribution" */ = {
+ 			isa = XCRemoteSwiftPackageReference;
+@@ -777,6 +800,8 @@
+ 			package = 94207865CDFC7E08124CE788 /* XCRemoteSwiftPackageReference "maplibre-gl-native-distribution" */;
+ 			productName = MapLibre;
+ 		};
++		D72EEBCE0C086EC32764ACD7 = {isa = XCSwiftPackageProductDependency; package = C77B49B95030F5C564E81869; productName = ClickBridgeCore; };
++		A0639425BFF2A4FB2FF3451E = {isa = XCSwiftPackageProductDependency; package = C77B49B95030F5C564E81869; productName = ClickBridgeBLE; };
+ /* End XCSwiftPackageProductDependency section */
+ 	};
+ 	rootObject = 83CBB9F71A601CBA00E9B192 /* Project object */;
+diff --git a/ios/Incyclist/AppDelegate.swift b/ios/Incyclist/AppDelegate.swift
+index 3920d95..6cc27ed 100644
+--- a/ios/Incyclist/AppDelegate.swift
++++ b/ios/Incyclist/AppDelegate.swift
+@@ -18,6 +18,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
+     func application(
+         _ application: UIApplication,
+         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
++        _ = ClickBridgeHost.shared // Initialize CoreBluetooth restoration before React.
+         let delegate = ReactNativeDelegate()
+         let factory = RCTReactNativeFactory(delegate: delegate)
+         delegate.dependencyProvider = RCTAppDependencyProvider()
+diff --git a/ios/Incyclist/Info.plist b/ios/Incyclist/Info.plist
+index dae0ce1..15111fa 100644
+--- a/ios/Incyclist/Info.plist
++++ b/ios/Incyclist/Info.plist
+@@ -24,8 +24,8 @@
+ 	<string>????</string>
+ 	<key>CFBundleVersion</key>
+ 	<string>$(CURRENT_PROJECT_VERSION)</string>
+-    <key>ITSAppUsesNonExemptEncryption</key>
+-    <false/>    
++	<key>ITSAppUsesNonExemptEncryption</key>
++	<false/>
+ 	<key>LSRequiresIPhoneOS</key>
+ 	<true/>
+ 	<key>UIRequiresFullScreen</key>
+@@ -43,15 +43,15 @@
+ 	<string>This app uses Bluetooth to connect to fitness devices.</string>
+ 	<key>NSBonjourServices</key>
+ 	<array>
+-        <string>_wahoo-fitness-tnp._tcp</string>
+-        <string>_openbikecontrol._tcp</string>
++		<string>_wahoo-fitness-tnp._tcp</string>
++		<string>_openbikecontrol._tcp</string>
+ 	</array>
+ 	<key>NSLocalNetworkUsageDescription</key>
+ 	<string>Incyclist uses the local network to discover and connect to fitness devices such as smart trainers.</string>
+ 	<key>NSPhotoLibraryUsageDescription</key>
+-	<string>Incyclist uses your photo library to allow you to save and share ride data and screenshots.</string>	
+-    <key>NSLocationWhenInUseUsageDescription</key>
+-    <string>Bluetooth device scanning may require location access on some devices.</string>    
++	<string>Incyclist uses your photo library to allow you to save and share ride data and screenshots.</string>
++	<key>NSLocationWhenInUseUsageDescription</key>
++	<string>Bluetooth device scanning may require location access on some devices.</string>
+ 	<key>RCTNewArchEnabled</key>
+ 	<true/>
+ 	<key>UIBackgroundModes</key>
+@@ -83,16 +83,16 @@
+ 	</array>
+ 	<key>UIViewControllerBasedStatusBarAppearance</key>
+ 	<false/>
+-    <key>CFBundleURLTypes</key>
+-    <array>
+-    <dict>
+-        <key>CFBundleURLName</key>
+-        <string>com.incyclist.app</string>
+-        <key>CFBundleURLSchemes</key>
+-        <array>
+-        <string>incyclist</string>
+-        </array>
+-    </dict>
+-    </array>    
++	<key>CFBundleURLTypes</key>
++	<array>
++		<dict>
++			<key>CFBundleURLName</key>
++			<string>com.incyclist.app</string>
++			<key>CFBundleURLSchemes</key>
++			<array>
++				<string>incyclist</string>
++			</array>
++		</dict>
++	</array>
+ </dict>
+ </plist>
+diff --git a/ios/Podfile b/ios/Podfile
+index 928d1bd..e441514 100644
+--- a/ios/Podfile
++++ b/ios/Podfile
+@@ -5,7 +5,7 @@ require Pod::Executable.execute_command('node', ['-p',
+     {paths: [process.argv[1]]},
+   )', __dir__]).strip
+ 
+-min_ios_version_supported = '15.5'  
++min_ios_version_supported = '18.0'
+ platform :ios, min_ios_version_supported
+ prepare_react_native_project!
+ cpu_arch = `uname -m`.strip 
+diff --git a/src/integrations/clickbridge/ClickBridgeControls.tsx b/src/integrations/clickbridge/ClickBridgeControls.tsx
+new file mode 100644
+index 0000000..586d208
+--- /dev/null
++++ b/src/integrations/clickbridge/ClickBridgeControls.tsx
+@@ -0,0 +1,57 @@
++import React, { useEffect, useState } from 'react';
++import { NativeModules, NativeEventEmitter, Platform, Pressable, Text, StyleSheet } from 'react-native';
++import { useDeviceRide } from 'incyclist-services';
++import { createShiftRouter, ShiftMessage } from './shiftRouter';
++
++const native = NativeModules.ClickBridgeModule;
++
++/** Mount only in a real ride, inside the modified Incyclist application. */
++export function ClickBridgeControls({ simulate = false }: { simulate?: boolean }) {
++    const [status, setStatus] = useState('ClickBridge');
++    useEffect(() => {
++        if (Platform.OS !== 'ios' || !native || simulate) return;
++        let active = true;
++        let session: string | null = null;
++        const service = useDeviceRide();
++        const router = createShiftRouter({
++            active: () => active,
++            session: () => session,
++            targetCount: () => service.getAdapters({}).filter(({ adapter }) =>
++                adapter?.isControllable() && adapter.isStarted() && !adapter.isStopped() && !adapter.isPaused()).length,
++            virtualShiftingEnabled: () => {
++                const mode = service.getCyclingMode();
++                const config = mode?.getConfig();
++                return !!config?.isSIM && !config.isERG && ['Mixed', 'Incyclist', 'SmartTrainer', 'Enabled'].includes(String(mode?.getSetting('virtshift')));
++            },
++            busy: () => service.isUpdateBusy(),
++            sendUpdate: request => service.sendUpdate(request),
++            gearDisplay: () => service.getData()?.gearStr,
++        });
++        const emitter = new NativeEventEmitter(native);
++        const subscription = emitter.addListener('ClickBridgeShift', (event: ShiftMessage) => {
++            void router.handle(event).then(result => {
++                if (!active) return;
++                setStatus(result.status === 'submitted' ? 'Schaltauftrag abgegeben' : 'ClickBridge · ' + result.reason);
++                native.report(event.id, JSON.stringify(result));
++            }).catch(error => { if (active) setStatus(String(error)); });
++        });
++        void native.arm(true).then((id: string) => {
++            if (active) session = id;
++            else void native.arm(false);
++        }).catch((error: unknown) => { if (active) setStatus(String(error)); });
++        return () => {
++            active = false; session = null; router.close(); subscription.remove();
++            void native.arm(false);
++        };
++    }, [simulate]);
++    if (Platform.OS !== 'ios' || !native || simulate) return null;
++    return <Pressable accessibilityRole="button" accessibilityLabel="ClickBridge Controller einrichten"
++        onPress={() => native.presentSetup()} style={styles.button}>
++        <Text style={styles.text} numberOfLines={1}>{status}</Text>
++    </Pressable>;
++}
++const styles = StyleSheet.create({
++    button: { position: 'absolute', left: 16, bottom: 72, zIndex: 100, maxWidth: 280,
++        padding: 10, borderRadius: 10, backgroundColor: '#1A222AEF', borderWidth: 1, borderColor: '#FB923C' },
++    text: { color: '#FB923C', fontSize: 12 },
++});
+diff --git a/src/integrations/clickbridge/shiftRouter.d.ts b/src/integrations/clickbridge/shiftRouter.d.ts
+new file mode 100644
+index 0000000..94fb2c1
+--- /dev/null
++++ b/src/integrations/clickbridge/shiftRouter.d.ts
+@@ -0,0 +1,12 @@
++export interface ShiftMessage { id: string; session: string; direction: 1 | -1; emittedAtMs: number }
++export interface ShiftResult { status: 'submitted' | 'rejected'; reason?: string; gearDisplay?: string; evidence?: string }
++export interface ShiftDependencies {
++    active(): boolean; session(): string | null; targetCount(): number;
++    virtualShiftingEnabled(): boolean; busy(): boolean; gearDisplay(): unknown;
++    sendUpdate(request: { gearDelta: number }): Promise<void>;
++    now?(): number;
++}
++export function createShiftRouter(dependencies: ShiftDependencies): {
++    handle(event: ShiftMessage): Promise<ShiftResult>;
++    close(): void;
++};
+diff --git a/src/integrations/clickbridge/shiftRouter.js b/src/integrations/clickbridge/shiftRouter.js
+new file mode 100644
+index 0000000..496c4e1
+--- /dev/null
++++ b/src/integrations/clickbridge/shiftRouter.js
+@@ -0,0 +1,49 @@
++'use strict';
++
++// Runs INSIDE Incyclist. This is not an IPC endpoint in the standalone app.
++function createShiftRouter(dependencies) {
++    const now = dependencies.now || Date.now;
++    const seen = new Set();
++    let tail = Promise.resolve();
++    let queued = 0;
++    let closed = false;
++
++    function reject(reason) { return { status: 'rejected', reason }; }
++    function handle(event) {
++        if (!event || typeof event.id !== 'string' || event.id.length > 80 ||
++            typeof event.session !== 'string' || !Number.isFinite(event.emittedAtMs) ||
++            (event.direction !== 1 && event.direction !== -1)) {
++            return Promise.resolve(reject('invalid-event'));
++        }
++        if (closed) return Promise.resolve(reject('closed'));
++        if (seen.has(event.id)) return Promise.resolve(reject('duplicate'));
++        seen.add(event.id);
++        if (seen.size > 256) seen.delete(seen.values().next().value);
++        if (queued >= 8) return Promise.resolve(reject('queue-full'));
++        // Capture primitives; do not retain a caller-mutable native event object.
++        const input = { id: event.id, session: event.session,
++            direction: event.direction, emittedAtMs: event.emittedAtMs };
++        queued += 1;
++        const work = tail.then(async () => {
++            if (closed || !dependencies.active()) return reject('inactive-ride');
++            if (input.session !== dependencies.session()) return reject('stale-session');
++            const age = now() - input.emittedAtMs;
++            if (age > 1500 || age < -250) return reject('expired-event');
++            if (dependencies.targetCount() !== 1) return reject('requires-one-started-control-adapter');
++            if (!dependencies.virtualShiftingEnabled()) return reject('virtual-shifting-disabled-or-erg');
++            if (dependencies.busy()) return reject('trainer-update-busy');
++            try {
++                // Existing Incyclist path owns both route simulation and gear deltas.
++                await dependencies.sendUpdate({ gearDelta: input.direction });
++                return { status: 'submitted', gearDisplay: String(dependencies.gearDisplay() ?? ''),
++                    evidence: 'incyclist-software-path-only' };
++            } catch (error) {
++                return reject('send-update-error: ' + String(error));
++            }
++        });
++        tail = work.then(() => undefined, () => undefined);
++        return work.finally(() => { queued -= 1; });
++    }
++    return { handle, close() { closed = true; } };
++}
++module.exports = { createShiftRouter };
+diff --git a/src/integrations/clickbridge/shiftRouter.test.cjs b/src/integrations/clickbridge/shiftRouter.test.cjs
+new file mode 100644
+index 0000000..12ea4d8
+--- /dev/null
++++ b/src/integrations/clickbridge/shiftRouter.test.cjs
+@@ -0,0 +1,71 @@
++const { test } = require('node:test');
++const assert = require('node:assert/strict');
++const { createShiftRouter } = require('./shiftRouter.js');
++
++function fixture(overrides = {}) {
++    const calls = [];
++    const dependencies = { active: () => true, session: () => 'ride-1', targetCount: () => 1,
++        virtualShiftingEnabled: () => true, busy: () => false, gearDisplay: () => '13',
++        now: () => 1000, sendUpdate: async request => { calls.push(request); }, ...overrides };
++    return { calls, dependencies, router: createShiftRouter(dependencies) };
++}
++const event = (id = '1', direction = 1) => ({ id, direction, session: 'ride-1', emittedAtMs: 1000 });
++
++test('routes both directions through existing Incyclist path, no slope override', async () => {
++    const { calls, router } = fixture();
++    assert.equal((await router.handle(event())).status, 'submitted');
++    assert.equal((await router.handle(event('2', -1))).evidence, 'incyclist-software-path-only');
++    assert.deepEqual(calls, [{ gearDelta: 1 }, { gearDelta: -1 }]);
++});
++test('suppresses duplicate native events', async () => {
++    const { calls, router } = fixture();
++    await router.handle(event());
++    assert.equal((await router.handle(event())).reason, 'duplicate');
++    assert.equal(calls.length, 1);
++});
++test('rejects invalid, expired and future events', async () => {
++    const { calls, router } = fixture();
++    assert.equal((await router.handle({ ...event(), direction: 4 })).reason, 'invalid-event');
++    assert.equal((await router.handle({ ...event('old'), emittedAtMs: -1000 })).reason, 'expired-event');
++    assert.equal((await router.handle({ ...event('future'), emittedAtMs: 5000 })).reason, 'expired-event');
++    assert.equal(calls.length, 0);
++});
++test('rejects stale ride session and events after cleanup', async () => {
++    const { calls, router } = fixture();
++    assert.equal((await router.handle({ ...event(), session: 'old-ride' })).reason, 'stale-session');
++    router.close();
++    assert.equal((await router.handle(event('2'))).reason, 'closed');
++    assert.equal(calls.length, 0);
++});
++test('gates inactive rides, ERG, disabled shifting, missing and multiple trainers', async () => {
++    for (const overrides of [{ active: () => false }, { virtualShiftingEnabled: () => false },
++        { targetCount: () => 0 }, { targetCount: () => 2 }, { busy: () => true }]) {
++        const { calls, router } = fixture(overrides);
++        assert.equal((await router.handle(event())).status, 'rejected');
++        assert.equal(calls.length, 0);
++    }
++});
++test('serializes requests and recovers after transport error', async () => {
++    let inFlight = 0, maxInFlight = 0, number = 0;
++    const { router } = fixture({ sendUpdate: async () => {
++        inFlight++; maxInFlight = Math.max(maxInFlight, inFlight);
++        await new Promise(resolve => setTimeout(resolve, 2));
++        inFlight--; if (number++ === 0) throw Error('test failure');
++    } });
++    const results = await Promise.all([router.handle(event('1')), router.handle(event('2'))]);
++    assert.equal(maxInFlight, 1); assert.equal(results[0].status, 'rejected');
++    assert.equal(results[1].status, 'submitted');
++});
++test('rechecks state at execution time and bounds queue', async () => {
++    let resolve;
++    const { router, calls, dependencies } = fixture({ sendUpdate: () => new Promise(r => { resolve = r; }) });
++    const first = router.handle(event());
++    await new Promise(r => setImmediate(r));
++    const rest = Array.from({ length: 8 }, (_, i) => router.handle(event('queued-' + i)));
++    dependencies.active = () => false;
++    resolve(); await first;
++    const results = await Promise.all(rest);
++    assert.equal(results.filter(r => r.reason === 'queue-full').length, 1);
++    assert.equal(results.filter(r => r.reason === 'inactive-ride').length, 7);
++    assert.equal(calls.length, 0);
++});
+diff --git a/src/pages/RidePage/RidePage.tsx b/src/pages/RidePage/RidePage.tsx
+index 4146eea..cbcb2e9 100644
+--- a/src/pages/RidePage/RidePage.tsx
++++ b/src/pages/RidePage/RidePage.tsx
+@@ -1,3 +1,4 @@
++import { ClickBridgeControls } from '../../integrations/clickbridge/ClickBridgeControls';
+ import React, { useState, useEffect, useRef, useCallback } from 'react';
+ import { View, StyleSheet, Text } from 'react-native';
+ import { getRidePageService, RideType, StartGateProps } from 'incyclist-services';
+@@ -30,7 +31,7 @@ const NotImplementedView = ({ onBack }: NotImplementedViewProps) => {
+     );
+ };
+ 
+-export const RidePage = ({ simulate = false }: RidePageProps) => {
++const RidePageContent = ({ simulate = false }: RidePageProps) => {
+     const refInitialized = useRef(false);
+     const refMounted = useRef(false);
+     const refPendingType = useRef<RideType | null>(null);
+@@ -172,4 +173,10 @@ const styles = StyleSheet.create({
+         fontSize: textSizes.normalText,
+         textAlign: 'center',
+     },
+-});
+\ No newline at end of file
++});
++export const RidePage = ({ simulate = false }: RidePageProps) => (
++    <View style={{ flex: 1 }}>
++        <RidePageContent simulate={simulate} />
++        <ClickBridgeControls simulate={simulate} />
++    </View>
++);
+-- 
+2.51.1
+
