@@ -180,6 +180,18 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
         trackCoordinates = track.map(\.coordinate)
         updateAverageSpeed()
     }
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        let locationError = error as? CLError
+        if locationError?.code == .locationUnknown {
+            if !active { status = "GPS-Position wird gesucht" }
+            return
+        }
+        if locationError?.code == .denied {
+            status = "Standortzugriff in Einstellungen erlauben"
+        } else {
+            status = active ? "GPS vorübergehend nicht verfügbar" : "GPS-Position nicht verfügbar"
+        }
+    }
     private func updateAverageSpeed() {
         guard elapsedSeconds > 0 else { averageSpeedKmh = 0; return }
         averageSpeedKmh = distance / Double(elapsedSeconds) * 3.6
