@@ -51,6 +51,10 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
     func start() {
         guard !active else { return }
+        guard CLLocationManager.locationServicesEnabled() else {
+            status = "Ortungsdienste am iPhone einschalten"
+            return
+        }
         if location.authorizationStatus == .notDetermined {
             pendingStartAfterAuthorization = true
             status = "Standortfreigabe wird angefordert"
@@ -90,6 +94,9 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
         elapsedTimer = timer
         RunLoop.main.add(timer, forMode: .common)
         active = true
+        location.allowsBackgroundLocationUpdates = true
+        location.showsBackgroundLocationIndicator = true
+        location.pausesLocationUpdatesAutomatically = false
         location.startUpdatingLocation()
         status = "Aufzeichnung läuft"
     }
@@ -111,6 +118,9 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
     func stop() {
         active = false
         location.stopUpdatingLocation()
+        location.allowsBackgroundLocationUpdates = false
+        location.showsBackgroundLocationIndicator = false
+        location.pausesLocationUpdatesAutomatically = true
         elapsedTimer?.invalidate()
         elapsedTimer = nil
         speedKmh = 0
