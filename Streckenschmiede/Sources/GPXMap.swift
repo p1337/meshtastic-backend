@@ -34,18 +34,47 @@ final class GPXParser: NSObject, XMLParserDelegate {
 
 struct RouteMap: View {
     let coordinates: [CLLocationCoordinate2D]
+
+    private var initialCamera: MapCameraPosition {
+        guard let first = coordinates.first else { return .automatic }
+        if coordinates.count == 1 {
+            return .region(MKCoordinateRegion(
+                center: first,
+                latitudinalMeters: 1_000,
+                longitudinalMeters: 1_000
+            ))
+        }
+        // Fit the imported route, not the user's current GPS position.
+        let line = MKPolyline(coordinates: coordinates, count: coordinates.count)
+        return .rect(line.boundingMapRect)
+    }
+
     var body: some View {
-        Map {
+        Map(initialPosition: initialCamera) {
             if coordinates.count > 1 {
                 MapPolyline(coordinates: coordinates)
                     .stroke(.orange, lineWidth: 5)
             }
             if let start = coordinates.first {
-                Annotation("Start", coordinate: start) { Image(systemName: "flag.fill").foregroundStyle(.orange) }
+                Annotation("Start", coordinate: start) {
+                    Image(systemName: "flag.fill")
+                        .foregroundStyle(.orange)
+                        .padding(7)
+                        .background(.black.opacity(0.85), in: Circle())
+                }
+            }
+            if coordinates.count > 1, let finish = coordinates.last {
+                Annotation("Ziel", coordinate: finish) {
+                    Image(systemName: "flag.checkered")
+                        .foregroundStyle(.white)
+                        .padding(7)
+                        .background(.black.opacity(0.85), in: Circle())
+                }
             }
         }
         .mapStyle(.standard(elevation: .realistic))
-        .frame(height: 260)
+        .frame(height: 300)
         .clipShape(RoundedRectangle(cornerRadius: 16))
+        .accessibilityLabel("Streckenkarte mit Start und Ziel")
     }
 }
