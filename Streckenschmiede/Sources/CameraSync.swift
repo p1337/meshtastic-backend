@@ -48,22 +48,20 @@ struct CameraSyncPayload: Codable, Equatable {
         let latitudeE7 = includeGPS ? coordinate.map { Int(($0.latitude * 10_000_000).rounded()) } : nil
         let longitudeE7 = includeGPS ? coordinate.map { Int(($0.longitude * 10_000_000).rounded()) } : nil
         let accuracy = includeGPS ? horizontalAccuracy.flatMap { $0 >= 0 ? Int(($0 * 100).rounded()) : nil } : nil
-        let canonical = [
-            "1",
-            rideID.uuidString.lowercased(),
-            event.rawValue,
-            String(sequence),
-            utc,
-            String(rideElapsedMilliseconds),
-            latitudeE7.map(String.init) ?? "",
-            longitudeE7.map(String.init) ?? "",
-            accuracy.map(String.init) ?? ""
-        ].joined(separator: "|")
+        let rideIDText = rideID.uuidString.lowercased()
+        let latitudeText = latitudeE7.map { String($0) } ?? ""
+        let longitudeText = longitudeE7.map { String($0) } ?? ""
+        let accuracyText = accuracy.map { String($0) } ?? ""
+        let fields: [String] = [
+            "1", rideIDText, event.rawValue, String(sequence), utc,
+            String(rideElapsedMilliseconds), latitudeText, longitudeText, accuracyText
+        ]
+        let canonical = fields.joined(separator: "|")
         let digest = SHA256.hash(data: Data(canonical.utf8))
         let checksum = digest.prefix(8).map { String(format: "%02x", $0) }.joined()
         return CameraSyncPayload(
             version: 1,
-            rideID: rideID.uuidString.lowercased(),
+            rideID: rideIDText,
             event: event,
             sequence: sequence,
             utc: utc,
