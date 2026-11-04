@@ -114,3 +114,5 @@ jobs:
           name: Streckenschmiede-signed-IPA
           path: ${{ runner.temp }}/export/*.ipa
           if-no-files-found: error
+
+# Trigger build after signing workflow setup
