@@ -18,7 +18,21 @@ jobs:
         run: |
           cd Streckenschmiede
           xcodebuild -project Streckenschmiede.xcodeproj -scheme Streckenschmiede -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+      - name: Upload simulator build
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Streckenschmiede-Simulator
+          path: ~/Library/Developer/Xcode/DerivedData/**/Build/Products/Release-iphonesimulator/Streckenschmiede.app
+          if-no-files-found: warn
       - name: Build unsigned iPhone app
         run: |
           cd Streckenschmiede
           xcodebuild -project Streckenschmiede.xcodeproj -scheme Streckenschmiede -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO build
+      - name: Upload iPhone build for signing
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Streckenschmiede-iPhone-unsigned
+          path: ~/Library/Developer/Xcode/DerivedData/**/Build/Products/Release-iphoneos/Streckenschmiede.app
+          if-no-files-found: error
