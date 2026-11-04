@@ -1,0 +1,15 @@
+name: Streckenschmiede
+options:
+  bundleIdPrefix: de.p1337
+targets:
+  Streckenschmiede:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources: [Sources]
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: de.p1337.Streckenschmiede
+      GENERATE_INFOPLIST_FILE: YES
+      INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "GPS-Fahrten aufzeichnen"
+      INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription: "Fahrradtrainer und Zwift Click finden"
+      INFOPLIST_KEY_UILaunchScreen_Generation: YES
