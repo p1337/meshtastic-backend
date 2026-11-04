@@ -257,4 +257,3 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 - Valhalla-Routingprofile: <https://valhalla.github.io/valhalla/api/route/api-reference/>
 - Bluetooth-SIG Assigned Numbers: <https://www.bluetooth.com/specifications/assigned-numbers/>
 - OSM-Kachelrichtlinie: <https://operations.osmfoundation.org/policies/tiles/>
-
