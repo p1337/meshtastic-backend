@@ -11,6 +11,8 @@ targets:
       path: Info.plist
       properties:
         CFBundleDisplayName: Streckenschmiede
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         NSLocationWhenInUseUsageDescription: "GPS-Fahrten aufzeichnen und auf der Fahrradkarte navigieren"
         NSBluetoothAlwaysUsageDescription: "Fahrradtrainer, Pulsmesser, Leistungsmesser und Zwift Click verbinden"
         UILaunchScreen: {}
@@ -33,7 +35,7 @@ targets:
                 - application/gpx+xml
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: de.p1337.Streckenschmiede
-      MARKETING_VERSION: "0.1.0"
+      MARKETING_VERSION: "1.1.0"
       CURRENT_PROJECT_VERSION: "1"
       SWIFT_VERSION: "5.0"
       TARGETED_DEVICE_FAMILY: "1"
