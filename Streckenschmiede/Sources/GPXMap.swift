@@ -1,4 +1,8 @@
 import Foundation
+import SwiftUI
+#if canImport(FoundationXML)
+import FoundationXML
+#endif
 import CoreLocation
 import MapKit
 

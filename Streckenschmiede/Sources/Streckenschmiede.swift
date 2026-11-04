@@ -17,6 +17,7 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
     @Published var status = "Bereit"
     private let location = CLLocationManager()
     private var track: [CLLocation] = []
+    private var pendingStartAfterAuthorization = false
     override init() {
         super.init()
         location.delegate = self
@@ -25,19 +26,34 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
         location.distanceFilter = 5
     }
     func start() {
+        guard !active else { return }
         if location.authorizationStatus == .notDetermined {
+            pendingStartAfterAuthorization = true
+            status = "Standortfreigabe wird angefordert"
             location.requestWhenInUseAuthorization()
-            status = "Standortfreigabe erteilen und erneut starten"
             return
         }
         guard location.authorizationStatus == .authorizedWhenInUse || location.authorizationStatus == .authorizedAlways else {
-            status = "Standortzugriff erforderlich"
+            status = "Standortzugriff in Einstellungen erlauben"
             return
         }
+        beginRecording()
+    }
+    private func beginRecording() {
         track = []; distance = 0; points = 0; exportURL = nil
         active = true
         location.startUpdatingLocation()
         status = "Aufzeichnung läuft"
+    }
+    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        guard pendingStartAfterAuthorization else { return }
+        if manager.authorizationStatus == .notDetermined { return }
+        pendingStartAfterAuthorization = false
+        if manager.authorizationStatus == .authorizedAlways || manager.authorizationStatus == .authorizedWhenInUse {
+            beginRecording()
+        } else {
+            status = "Standortzugriff verweigert"
+        }
     }
     func stop() {
         active = false
@@ -50,13 +66,14 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
             gpx += "<trkpt lat=\"\(p.coordinate.latitude)\" lon=\"\(p.coordinate.longitude)\"><ele>\(p.altitude)</ele><time>\(f.string(from:p.timestamp))</time></trkpt>"
         }
         gpx += "</trkseg></trk></gpx>"
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent("Fahrt-\(Int(Date().timeIntervalSince1970)).gpx")
+        let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first ?? FileManager.default.temporaryDirectory
+        let url = documents.appendingPathComponent("Fahrt-\(Int(Date().timeIntervalSince1970)).gpx")
         do { try gpx.write(to:url,atomically:true,encoding:.utf8); exportURL = url; status = "GPX bereit" }
         catch { status = error.localizedDescription }
     }
     func locationManager(_ manager: CLLocationManager, didUpdateLocations updates: [CLLocation]) {
         guard active else { return }
-        for p in updates where p.horizontalAccuracy >= 0 && p.horizontalAccuracy < 40 {
+        for p in updates where p.horizontalAccuracy >= 0 && p.horizontalAccuracy < 40 && abs(p.timestamp.timeIntervalSinceNow) < 20 {
             if let last = track.last {
                 let d = p.distance(from:last)
                 guard d >= 3 && d < 300 else { continue }
@@ -112,7 +129,7 @@ struct MainView: View {
                         if !route.isEmpty { RouteMap(coordinates: route) }
                     }
                 }
-                .fileImporter(isPresented: $importing, allowedContentTypes: [.xml, .data]) { result in
+                .fileImporter(isPresented: $importing, allowedContentTypes: [UTType(filenameExtension: "gpx") ?? .xml, .xml, .data]) { result in
                     do {
                         let url = try result.get()
                         route = try GPXParser.load(url)
@@ -122,7 +139,15 @@ struct MainView: View {
                     }
                 }
                 .navigationTitle("Aufzeichnung")
-                .toolbar { NavigationLink(destination: SettingsView()) { Image(systemName:"gearshape") } }
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        NavigationLink {
+                            SettingsView()
+                        } label: {
+                            Image(systemName: "gearshape")
+                        }
+                    }
+                }
             }
             .tabItem { Label("Aufzeichnung",systemImage:"record.circle") }
             NavigationStack {
@@ -137,9 +162,17 @@ struct MainView: View {
                     }
                 }
                 .navigationTitle("Indoor-Training")
-                .toolbar { NavigationLink(destination: SettingsView()) { Image(systemName:"gearshape") } }
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        NavigationLink {
+                            SettingsView()
+                        } label: {
+                            Image(systemName: "gearshape")
+                        }
+                    }
+                }
             }
-            .tabItem { Label("Indoor",systemImage:"bicycle") }
+            .tabItem { Label("Indoor-Training",systemImage:"bicycle") }
         }
         .tint(Color(red:1,green:0.57,blue:0))
         .preferredColorScheme(.dark)
