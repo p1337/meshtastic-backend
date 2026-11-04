@@ -148,12 +148,11 @@ final class RideSessionEngine {
                 ? sample.speedMetersPerSecond
                 : derivedSpeed
             guard measuredSpeed <= 35, derivedSpeed <= 35 else { return false }
+            let latestSpeedKmh = max(0, measuredSpeed * 3.6)
+            let previousMaximumSpeedKmh = snapshot?.maximumSpeedKmh ?? 0
             snapshot?.distanceMeters += distance
-            snapshot?.latestSpeedKmh = max(0, measuredSpeed * 3.6)
-            snapshot?.maximumSpeedKmh = max(
-                snapshot?.maximumSpeedKmh ?? 0,
-                snapshot?.latestSpeedKmh ?? 0
-            )
+            snapshot?.latestSpeedKmh = latestSpeedKmh
+            snapshot?.maximumSpeedKmh = max(previousMaximumSpeedKmh, latestSpeedKmh)
             if sample.verticalAccuracy >= 0, sample.verticalAccuracy < 30,
                last.verticalAccuracy >= 0, last.verticalAccuracy < 30 {
                 let change = sample.altitude - last.altitude
