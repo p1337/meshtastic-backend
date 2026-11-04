@@ -9,6 +9,7 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
 - Zwei Hauptreiter: Aufzeichnung und Indoor-Training
 - GPS-Aufzeichnung mit Distanz und GPX-Export (nur Vordergrund)
 - Erstes modernes Fahrt-Cockpit mit Live-Karte, gefahrenem Track, GPS-Geschwindigkeit, Zeit, Höhe, Auf-/Abstieg und gespeichertem Karten-Zoom
+- Erster DJI-Action-5-Pro-Sync-Bildschirm mit Start-/Checkpoint-/End-QR, Fahrt-ID, UTC, Fahrtzeit, Prüfsumme und optionaler GPS-Position
 - GPX-Import aus Dateien und Apple-MapKit-Streckenkarte
 - BLE-Scan für Van Rysel D100 und Zwift Click V2
 - Dunkles Design mit orangefarbenem Akzent

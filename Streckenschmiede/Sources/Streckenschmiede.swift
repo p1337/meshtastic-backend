@@ -15,6 +15,7 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
     @Published var points = 0
     @Published var trackCoordinates: [CLLocationCoordinate2D] = []
     @Published var currentCoordinate: CLLocationCoordinate2D?
+    @Published var currentHorizontalAccuracy: Double?
     @Published var speedKmh = 0.0
     @Published var averageSpeedKmh = 0.0
     @Published var maximumSpeedKmh = 0.0
@@ -24,11 +25,17 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
     @Published var elapsedSeconds = 0
     @Published var exportURL: URL?
     @Published var status = "Bereit"
+    @Published private(set) var rideID = UUID()
+    @Published private(set) var startedAt: Date?
     private let location = CLLocationManager()
     private var track: [CLLocation] = []
     private var pendingStartAfterAuthorization = false
-    private var startedAt: Date?
     private var elapsedTimer: Timer?
+
+    var elapsedMilliseconds: Int64 {
+        guard active, let startedAt else { return Int64(elapsedSeconds) * 1_000 }
+        return max(0, Int64(Date().timeIntervalSince(startedAt) * 1_000))
+    }
     override init() {
         super.init()
         location.delegate = self
@@ -54,6 +61,7 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
         track = []
         trackCoordinates = []
         currentCoordinate = nil
+        currentHorizontalAccuracy = nil
         distance = 0
         points = 0
         speedKmh = 0
@@ -64,6 +72,7 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
         descent = 0
         elapsedSeconds = 0
         exportURL = nil
+        rideID = UUID()
         startedAt = Date()
         elapsedTimer?.invalidate()
         let timer = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
@@ -129,6 +138,7 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
             }
             track.append(p)
             currentCoordinate = p.coordinate
+            currentHorizontalAccuracy = p.horizontalAccuracy
             if p.verticalAccuracy >= 0, p.verticalAccuracy < 30 { elevation = p.altitude }
         }
         points = track.count
@@ -231,6 +241,7 @@ private struct RideDashboard: View {
     @Binding var importing: Bool
     let route: [CLLocationCoordinate2D]
     let routeMessage: String
+    @State private var showingCameraSync = false
 
     private let columns = [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())]
 
@@ -283,6 +294,17 @@ private struct RideDashboard: View {
                 )
 
                 Button {
+                    showingCameraSync = true
+                } label: {
+                    Label("DJI Action 5 Pro synchronisieren", systemImage: "qrcode.viewfinder")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .tint(.orange)
+                .disabled(!ride.active && ride.points == 0)
+
+                Button {
                     if ride.active { ride.stop() } else { ride.start() }
                 } label: {
                     Label(
@@ -326,6 +348,9 @@ private struct RideDashboard: View {
             .padding(.bottom, 24)
         }
         .background(Color.black)
+        .sheet(isPresented: $showingCameraSync) {
+            CameraSyncView(ride: ride)
+        }
     }
 }
 
