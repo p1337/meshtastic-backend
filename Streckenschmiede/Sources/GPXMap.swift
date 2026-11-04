@@ -5,14 +5,22 @@ import FoundationXML
 #endif
 import CoreLocation
 import MapKit
+import UniformTypeIdentifiers
+
+extension UTType {
+    static let gpx = UTType(importedAs: "com.topografix.gpx", conformingTo: .xml)
+}
 
 struct LiveRideMap: View {
     let coordinates: [CLLocationCoordinate2D]
+    let plannedRoute: [CLLocationCoordinate2D]
     let currentCoordinate: CLLocationCoordinate2D?
     let speedKmh: Double
+    let courseDegrees: Double?
 
     @AppStorage("rideMapZoomMeters") private var rideMapZoomMeters = 1_500.0
     @AppStorage("rideMapAutoZoom") private var rideMapAutoZoom = true
+    @AppStorage("rideMapHeadingUp") private var rideMapHeadingUp = true
     @State private var cameraPosition: MapCameraPosition = .automatic
     @State private var followsPosition = true
 
@@ -25,6 +33,13 @@ struct LiveRideMap: View {
 
     var body: some View {
         Map(position: $cameraPosition, interactionModes: .all) {
+            if plannedRoute.count > 1 {
+                MapPolyline(coordinates: plannedRoute)
+                    .stroke(
+                        Color(red: 0.82, green: 1.0, blue: 0.1),
+                        style: StrokeStyle(lineWidth: 8, lineCap: .round, lineJoin: .round)
+                    )
+            }
             if coordinates.count > 1 {
                 MapPolyline(coordinates: coordinates)
                     .stroke(.orange, style: StrokeStyle(lineWidth: 6, lineCap: .round, lineJoin: .round))
@@ -47,11 +62,7 @@ struct LiveRideMap: View {
         .frame(height: 360)
         .clipShape(RoundedRectangle(cornerRadius: 22))
         .overlay(alignment: .topTrailing) {
-            VStack(spacing: 8) {
-                mapButton(systemImage: followsPosition ? "location.fill" : "location") {
-                    followsPosition = true
-                    recenter()
-                }
+            VStack(spacing: 10) {
                 mapButton(systemImage: "plus.magnifyingglass") {
                     rideMapZoomMeters = max(250, rideMapZoomMeters / 1.5)
                     followsPosition = true
@@ -65,13 +76,34 @@ struct LiveRideMap: View {
             }
             .padding(12)
         }
-        .overlay(alignment: .bottomLeading) {
+        .overlay(alignment: .topLeading) {
             Text(followsPosition ? "Position folgen" : "Karte frei")
                 .font(.caption.weight(.semibold))
                 .padding(.horizontal, 10)
                 .padding(.vertical, 7)
                 .background(.black.opacity(0.72), in: Capsule())
                 .padding(12)
+        }
+        .overlay(alignment: .bottom) {
+            Button {
+                followsPosition = true
+                recenter()
+            } label: {
+                Label(
+                    followsPosition ? "Zentriert" : "Fahrrad zentrieren",
+                    systemImage: followsPosition ? "location.fill" : "location"
+                )
+                .font(.headline.weight(.bold))
+                .padding(.horizontal, 18)
+                .frame(minHeight: 56)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.black)
+            .background(.orange, in: Capsule())
+            .overlay(Capsule().stroke(.white.opacity(0.55), lineWidth: 1))
+            .shadow(color: .black.opacity(0.55), radius: 8, y: 3)
+            .padding(.bottom, 12)
+            .accessibilityLabel("Fahrrad auf der Karte zentrieren")
         }
         .simultaneousGesture(DragGesture(minimumDistance: 8).onChanged { _ in
             followsPosition = false
@@ -89,6 +121,12 @@ struct LiveRideMap: View {
         .onChange(of: speedKmh) { _, _ in
             if followsPosition, rideMapAutoZoom { recenter() }
         }
+        .onChange(of: courseDegrees) { _, _ in
+            if followsPosition, rideMapHeadingUp { recenter() }
+        }
+        .onChange(of: plannedRoute.count) { _, _ in
+            if followsPosition { recenter() }
+        }
         .accessibilityLabel("Live-Fahrtkarte mit aktueller Position und gefahrenem Track")
     }
 
@@ -96,22 +134,54 @@ struct LiveRideMap: View {
     private func mapButton(systemImage: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: systemImage)
-                .font(.headline)
-                .frame(width: 38, height: 38)
+                .font(.title3.weight(.bold))
+                .frame(width: 56, height: 56)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .foregroundStyle(.orange)
         .background(.black.opacity(0.8), in: Circle())
+        .overlay(Circle().stroke(.white.opacity(0.35), lineWidth: 1))
         .accessibilityLabel(systemImage)
     }
 
     private func recenter() {
         guard let currentCoordinate else { return }
-        cameraPosition = .region(MKCoordinateRegion(
-            center: currentCoordinate,
-            latitudinalMeters: effectiveZoomMeters,
-            longitudinalMeters: effectiveZoomMeters
+        let hasReliableCourse = rideMapHeadingUp && courseDegrees.map { $0 >= 0 } == true
+        let heading = hasReliableCourse ? courseDegrees ?? 0 : 0
+        let center = hasReliableCourse
+            ? coordinate(from: currentCoordinate, bearingDegrees: heading, distanceMeters: effectiveZoomMeters * 0.22)
+            : currentCoordinate
+        cameraPosition = .camera(MapCamera(
+            centerCoordinate: center,
+            distance: effectiveZoomMeters,
+            heading: heading,
+            pitch: hasReliableCourse ? 38 : 0
         ))
+    }
+
+    private func coordinate(
+        from origin: CLLocationCoordinate2D,
+        bearingDegrees: Double,
+        distanceMeters: Double
+    ) -> CLLocationCoordinate2D {
+        let earthRadius = 6_378_137.0
+        let angularDistance = distanceMeters / earthRadius
+        let bearing = bearingDegrees * .pi / 180
+        let latitude = origin.latitude * .pi / 180
+        let longitude = origin.longitude * .pi / 180
+        let resultLatitude = asin(
+            sin(latitude) * cos(angularDistance)
+                + cos(latitude) * sin(angularDistance) * cos(bearing)
+        )
+        let resultLongitude = longitude + atan2(
+            sin(bearing) * sin(angularDistance) * cos(latitude),
+            cos(angularDistance) - sin(latitude) * sin(resultLatitude)
+        )
+        return CLLocationCoordinate2D(
+            latitude: resultLatitude * 180 / .pi,
+            longitude: resultLongitude * 180 / .pi
+        )
     }
 }
 
@@ -132,6 +202,15 @@ final class GPXParser: NSObject, XMLParserDelegate {
     static func load(_ url: URL) throws -> [CLLocationCoordinate2D] {
         let granted = url.startAccessingSecurityScopedResource()
         defer { if granted { url.stopAccessingSecurityScopedResource() } }
+        let values = try url.resourceValues(forKeys: [.fileSizeKey, .isRegularFileKey])
+        guard values.isRegularFile != false else {
+            throw NSError(domain: "Streckenschmiede", code: 2,
+                          userInfo: [NSLocalizedDescriptionKey: "Die Auswahl ist keine GPX-Datei"])
+        }
+        if let fileSize = values.fileSize, fileSize > 50 * 1_024 * 1_024 {
+            throw NSError(domain: "Streckenschmiede", code: 3,
+                          userInfo: [NSLocalizedDescriptionKey: "GPX-Datei ist größer als 50 MB"])
+        }
         let data = try Data(contentsOf: url)
         let delegate = GPXParser()
         let parser = XMLParser(data: data)

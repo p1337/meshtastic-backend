@@ -7,14 +7,33 @@ targets:
     platform: iOS
     deploymentTarget: "17.0"
     sources: [Sources]
+    info:
+      path: Info.plist
+      properties:
+        CFBundleDisplayName: Streckenschmiede
+        NSLocationWhenInUseUsageDescription: "GPS-Fahrten aufzeichnen und auf der Fahrradkarte navigieren"
+        NSBluetoothAlwaysUsageDescription: "Fahrradtrainer, Pulsmesser, Leistungsmesser und Zwift Click verbinden"
+        UILaunchScreen: {}
+        LSSupportsOpeningDocumentsInPlace: true
+        CFBundleDocumentTypes:
+          - CFBundleTypeName: GPX-Fahrradroute
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Owner
+            LSItemContentTypes:
+              - com.topografix.gpx
+        UTImportedTypeDeclarations:
+          - UTTypeIdentifier: com.topografix.gpx
+            UTTypeDescription: GPS Exchange Format
+            UTTypeConformsTo:
+              - public.xml
+            UTTypeTagSpecification:
+              public.filename-extension:
+                - gpx
+              public.mime-type:
+                - application/gpx+xml
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: de.p1337.Streckenschmiede
       MARKETING_VERSION: "0.1.0"
       CURRENT_PROJECT_VERSION: "1"
       SWIFT_VERSION: "5.0"
       TARGETED_DEVICE_FAMILY: "1"
-      INFOPLIST_KEY_CFBundleDisplayName: Streckenschmiede
-      GENERATE_INFOPLIST_FILE: YES
-      INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "GPS-Fahrten aufzeichnen"
-      INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription: "Fahrradtrainer und Zwift Click finden"
-      INFOPLIST_KEY_UILaunchScreen_Generation: YES
