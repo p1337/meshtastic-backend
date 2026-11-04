@@ -73,14 +73,18 @@ jobs:
           /usr/libexec/PlistBuddy -c 'Print :Name' "$RUNNER_TEMP/profile.plist" > "$RUNNER_TEMP/profile_name"
           /usr/libexec/PlistBuddy -c 'Print :Entitlements:application-identifier' "$RUNNER_TEMP/profile.plist" > "$RUNNER_TEMP/profile_app_id"
           cat "$RUNNER_TEMP/profile_app_id"
-      - name: Verify bundle ID matches provisioning profile
+      - name: Reuse existing signing bundle ID
         if: steps.signing.outputs.available == 'true'
+        id: profile
         run: |
+          set -euo pipefail
           APP_ID=$(cat "$RUNNER_TEMP/profile_app_id")
-          if [[ "$APP_ID" != *".de.p1337.Streckenschmiede" ]]; then
-            echo "::error::Existing profile is not for de.p1337.Streckenschmiede; do not sign with Werkbeleg profile."
+          BUNDLE_ID="${APP_ID#*.}"
+          if [[ -z "$BUNDLE_ID" || "$BUNDLE_ID" == *"*"* ]]; then
+            echo "::error::Invalid specific provisioning bundle ID"
             exit 1
           fi
+          echo "bundle_id=$BUNDLE_ID" >> "$GITHUB_OUTPUT"
       - name: Archive signed app
         if: steps.signing.outputs.available == 'true'
         working-directory: Streckenschmiede
@@ -88,7 +92,7 @@ jobs:
           TEAM: ${{ secrets.IOS_TEAM_ID }}
         run: |
           PROFILE_NAME=$(cat "$RUNNER_TEMP/profile_name")
-          xcodebuild -project Streckenschmiede.xcodeproj -scheme Streckenschmiede -configuration Release -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/Streckenschmiede.xcarchive" DEVELOPMENT_TEAM="$TEAM" CODE_SIGN_STYLE=Manual PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" archive
+          xcodebuild -project Streckenschmiede.xcodeproj -scheme Streckenschmiede -configuration Release -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/Streckenschmiede.xcarchive" DEVELOPMENT_TEAM="$TEAM" PRODUCT_BUNDLE_IDENTIFIER="${{ steps.profile.outputs.bundle_id }}" CODE_SIGN_STYLE=Manual PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" archive
       - name: Export signed IPA
         if: steps.signing.outputs.available == 'true'
         env:
@@ -102,7 +106,7 @@ jobs:
           <key>teamID</key><string>$TEAM</string>
           <key>signingStyle</key><string>manual</string>
           <key>provisioningProfiles</key><dict>
-          <key>de.p1337.Streckenschmiede</key><string>$(cat "$RUNNER_TEMP/profile_name")</string>
+          <key>${{ steps.profile.outputs.bundle_id }}</key><string>$(cat "$RUNNER_TEMP/profile_name")</string>
           </dict>
           </dict></plist>
           EOF
