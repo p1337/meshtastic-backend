@@ -11,7 +11,6 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
 - Dunkles Design mit orangefarbenem Akzent
 
 ## Noch nicht implementiert
-- Signierte IPA und OTA-Store-Veröffentlichung
 - GPS-Aufzeichnung bei gesperrtem Display / Background-Mode
 - Persistente Fahrtenbibliothek
 - FTMS-Verbindung und Leistung/Kadenz
@@ -19,6 +18,7 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
 - RLV-Videoimport, automatische Osmo-/Fitmeter-Synchronisierung
 - Training/ERG, Apple-TV-App, Apple Look Around
 
-## Build
-Workflow: .github/workflows/streckenschmiede-ios.yml
-Der Workflow erzeugt derzeit nur nicht signierte Test-Builds. Apple-Code-Signing muss aus der existierenden Store-Infrastruktur übernommen werden. Ein erfolgreicher Build ist noch nicht verifiziert.
+## Build und Veröffentlichung
+Workflow: `.github/workflows/streckenschmiede-ios.yml`
+
+Die Pipeline nutzt die vorhandene GitHub-Environment `apple-signing` mit `IOS_DISTRIBUTION_P12_BASE64`, `IOS_P12_PASSWORD` und `IOS_ADHOC_PROFILE_BASE64`. Bundle-ID und Team-ID werden aus dem bestehenden Profil übernommen; dadurch ersetzt die App die frühere Werkbeleg-/LoRaLab-Test-App. Nach Compiler-, Profil- und Signaturprüfung werden IPA, Manifest und Store gemeinsam über GitHub Pages veröffentlicht. Ein fehlgeschlagener Build überschreibt den letzten funktionierenden Store nicht.
