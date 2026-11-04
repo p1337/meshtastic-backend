@@ -66,7 +66,8 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
             gpx += "<trkpt lat=\"\(p.coordinate.latitude)\" lon=\"\(p.coordinate.longitude)\"><ele>\(p.altitude)</ele><time>\(f.string(from:p.timestamp))</time></trkpt>"
         }
         gpx += "</trkseg></trk></gpx>"
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent("Fahrt-\(Int(Date().timeIntervalSince1970)).gpx")
+        let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first ?? FileManager.default.temporaryDirectory
+        let url = documents.appendingPathComponent("Fahrt-\(Int(Date().timeIntervalSince1970)).gpx")
         do { try gpx.write(to:url,atomically:true,encoding:.utf8); exportURL = url; status = "GPX bereit" }
         catch { status = error.localizedDescription }
     }
@@ -128,7 +129,7 @@ struct MainView: View {
                         if !route.isEmpty { RouteMap(coordinates: route) }
                     }
                 }
-                .fileImporter(isPresented: $importing, allowedContentTypes: [.xml, .data]) { result in
+                .fileImporter(isPresented: $importing, allowedContentTypes: [UTType(filenameExtension: "gpx") ?? .xml, .xml, .data]) { result in
                     do {
                         let url = try result.get()
                         route = try GPXParser.load(url)
@@ -171,7 +172,7 @@ struct MainView: View {
                     }
                 }
             }
-            .tabItem { Label("Indoor",systemImage:"bicycle") }
+            .tabItem { Label("Indoor-Training",systemImage:"bicycle") }
         }
         .tint(Color(red:1,green:0.57,blue:0))
         .preferredColorScheme(.dark)
