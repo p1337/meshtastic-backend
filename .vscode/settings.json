@@ -1,8 +1,0 @@
-{
-    "gradle.javaDebug": {
-        "tasks": [
-            "bootRun"
-        ],
-        "clean": true
-    }
-}
