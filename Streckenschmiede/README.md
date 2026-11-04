@@ -1,6 +1,6 @@
 # Streckenschmiede – Entwicklungsstand
 
-Verbindlicher Gesamtumfang und Status: [../TODO.md](../TODO.md) · Zielarchitektur und dauerhafte technische Entscheidungen: [ARCHITECTURE.md](ARCHITECTURE.md) · DJI Action 5 Pro Video-/GPS-Sync: [CAMERA_SYNC.md](CAMERA_SYNC.md)
+Verbindlicher Gesamtumfang und Status: [../TODO.md](../TODO.md) · Zielarchitektur und dauerhafte technische Entscheidungen: [ARCHITECTURE.md](ARCHITECTURE.md) · [Routen/Karten/Integrationen](ROUTES_MAPS_INTEGRATIONS.md) · [RLV-Kompatibilität](RLV_COMPATIBILITY.md) · [eigene Grafiken](ARTWORK.md) · DJI Action 5 Pro Video-/GPS-Sync: [CAMERA_SYNC.md](CAMERA_SYNC.md)
 
 ## Ziel
 Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Training, ohne laufendes Abonnement.
@@ -10,7 +10,9 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
 - GPS-Aufzeichnung mit Distanz und GPX-Export (nur Vordergrund)
 - Erstes modernes Fahrt-Cockpit mit Live-Karte, gefahrenem Track, GPS-Geschwindigkeit, Zeit, Höhe, Auf-/Abstieg und gespeichertem Karten-Zoom
 - Erster DJI-Action-5-Pro-Sync-Bildschirm mit Start-/Checkpoint-/End-QR, Fahrt-ID, UTC, Fahrtzeit, Prüfsumme und optionaler GPS-Position
-- GPX-Import aus Dateien und Apple-MapKit-Streckenkarte
+- GPX-Import aus Dateien sowie Empfang über „Öffnen mit“/Teilen aus WhatsApp, Komoot und anderen Apps
+- Live-Karte mit geplanter GPX-Linie, Fahrtrichtung/Vorausblick, großem Zentrieren-Knopf und Handschuh-Zoompresets
+- Eigenes schwarz-oranges Streckenschmiede-Routenmotiv als App-Asset
 - BLE-Scan für Van Rysel D100 und Zwift Click V2
 - Dunkles Design mit orangefarbenem Akzent
 
@@ -24,6 +26,7 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
 - FTMS-Verbindung und Leistung/Kadenz
 - Zwift Click V2 Tastenprotokoll und virtuelle Schaltung
 - DJI Osmo Action 5 Pro Videoimport, QR-/Timecode-/FIT-Synchronisierung und optionale Kamerasteuerung; das technische Konzept ist dokumentiert
+- Offline-Vektorkarten/OSM-Fahrradstil, Komoot-Kontosync und freiwillige Gruppenpositionen; Grenzen und Providerentscheidung sind dokumentiert
 - Training/ERG, Apple-TV-App, Apple Look Around
 
 ## Build und Veröffentlichung
