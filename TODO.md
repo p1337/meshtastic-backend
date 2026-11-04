@@ -21,14 +21,14 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 
 ## P0 – verlässliche Fahrtaufzeichnung
 
-- [ ] `RideSessionEngine` als einzige Quelle für Start, Pause, Fortsetzen, Stop und Wiederherstellung einführen.
+- [~] `RideSessionEngine` ist als einzige Quelle für Start, Pause, Fortsetzen, Stop, Zeiten, Metriken und Wiederherstellung eingeführt; Compiler- und echter Relaunch-Test stehen noch aus.
 - [~] Background-Location-Modus und fortlaufende GPS-Updates während einer gestarteten Fahrt sind konfiguriert; Freigabestufe „Immer“, energieangepasste Genauigkeit und echte Sperrbildschirm-Abnahme bleiben offen.
 - [~] Core-Location-Startpfad verarbeitet erfolgreiche Einmalposition und Fehler-Callback; echter Relaunch-Test mit erteilter, verweigerter und ausgeschalteter Standortfreigabe bleibt offen.
 - [ ] Aufzeichnung bei gesperrtem Display und App im Hintergrund testen.
-- [ ] Laufende Fahrt absturzsicher und atomar zwischenspeichern; nach App-/Telefonneustart Wiederaufnahme oder sauberen Abschluss anbieten.
-- [ ] GPS-Ausreißer, alte Punkte, Tunnel-/Empfangslücken und unrealistische Sprünge filtern, ohne echte schnelle Abschnitte zu verlieren.
+- [~] Laufende Fahrt wird spätestens alle fünf Sekunden sowie bei Zustands-/App-Wechsel atomar zwischengespeichert; Wiederaufnahme oder GPX-Abschluss werden nach Relaunch angeboten. Echter Abbruch-/Telefonneustart-Test bleibt offen.
+- [~] Alte, ungenaue, nicht monotone und über 126 km/h implizierende GPS-Punkte sowie Sprünge ab 300 m werden verworfen; Tunnel-/Empfangslücken und reale Grenzfälle bleiben zu testen.
 - [ ] Auto-Pause mit einstellbarer Geschwindigkeit und Zeit; manuelle Pause hat Vorrang.
-- [ ] Gesamtzeit, Fahrzeit und Pausenzeit getrennt führen.
+- [~] Gesamtzeit, Fahrzeit und manuelle Pausenzeit werden getrennt geführt und im Cockpit angezeigt; Auto-Pause und echte Fahrtabnahme fehlen.
 - [~] Erste GPS-Live-Werte: aktuelle, durchschnittliche und maximale Geschwindigkeit, Distanz, Zeit, Höhe sowie Auf-/Abstieg. Steigung, Kalorien, Herzfrequenz, Trittfrequenz, Leistung, Balance und Sensor-/Akkudaten bleiben offen.
 - [ ] Datenherkunft je Wert sichtbar und testbar machen: Sensor, Apple Watch, GPS oder Schätzung.
 - [ ] Einheiten km/mi, kg/lb, °C/°F und konfigurierbarer Radumfang.
@@ -165,7 +165,7 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 
 ## Qualität, Datenschutz und Veröffentlichung
 
-- [ ] Swift-Unit-Tests für Metriken, Auto-Pause, GPX/FIT/TCX, Sensorparser, Routingprofile und Persistenz.
+- [~] CI-Selbsttest deckt Sitzungszustände, getrennte Zeiten, GPS-Sprungfilter und atomare Relaunch-Wiederherstellung ab; Auto-Pause, Formate, Sensorparser und Routingprofile fehlen.
 - [ ] UI-/Simulator-Smoke-Test für beide Hauptreiter, Einstellungen, Historie, Routenplaner und Wiederherstellung.
 - [ ] Reale iPhone-Testfahrten: mindestens 30 und 120 Minuten, Display an/aus, Hintergrund, Telefonat, Bluetooth-Abbruch, GPS-Lücke und Akkumessung.
 - [ ] Reale Watch-Testfahrt mit gespiegelter Session und anschließendem Health-/Fitness-Nachweis.

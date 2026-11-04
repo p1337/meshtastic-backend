@@ -10,7 +10,7 @@ struct StreckenschmiedeApp: App {
     var body: some Scene { WindowGroup { MainView() } }
 }
 final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
-    @Published var active = false
+    @Published private(set) var sessionPhase: RideSessionPhase = .idle
     @Published var distance = 0.0
     @Published var points = 0
     @Published var trackCoordinates: [CLLocationCoordinate2D] = []
@@ -24,31 +24,47 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
     @Published var ascent = 0.0
     @Published var descent = 0.0
     @Published var elapsedSeconds = 0
+    @Published var ridingSeconds = 0
+    @Published var pausedSeconds = 0
     @Published var exportURL: URL?
     @Published var status = "Bereit"
     @Published private(set) var rideID = UUID()
     @Published private(set) var startedAt: Date?
     private let location = CLLocationManager()
-    private var track: [CLLocation] = []
-    private var pendingStartAfterAuthorization = false
+    private let sessionEngine: RideSessionEngine
+    private enum PendingAction { case newRide, recoveredRide }
+    private var pendingActionAfterAuthorization: PendingAction?
     private var elapsedTimer: Timer?
 
+    var active: Bool { sessionPhase == .recording || sessionPhase == .paused }
+    var isRecording: Bool { sessionPhase == .recording }
+    var isPaused: Bool { sessionPhase == .paused }
+    var recoveryAvailable: Bool { sessionPhase == .recoveryRequired }
+
     var elapsedMilliseconds: Int64 {
-        guard active, let startedAt else { return Int64(elapsedSeconds) * 1_000 }
-        return max(0, Int64(Date().timeIntervalSince(startedAt) * 1_000))
+        Int64(elapsedSeconds) * 1_000
     }
+
     override init() {
+        sessionEngine = RideSessionEngine()
         super.init()
         location.delegate = self
         location.activityType = .fitness
         location.desiredAccuracy = kCLLocationAccuracyBest
         location.distanceFilter = 5
+        syncFromSession(now: Date())
+        if recoveryAvailable {
+            status = "Unterbrochene Fahrt gefunden"
+            startElapsedTimer()
+        }
     }
+
     func refreshLocation() {
         guard location.authorizationStatus == .authorizedWhenInUse
                 || location.authorizationStatus == .authorizedAlways else { return }
         location.requestLocation()
     }
+
     func start() {
         guard !active else { return }
         guard CLLocationManager.locationServicesEnabled() else {
@@ -56,7 +72,7 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
             return
         }
         if location.authorizationStatus == .notDetermined {
-            pendingStartAfterAuthorization = true
+            pendingActionAfterAuthorization = .newRide
             status = "Standortfreigabe wird angefordert"
             location.requestWhenInUseAuthorization()
             return
@@ -67,8 +83,9 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
         }
         beginRecording()
     }
+
     private func beginRecording() {
-        track = []
+        sessionEngine.start(now: Date())
         trackCoordinates = []
         currentCoordinate = nil
         currentHorizontalAccuracy = nil
@@ -82,63 +99,158 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
         ascent = 0
         descent = 0
         elapsedSeconds = 0
+        ridingSeconds = 0
+        pausedSeconds = 0
         exportURL = nil
-        rideID = UUID()
-        startedAt = Date()
+        syncFromSession(now: Date())
+        startElapsedTimer()
+        startLocationUpdates()
+        status = sessionEngine.lastPersistenceError == nil
+            ? "Aufzeichnung läuft"
+            : "Aufzeichnung läuft · Sicherung fehlgeschlagen"
+    }
+
+    func pause() {
+        guard isRecording else { return }
+        sessionEngine.pause(now: Date())
+        stopLocationUpdates()
+        syncFromSession(now: Date())
+        status = "Fahrt pausiert"
+    }
+
+    func resume() {
+        guard isPaused else { return }
+        guard location.authorizationStatus == .authorizedWhenInUse
+                || location.authorizationStatus == .authorizedAlways else {
+            status = "Standortzugriff in Einstellungen erlauben"
+            return
+        }
+        sessionEngine.resume(now: Date())
+        syncFromSession(now: Date())
+        startLocationUpdates()
+        status = "Aufzeichnung läuft"
+    }
+
+    func resumeRecoveredRide() {
+        guard recoveryAvailable else { return }
+        guard CLLocationManager.locationServicesEnabled() else {
+            status = "Ortungsdienste am iPhone einschalten"
+            return
+        }
+        if location.authorizationStatus == .notDetermined {
+            pendingActionAfterAuthorization = .recoveredRide
+            status = "Standortfreigabe wird angefordert"
+            location.requestWhenInUseAuthorization()
+            return
+        }
+        guard location.authorizationStatus == .authorizedWhenInUse
+                || location.authorizationStatus == .authorizedAlways else {
+            status = "Standortzugriff in Einstellungen erlauben"
+            return
+        }
+        beginRecoveredRecording()
+    }
+
+    private func beginRecoveredRecording() {
+        sessionEngine.resume(now: Date())
+        syncFromSession(now: Date())
+        startElapsedTimer()
+        startLocationUpdates()
+        status = "Fahrt wiederhergestellt"
+    }
+
+    func finishRecoveredRide() {
+        guard recoveryAvailable else { return }
+        finishSession()
+    }
+
+    private func startElapsedTimer() {
         elapsedTimer?.invalidate()
         let timer = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
-            guard let self, let startedAt = self.startedAt else { return }
-            self.elapsedSeconds = max(0, Int(Date().timeIntervalSince(startedAt)))
-            self.updateAverageSpeed()
+            self?.syncFromSession(now: Date())
         }
         elapsedTimer = timer
         RunLoop.main.add(timer, forMode: .common)
-        active = true
+    }
+
+    private func startLocationUpdates() {
         location.allowsBackgroundLocationUpdates = true
         location.showsBackgroundLocationIndicator = true
         location.pausesLocationUpdatesAutomatically = false
         location.startUpdatingLocation()
-        status = "Aufzeichnung läuft"
     }
-    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
-        let allowed = manager.authorizationStatus == .authorizedAlways
-            || manager.authorizationStatus == .authorizedWhenInUse
-        if pendingStartAfterAuthorization {
-            if manager.authorizationStatus == .notDetermined { return }
-            pendingStartAfterAuthorization = false
-            if allowed {
-                beginRecording()
-            } else {
-                status = "Standortzugriff verweigert"
-            }
-        } else if allowed {
-            manager.requestLocation()
-        }
-    }
-    func stop() {
-        active = false
+
+    private func stopLocationUpdates() {
         location.stopUpdatingLocation()
         location.allowsBackgroundLocationUpdates = false
         location.showsBackgroundLocationIndicator = false
         location.pausesLocationUpdatesAutomatically = true
+    }
+
+    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        let allowed = manager.authorizationStatus == .authorizedAlways
+            || manager.authorizationStatus == .authorizedWhenInUse
+        if let pendingActionAfterAuthorization {
+            if manager.authorizationStatus == .notDetermined { return }
+            self.pendingActionAfterAuthorization = nil
+            if allowed {
+                switch pendingActionAfterAuthorization {
+                case .newRide: beginRecording()
+                case .recoveredRide: beginRecoveredRecording()
+                }
+            } else {
+                status = "Standortzugriff verweigert"
+            }
+        } else if allowed, !isRecording {
+            manager.requestLocation()
+        }
+    }
+
+    func stop() {
+        guard active else { return }
+        finishSession()
+    }
+
+    private func finishSession() {
+        _ = sessionEngine.finish(now: Date())
+        stopLocationUpdates()
         elapsedTimer?.invalidate()
         elapsedTimer = nil
-        speedKmh = 0
-        guard !track.isEmpty else { status = "Keine GPS-Daten"; return }
+        syncFromSession(now: Date())
+        guard !sessionEngine.samples.isEmpty else {
+            sessionEngine.clearPersistedSession()
+            sessionPhase = .finished
+            status = "Keine GPS-Daten"
+            return
+        }
         let f = ISO8601DateFormatter()
         f.formatOptions = [.withInternetDateTime]
         var gpx = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><gpx version=\"1.1\" creator=\"Streckenschmiede\" xmlns=\"http://www.topografix.com/GPX/1/1\"><trk><name>Fahrt</name><trkseg>"
-        for p in track {
-            gpx += "<trkpt lat=\"\(p.coordinate.latitude)\" lon=\"\(p.coordinate.longitude)\"><ele>\(p.altitude)</ele><time>\(f.string(from:p.timestamp))</time></trkpt>"
+        for sample in sessionEngine.samples {
+            gpx += "<trkpt lat=\"\(sample.latitude)\" lon=\"\(sample.longitude)\"><ele>\(sample.altitude)</ele><time>\(f.string(from:sample.timestamp))</time></trkpt>"
         }
         gpx += "</trkseg></trk></gpx>"
         let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first ?? FileManager.default.temporaryDirectory
         let url = documents.appendingPathComponent("Fahrt-\(Int(Date().timeIntervalSince1970)).gpx")
-        do { try gpx.write(to:url,atomically:true,encoding:.utf8); exportURL = url; status = "GPX bereit" }
+        do {
+            try gpx.write(to: url, atomically: true, encoding: .utf8)
+            exportURL = url
+            sessionEngine.clearPersistedSession()
+            sessionPhase = .finished
+            status = "GPX bereit"
+        }
         catch { status = error.localizedDescription }
     }
+
+    func persistNow() {
+        sessionEngine.persistNow(now: Date())
+        if sessionEngine.lastPersistenceError != nil, active {
+            status = "Fahrt läuft · Sicherung fehlgeschlagen"
+        }
+    }
+
     func locationManager(_ manager: CLLocationManager, didUpdateLocations updates: [CLLocation]) {
-        if !active {
+        if !isRecording {
             guard let point = updates.last(where: {
                 $0.horizontalAccuracy >= 0
                     && $0.horizontalAccuracy < 100
@@ -149,37 +261,23 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
             if point.verticalAccuracy >= 0 { elevation = point.altitude }
             return
         }
-        for p in updates where p.horizontalAccuracy >= 0 && p.horizontalAccuracy < 40 && abs(p.timestamp.timeIntervalSinceNow) < 20 {
-            if let last = track.last {
-                let d = p.distance(from:last)
-                guard d >= 3 && d < 300 else { continue }
-                distance += d
-                if p.verticalAccuracy >= 0, p.verticalAccuracy < 30,
-                   last.verticalAccuracy >= 0, last.verticalAccuracy < 30 {
-                    let change = p.altitude - last.altitude
-                    if change >= 1 { ascent += change }
-                    if change <= -1 { descent += abs(change) }
-                }
-                let seconds = p.timestamp.timeIntervalSince(last.timestamp)
-                let measuredSpeed = p.speed >= 0 ? p.speed : (seconds > 0 ? d / seconds : 0)
-                speedKmh = max(0, measuredSpeed * 3.6)
-                maximumSpeedKmh = max(maximumSpeedKmh, speedKmh)
-            } else if p.speed >= 0 {
-                speedKmh = p.speed * 3.6
-                maximumSpeedKmh = max(maximumSpeedKmh, speedKmh)
-            }
-            track.append(p)
-            currentCoordinate = p.coordinate
-            currentHorizontalAccuracy = p.horizontalAccuracy
-            if p.course >= 0, p.speed >= 1 {
-                courseDegrees = p.course
-            }
-            if p.verticalAccuracy >= 0, p.verticalAccuracy < 30 { elevation = p.altitude }
+        var acceptedPoint = false
+        for point in updates {
+            let sample = RideSample(
+                latitude: point.coordinate.latitude,
+                longitude: point.coordinate.longitude,
+                altitude: point.altitude,
+                horizontalAccuracy: point.horizontalAccuracy,
+                verticalAccuracy: point.verticalAccuracy,
+                speedMetersPerSecond: point.speed,
+                courseDegrees: point.course,
+                timestamp: point.timestamp
+            )
+            if sessionEngine.append(sample, now: Date()) { acceptedPoint = true }
         }
-        points = track.count
-        trackCoordinates = track.map(\.coordinate)
-        updateAverageSpeed()
+        if acceptedPoint { syncFromSession(now: Date()) }
     }
+
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         let locationError = error as? CLError
         if locationError?.code == .locationUnknown {
@@ -192,9 +290,39 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
             status = active ? "GPS vorübergehend nicht verfügbar" : "GPS-Position nicht verfügbar"
         }
     }
-    private func updateAverageSpeed() {
-        guard elapsedSeconds > 0 else { averageSpeedKmh = 0; return }
-        averageSpeedKmh = distance / Double(elapsedSeconds) * 3.6
+
+    private func syncFromSession(now: Date) {
+        guard let snapshot = sessionEngine.snapshot else { return }
+        sessionPhase = snapshot.phase
+        rideID = snapshot.rideID
+        startedAt = snapshot.startedAt
+        distance = snapshot.distanceMeters
+        speedKmh = snapshot.latestSpeedKmh
+        maximumSpeedKmh = snapshot.maximumSpeedKmh
+        ascent = snapshot.ascentMeters
+        descent = snapshot.descentMeters
+        points = snapshot.samples.count
+        trackCoordinates = snapshot.samples.map {
+            CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude)
+        }
+        if let latest = snapshot.samples.last {
+            currentCoordinate = CLLocationCoordinate2D(
+                latitude: latest.latitude,
+                longitude: latest.longitude
+            )
+            currentHorizontalAccuracy = latest.horizontalAccuracy
+            if latest.verticalAccuracy >= 0 { elevation = latest.altitude }
+            if latest.courseDegrees >= 0, latest.speedMetersPerSecond >= 1 {
+                courseDegrees = latest.courseDegrees
+            }
+        }
+        let durations = sessionEngine.durations(at: now)
+        elapsedSeconds = max(0, Int(durations.totalSeconds))
+        ridingSeconds = max(0, Int(durations.ridingSeconds))
+        pausedSeconds = max(0, Int(durations.pausedSeconds))
+        averageSpeedKmh = ridingSeconds > 0
+            ? distance / Double(ridingSeconds) * 3.6
+            : 0
     }
 }
 final class TrainerScanner: NSObject, ObservableObject, CBCentralManagerDelegate {
@@ -226,6 +354,7 @@ struct MainView: View {
 
     @StateObject private var ride = RideTracker()
     @StateObject private var ble = TrainerScanner()
+    @Environment(\.scenePhase) private var scenePhase
     @State private var selectedTab: AppTab = .recording
     @State private var importing = false
     @State private var route: [CLLocationCoordinate2D] = []
@@ -279,6 +408,11 @@ struct MainView: View {
         .onOpenURL { url in
             importGPX(from: url, source: "Geteilt")
         }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .background || phase == .inactive {
+                ride.persistNow()
+            }
+        }
         .tint(Color(red:1,green:0.57,blue:0))
         .preferredColorScheme(.dark)
     }
@@ -309,7 +443,7 @@ private struct RideDashboard: View {
             VStack(spacing: 12) {
                 HStack {
                     Circle()
-                        .fill(ride.active ? Color.green : Color.orange)
+                        .fill(ride.isRecording ? Color.green : (ride.recoveryAvailable ? Color.red : Color.orange))
                         .frame(width: 9, height: 9)
                     Text(ride.status)
                         .font(.subheadline.weight(.semibold))
@@ -331,6 +465,30 @@ private struct RideDashboard: View {
                     .background(Color.white.opacity(0.07), in: Circle())
                 }
                 .padding(.horizontal, 4)
+
+                if ride.recoveryAvailable {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Label("Unterbrochene Fahrt wiederherstellen", systemImage: "arrow.clockwise.heart.fill")
+                            .font(.headline)
+                            .foregroundStyle(.orange)
+                        Text("\(ride.points) GPS-Punkte und \(formatDuration(ride.elapsedSeconds)) Gesamtzeit wurden sicher gefunden.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        HStack(spacing: 10) {
+                            Button("Fortsetzen") { ride.resumeRecoveredRide() }
+                                .buttonStyle(.borderedProminent)
+                                .tint(.orange)
+                                .frame(maxWidth: .infinity, minHeight: 52)
+                            Button("GPX abschließen") { ride.finishRecoveredRide() }
+                                .buttonStyle(.bordered)
+                                .tint(.orange)
+                                .frame(maxWidth: .infinity, minHeight: 52)
+                        }
+                    }
+                    .padding()
+                    .background(Color.orange.opacity(0.1), in: RoundedRectangle(cornerRadius: 18))
+                    .overlay(RoundedRectangle(cornerRadius: 18).stroke(Color.orange.opacity(0.55)))
+                }
 
                 LiveRideMap(
                     coordinates: ride.trackCoordinates,
@@ -360,9 +518,12 @@ private struct RideDashboard: View {
                             RideMetric(title: "km", value: String(format: "%.2f", ride.distance / 1_000))
                             RideMetric(title: "Ø", value: String(format: "%.1f", ride.averageSpeedKmh))
                             RideMetric(title: "max", value: String(format: "%.1f", ride.maximumSpeedKmh))
-                            RideMetric(title: "Zeit", value: formatDuration(ride.elapsedSeconds))
+                            RideMetric(title: "Gesamt", value: formatDuration(ride.elapsedSeconds))
+                            RideMetric(title: "Fahrt", value: formatDuration(ride.ridingSeconds))
+                            RideMetric(title: "Pause", value: formatDuration(ride.pausedSeconds))
                             RideMetric(title: "Höhe", value: String(format: "%.0f m", ride.elevation))
-                            RideMetric(title: "↗ ↘", value: String(format: "%.0f · %.0f", ride.ascent, ride.descent))
+                            RideMetric(title: "Auf", value: String(format: "%.0f m", ride.ascent))
+                            RideMetric(title: "Ab", value: String(format: "%.0f m", ride.descent))
                         }
                     }
                     .padding(.horizontal, 14)
@@ -373,18 +534,41 @@ private struct RideDashboard: View {
                 }
 
                 HStack(spacing: 10) {
-                    Button {
-                        if ride.active { ride.stop() } else { ride.start() }
-                    } label: {
-                        Label(
-                            ride.active ? "Fahrt beenden" : "Aufzeichnung starten",
-                            systemImage: ride.active ? "stop.fill" : "play.fill"
-                        )
-                        .font(.headline)
-                        .frame(maxWidth: .infinity, minHeight: 56)
+                    if ride.active {
+                        Button {
+                            if ride.isPaused { ride.resume() } else { ride.pause() }
+                        } label: {
+                            Label(
+                                ride.isPaused ? "Fortsetzen" : "Pause",
+                                systemImage: ride.isPaused ? "play.fill" : "pause.fill"
+                            )
+                            .font(.headline)
+                            .frame(maxWidth: .infinity, minHeight: 56)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.orange)
+
+                        Button {
+                            ride.stop()
+                        } label: {
+                            Image(systemName: "stop.fill")
+                                .font(.title2.weight(.bold))
+                                .frame(width: 56, height: 56)
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(.red)
+                        .accessibilityLabel("Fahrt beenden")
+                    } else if !ride.recoveryAvailable {
+                        Button {
+                            ride.start()
+                        } label: {
+                            Label("Aufzeichnung starten", systemImage: "play.fill")
+                                .font(.headline)
+                                .frame(maxWidth: .infinity, minHeight: 56)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.orange)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(ride.active ? .red : .orange)
 
                     Button {
                         showingCameraSync = true
