@@ -16,6 +16,7 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
     @Published var trackCoordinates: [CLLocationCoordinate2D] = []
     @Published var currentCoordinate: CLLocationCoordinate2D?
     @Published var currentHorizontalAccuracy: Double?
+    @Published var courseDegrees: Double?
     @Published var speedKmh = 0.0
     @Published var averageSpeedKmh = 0.0
     @Published var maximumSpeedKmh = 0.0
@@ -62,6 +63,7 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
         trackCoordinates = []
         currentCoordinate = nil
         currentHorizontalAccuracy = nil
+        courseDegrees = nil
         distance = 0
         points = 0
         speedKmh = 0
@@ -139,6 +141,9 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
             track.append(p)
             currentCoordinate = p.coordinate
             currentHorizontalAccuracy = p.horizontalAccuracy
+            if p.course >= 0, p.speed >= 1 {
+                courseDegrees = p.course
+            }
             if p.verticalAccuracy >= 0, p.verticalAccuracy < 30 { elevation = p.altitude }
         }
         points = track.count
@@ -172,13 +177,19 @@ final class TrainerScanner: NSObject, ObservableObject, CBCentralManagerDelegate
     }
 }
 struct MainView: View {
+    private enum AppTab: Hashable {
+        case recording
+        case indoor
+    }
+
     @StateObject private var ride = RideTracker()
     @StateObject private var ble = TrainerScanner()
+    @State private var selectedTab: AppTab = .recording
     @State private var importing = false
     @State private var route: [CLLocationCoordinate2D] = []
     @State private var routeMessage = "Noch keine GPX-Strecke importiert"
     var body: some View {
-        TabView {
+        TabView(selection: $selectedTab) {
             NavigationStack {
                 RideDashboard(
                     ride: ride,
@@ -186,11 +197,10 @@ struct MainView: View {
                     route: route,
                     routeMessage: routeMessage
                 )
-                .fileImporter(isPresented: $importing, allowedContentTypes: [UTType(filenameExtension: "gpx") ?? .xml, .xml, .data]) { result in
+                .fileImporter(isPresented: $importing, allowedContentTypes: [.gpx, .xml]) { result in
                     do {
                         let url = try result.get()
-                        route = try GPXParser.load(url)
-                        routeMessage = "\(route.count) Streckenpunkte importiert"
+                        importGPX(from: url, source: "Dateien")
                     } catch {
                         routeMessage = "Import fehlgeschlagen: \(error.localizedDescription)"
                     }
@@ -207,6 +217,7 @@ struct MainView: View {
                 }
             }
             .tabItem { Label("Aufzeichnung",systemImage:"record.circle") }
+            .tag(AppTab.recording)
             NavigationStack {
                 Form {
                     Section("Indoor-Trainer") {
@@ -230,9 +241,24 @@ struct MainView: View {
                 }
             }
             .tabItem { Label("Indoor-Training",systemImage:"bicycle") }
+            .tag(AppTab.indoor)
+        }
+        .onOpenURL { url in
+            importGPX(from: url, source: "Geteilt")
         }
         .tint(Color(red:1,green:0.57,blue:0))
         .preferredColorScheme(.dark)
+    }
+
+    private func importGPX(from url: URL, source: String) {
+        do {
+            route = try GPXParser.load(url)
+            selectedTab = .recording
+            let name = url.deletingPathExtension().lastPathComponent
+            routeMessage = "\(name) · \(route.count) Punkte · \(source)"
+        } catch {
+            routeMessage = "Import fehlgeschlagen: \(error.localizedDescription)"
+        }
     }
 }
 
@@ -289,8 +315,10 @@ private struct RideDashboard: View {
 
                 LiveRideMap(
                     coordinates: ride.trackCoordinates,
+                    plannedRoute: route,
                     currentCoordinate: ride.currentCoordinate,
-                    speedKmh: ride.speedKmh
+                    speedKmh: ride.speedKmh,
+                    courseDegrees: ride.courseDegrees
                 )
 
                 Button {
@@ -339,7 +367,30 @@ private struct RideDashboard: View {
                         Spacer()
                         Button("GPX importieren") { importing = true }
                     }
-                    if !route.isEmpty { RouteMap(coordinates: route) }
+                    if !route.isEmpty {
+                        RouteMap(coordinates: route)
+                    } else {
+                        Image("RideHero")
+                            .resizable()
+                            .scaledToFill()
+                            .frame(height: 190)
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .overlay(alignment: .bottomLeading) {
+                                Text("GPX aus WhatsApp, Dateien oder Komoot hier öffnen")
+                                    .font(.headline.weight(.bold))
+                                    .foregroundStyle(.white)
+                                    .padding(14)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .background(
+                                        LinearGradient(
+                                            colors: [.clear, .black.opacity(0.9)],
+                                            startPoint: .top,
+                                            endPoint: .bottom
+                                        )
+                                    )
+                            }
+                            .accessibilityLabel("Gravel-Fahrer folgt einer orangefarbenen Route")
+                    }
                 }
                 .padding()
                 .background(Color.white.opacity(0.055), in: RoundedRectangle(cornerRadius: 18))
@@ -390,11 +441,41 @@ private func formatDuration(_ seconds: Int) -> String {
 struct SettingsView: View {
     @AppStorage("rideMapZoomMeters") private var rideMapZoomMeters = 1_500.0
     @AppStorage("rideMapAutoZoom") private var rideMapAutoZoom = true
+    @AppStorage("rideMapHeadingUp") private var rideMapHeadingUp = true
+
+    private let zoomPresets: [(String, Double)] = [
+        ("Nah", 500),
+        ("Fahrt", 1_500),
+        ("Voraus", 3_000),
+        ("Übersicht", 8_000)
+    ]
 
     var body: some View {
         Form {
             Section("Fahrtkarte") {
                 Toggle("Automatischer Zoom", isOn: $rideMapAutoZoom)
+                Toggle("Fahrtrichtung oben und Vorausblick", isOn: $rideMapHeadingUp)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 10) {
+                        ForEach(zoomPresets, id: \.0) { preset in
+                            Button {
+                                rideMapZoomMeters = preset.1
+                            } label: {
+                                VStack(spacing: 2) {
+                                    Text(preset.0)
+                                        .font(.subheadline.weight(.bold))
+                                    Text(preset.1 >= 1_000
+                                         ? String(format: "%.1f km", preset.1 / 1_000)
+                                         : String(format: "%.0f m", preset.1))
+                                        .font(.caption.monospacedDigit())
+                                }
+                                .frame(minWidth: 82, minHeight: 52)
+                            }
+                            .buttonStyle(.bordered)
+                            .tint(abs(rideMapZoomMeters - preset.1) < 1 ? .orange : .secondary)
+                        }
+                    }
+                }
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
                         Text("Standard-Zoom")
@@ -405,7 +486,7 @@ struct SettingsView: View {
                     }
                     Slider(value: $rideMapZoomMeters, in: 250...10_000, step: 250)
                 }
-                Text("Die Einstellung wird dauerhaft für die Live-Fahrtkarte gespeichert. Auf der Karte kann zusätzlich direkt hinein- und herausgezoomt werden.")
+                Text("Nah, Fahrt, Voraus und Übersicht sind handschuhtaugliche Presets. Im Vorausblick steht das Fahrrad unten mittig, damit mehr Route vor dir sichtbar bleibt.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
