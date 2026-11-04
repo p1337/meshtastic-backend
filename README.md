@@ -6,7 +6,7 @@ Verbindlicher Gesamtumfang und Abnahmestatus: [TODO.md](TODO.md) · Technische Z
 
 ## App (iOS 17+)
 **Exakt zwei Hauptreiter:**
-- **Aufzeichnung:** GPS-Fahrt mit Distanz, GPX-Export; GPX-Import und Kartenansicht über Apple MapKit (mit Start-/Ziel-Markierung und automatischem Kartenausschnitt)
+- **Aufzeichnung:** GPS-Fahrt mit Pause/Fortsetzen, atomarer Notfall-Wiederherstellung, Distanz und GPX-Export; GPX-Import und Kartenansicht über Apple MapKit
 - **Indoor-Training:** BLE-Gerätesuche für Van Rysel D100, Zwift Click V2 und weitere Geräte
 
 Einstellungen sind über das Zahnradsymbol erreichbar. Design: dunkel, orangefarbene Akzente. Der derzeitige Build ist nur ein Grundprototyp. Das verbindliche Ziel umfasst ein modernes Fahrt-Cockpit, Live-Navigation mit Radweg-/Straßenprofilen und einstellbaren Zoomstufen, OSM-Option, Apple Watch/HealthKit/Apple Fitness, mehrere gleichzeitige Fahrradsensoren, D100/FTMS, Click V2 und die dokumentierten Historien-/Analysefunktionen. Diese Punkte sind in [TODO.md](TODO.md) einzeln aufgeführt und überwiegend **noch nicht implementiert**.

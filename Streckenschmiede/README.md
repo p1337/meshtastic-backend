@@ -7,7 +7,10 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
 
 ## Aktueller iOS-Grundprototyp
 - Zwei Hauptreiter: Aufzeichnung und Indoor-Training
-- GPS-Aufzeichnung mit Distanz und GPX-Export (nur Vordergrund)
+- GPS-Aufzeichnung mit Distanz, GPX-Export, manueller Pause/Fortsetzung,
+  getrennter Gesamt-/Fahrt-/Pausenzeit und atomarem Wiederherstellungsstand
+- Hintergrund-Ortung ist für eine laufende Fahrt konfiguriert; die echte
+  Sperrbildschirm- und Langzeittestfahrt steht noch aus
 - Erstes modernes Fahrt-Cockpit mit Live-Karte, gefahrenem Track, GPS-Geschwindigkeit, Zeit, Höhe, Auf-/Abstieg und gespeichertem Karten-Zoom
 - Erster DJI-Action-5-Pro-Sync-Bildschirm mit Start-/Checkpoint-/End-QR, Fahrt-ID, UTC, Fahrtzeit, Prüfsumme und optionaler GPS-Position
 - GPX-Import aus Dateien sowie Empfang über „Öffnen mit“/Teilen aus WhatsApp, Komoot und anderen Apps
@@ -20,7 +23,8 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
 ## Noch nicht implementiert
 - Vollständig anpassbares Fahrt-Cockpit, alle Sensorwerte und getrennte Zoom-Presets; die erste GPS-/Live-Karten-Ausbaustufe ist vorhanden
 - Zielnavigation mit Radweg-/Straßenprofilen, Apple-Fahrradrouting und OSM/Valhalla
-- GPS-Aufzeichnung bei gesperrtem Display / Background-Mode
+- Reale Abnahme der GPS-Aufzeichnung bei gesperrtem Display und nach einem
+  erzwungenen App-/Telefonneustart
 - Persistente Fahrtenbibliothek
 - Apple-Watch-Begleit-App, HealthKit-Workout/-Route und Übergabe an Apple Fitness
 - Standardisierte BLE-Dienste für Puls, Geschwindigkeit/Kadenz, Leistung, FTMS und mehrere gleichzeitige Sensoren

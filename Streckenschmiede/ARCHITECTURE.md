@@ -38,6 +38,16 @@ noch nicht erteilter Standortfreigabe.
 
 Eine Fahrt hat eine stabile UUID und mindestens die Zustände `idle`, `preparing`, `recording`, `paused`, `finishing`, `finished` und `recoveryRequired`. Zustandswechsel werden vor Nebenwirkungen atomar gespeichert.
 
+Der erste `RideSessionEngine`-Stand besitzt allein die Zustandsübergänge und
+berechnet Gesamt-, Fahrt- und Pausenzeit. Er schreibt `active-ride-v1.json`
+atomar in den Application-Support-Bereich: sofort bei jedem Zustandswechsel,
+beim Wechsel der App in den Hintergrund und während der Fahrt spätestens alle
+fünf Sekunden. Eine beim Start gefundene offene oder noch nicht exportierte
+Sitzung wird `recoveryRequired`; die Oberfläche bietet Fortsetzen oder einen
+sauberen GPX-Abschluss an. Die aktuelle JSON-Gesamtsicherung ist ein
+migrationsfähiger MVP. Vor sehr langen produktiven Aufzeichnungen wird die
+Punktreihe in das vorgesehene append-orientierte kompakte Format getrennt.
+
 Persistente Hauptobjekte:
 
 - `Ride`: Start/Ende, Typ indoor/outdoor, Gesamt-/Fahrt-/Pausenzeit, Summen, HealthKit-ID und Abschlussstatus.
