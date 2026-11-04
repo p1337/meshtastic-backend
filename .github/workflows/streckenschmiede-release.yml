@@ -6,6 +6,9 @@ on:
     paths:
       - 'Streckenschmiede/**'
       - '.github/workflows/streckenschmiede-release.yml'
+concurrency:
+  group: streckenschmiede-release
+  cancel-in-progress: false
 jobs:
   iphone:
     runs-on: macos-15
