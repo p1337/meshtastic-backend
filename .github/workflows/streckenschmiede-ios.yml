@@ -1,38 +1,166 @@
-name: Streckenschmiede iOS
+name: Streckenschmiede iPhone – Build, Sign, OTA
 on:
   push:
     branches: [streckenschmiede-ios]
+    paths:
+      - 'Streckenschmiede/**'
+      - '.github/workflows/streckenschmiede-ios.yml'
   workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: streckenschmiede-iphone-release
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: macos-15
+    outputs:
+      signed: ${{ steps.signing.outputs.available }}
     steps:
       - uses: actions/checkout@v4
+      - name: Use selected Xcode
+        run: xcodebuild -version
       - name: Install XcodeGen
         run: brew install xcodegen
+      - name: Validate Swift syntax
+        run: xcrun swiftc -frontend -parse Streckenschmiede/Sources/*.swift
       - name: Generate project
+        working-directory: Streckenschmiede
+        run: xcodegen generate
+      - name: Compile iPhone app without signing
+        working-directory: Streckenschmiede
         run: |
-          cd Streckenschmiede
-          xcodegen generate
-      - name: Build unsigned simulator app
-        run: |
-          cd Streckenschmiede
-          xcodebuild -project Streckenschmiede.xcodeproj -scheme Streckenschmiede -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
-      - name: Upload simulator build
-        if: success()
+          set -o pipefail
+          xcodebuild -project Streckenschmiede.xcodeproj -scheme Streckenschmiede -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath "$RUNNER_TEMP/unsigned" CODE_SIGNING_ALLOWED=NO build
+      - name: Upload compiled app for diagnostics
         uses: actions/upload-artifact@v4
         with:
-          name: Streckenschmiede-Simulator
-          path: ~/Library/Developer/Xcode/DerivedData/**/Build/Products/Release-iphonesimulator/Streckenschmiede.app
-          if-no-files-found: warn
-      - name: Build unsigned iPhone app
-        run: |
-          cd Streckenschmiede
-          xcodebuild -project Streckenschmiede.xcodeproj -scheme Streckenschmiede -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO build
-      - name: Upload iPhone build for signing
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: Streckenschmiede-iPhone-unsigned
-          path: ~/Library/Developer/Xcode/DerivedData/**/Build/Products/Release-iphoneos/Streckenschmiede.app
+          name: Streckenschmiede-unsigned-diagnostic
+          path: ${{ runner.temp }}/unsigned/Build/Products/Release-iphoneos/Streckenschmiede.app
           if-no-files-found: error
+      - name: Check existing Apple signing credentials
+        id: signing
+        env:
+          CERT: ${{ secrets.IOS_CERTIFICATE_BASE64 }}
+          PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+          PROFILE: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+          TEAM: ${{ secrets.IOS_TEAM_ID }}
+        run: |
+          if [[ -n "$CERT" && -n "$PASSWORD" && -n "$PROFILE" && -n "$TEAM" ]]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::No signed release: IOS_CERTIFICATE_BASE64, IOS_CERTIFICATE_PASSWORD, IOS_PROVISIONING_PROFILE_BASE64 and IOS_TEAM_ID are required."
+          fi
+      - name: Install and check distribution profile
+        if: steps.signing.outputs.available == 'true'
+        env:
+          CERT: ${{ secrets.IOS_CERTIFICATE_BASE64 }}
+          PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+          PROFILE: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+          TEAM: ${{ secrets.IOS_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          echo "$CERT" | base64 --decode > "$RUNNER_TEMP/distribution.p12"
+          echo "$PROFILE" | base64 --decode > "$RUNNER_TEMP/distribution.mobileprovision"
+          security cms -D -i "$RUNNER_TEMP/distribution.mobileprovision" > "$RUNNER_TEMP/profile.plist"
+          python3 - <<'PY'
+          import datetime, os, plistlib, sys
+          from pathlib import Path
+          profile = plistlib.loads((Path(os.environ["RUNNER_TEMP"]) / "profile.plist").read_bytes())
+          team = os.environ["TEAM"]
+          bundle = "de.p1337.Streckenschmiede"
+          app_id = profile.get("Entitlements", {}).get("application-identifier")
+          if app_id != f"{team}.{bundle}":
+              sys.exit(f"ERROR: profile is for {app_id}, not {team}.{bundle}")
+          expiry = profile.get("ExpirationDate")
+          if not isinstance(expiry, datetime.datetime) or expiry <= datetime.datetime.utcnow():
+              sys.exit("ERROR: provisioning profile expired")
+          if not profile.get("ProvisionedDevices") and not profile.get("ProvisionsAllDevices"):
+              sys.exit("ERROR: profile does not support ad-hoc/enterprise OTA installation")
+          print("Validated Streckenschmiede distribution profile")
+          PY
+          UUID=$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$RUNNER_TEMP/profile.plist")
+          NAME=$(/usr/libexec/PlistBuddy -c 'Print :Name' "$RUNNER_TEMP/profile.plist")
+          echo "$NAME" > "$RUNNER_TEMP/profile_name"
+          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
+          cp "$RUNNER_TEMP/distribution.mobileprovision" "$HOME/Library/MobileDevice/Provisioning Profiles/$UUID.mobileprovision"
+          KEYCHAIN="$RUNNER_TEMP/streckenschmiede.keychain-db"
+          security create-keychain -p "$RUNNER_TEMP" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$RUNNER_TEMP" "$KEYCHAIN"
+          security import "$RUNNER_TEMP/distribution.p12" -k "$KEYCHAIN" -P "$PASSWORD" -T /usr/bin/codesign
+          security list-keychains -d user -s "$KEYCHAIN"
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$RUNNER_TEMP" "$KEYCHAIN"
+          security find-identity -v -p codesigning "$KEYCHAIN"
+      - name: Archive signed Streckenschmiede
+        if: steps.signing.outputs.available == 'true'
+        working-directory: Streckenschmiede
+        env:
+          TEAM: ${{ secrets.IOS_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          PROFILE_NAME=$(cat "$RUNNER_TEMP/profile_name")
+          xcodebuild -project Streckenschmiede.xcodeproj -scheme Streckenschmiede -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/Streckenschmiede.xcarchive" DEVELOPMENT_TEAM="$TEAM" CODE_SIGN_STYLE=Manual PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" archive
+      - name: Export Apple-signed IPA
+        if: steps.signing.outputs.available == 'true'
+        env:
+          TEAM: ${{ secrets.IOS_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os, plistlib
+          from pathlib import Path
+          root=Path(os.environ["RUNNER_TEMP"])
+          opts={
+            "method":"ad-hoc",
+            "teamID":os.environ["TEAM"],
+            "signingStyle":"manual",
+            "provisioningProfiles":{
+              "de.p1337.Streckenschmiede":(root/"profile_name").read_text().strip()
+            }
+          }
+          (root/"ExportOptions.plist").write_bytes(plistlib.dumps(opts))
+          PY
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/Streckenschmiede.xcarchive" -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" -exportPath "$RUNNER_TEMP/export"
+      - name: Verify signature and package OTA store
+        if: steps.signing.outputs.available == 'true'
+        run: |
+          set -euo pipefail
+          IPA=$(find "$RUNNER_TEMP/export" -maxdepth 1 -name '*.ipa' -type f -print -quit)
+          test -n "$IPA"
+          python3 Streckenschmiede/scripts/package_release.py \
+            --ipa "$IPA" \
+            --store-html Streckenschmiede/webstore/index.html \
+            --out "$RUNNER_TEMP/site" \
+            --base-url "https://p1337.github.io/meshtastic-backend/"
+      - name: Upload verified signed IPA and OTA files
+        if: steps.signing.outputs.available == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Streckenschmiede-signed-OTA
+          path: ${{ runner.temp }}/site/
+          if-no-files-found: error
+      - name: Upload GitHub Pages package
+        if: steps.signing.outputs.available == 'true'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ${{ runner.temp }}/site/
+
+  deploy:
+    needs: build
+    if: needs.build.outputs.signed == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.pages.outputs.page_url }}
+    permissions:
+      pages: write
+      id-token: write
+    steps:
+      - name: Deploy verified app to existing GitHub Pages URL
+        id: pages
+        uses: actions/deploy-pages@v4
