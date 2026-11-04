@@ -6,14 +6,16 @@
 - Projektdateien:
   `Sources/Assets.xcassets/CorporateLogo.imageset/corporate-logo.png` und
   `Sources/Assets.xcassets/AppIcon.appiconset/app-icon-1024.png`.
-- Bildidee: eine orange Route als abstrahiertes `S`, Start-/Zielpunkt und ein
-  kleiner Schmiede- beziehungsweise Energie-Funke.
+- Bildidee: ein orangefarbener Schmiedeamboss als unverwechselbare
+  Markensilhouette; eine geschwungene schwarze Fahrradstrecke ist als
+  Negativraum in den Amboss geschnitten und führt zu einem Zielpunkt am Horn.
+  Ein einzelner heller Funke steht für die Schmiede.
 - Gestaltungsregeln: OLED-Schwarz, Safety-Orange `#FF7A00`, viel Negativraum,
   kein Text und keine fremden Markenbestandteile.
 
 Verwendeter Prompt:
 
-> Create a polished corporate brand mark and iOS app icon for a modern German cycling navigation app named Streckenschmiede. Icon-only, no words, no letters, no initials. Core symbol: one bold continuous safety-orange bicycle route bends into a subtle S-shaped path, ending in a simple circular destination pin; at the central bend add one tiny angular forging spark, so the idea is route craft / forged routes. Minimal geometric vector-like design, unmistakable silhouette, strong negative space, premium modern outdoor-tech identity, symmetric visual weight, centered, large margins, legible at 32 pixels. Deep OLED black background, orange #FF7A00 main mark, one restrained warm amber highlight only. Flat design, crisp edges, no gradients, no texture, no mockup, no bicycle illustration, no map screenshot, no text, no typography, no watermark, no Apple logo, no existing brand resemblance. Square 1:1 app-icon composition, fully opaque background, artwork must not touch the edges.
+> Design one iconic, highly distinctive corporate app icon for a German bicycle navigation and training brand called Streckenschmiede. Create a single memorable emblem that fuses two ideas into one silhouette: a blacksmith anvil and a winding bicycle road. The outer shape is a compact, bold safety-orange anvil seen from the side; a clean black negative-space road cuts through the anvil in an elegant S curve, beginning as a small round wheel/hub at lower left and ending as a precise destination dot near the horn. Add exactly one tiny four-point forge spark above the horn. This must feel like an enduring global sports-tech logo: instantly recognizable, ownable, simple enough to draw from memory, legible at 24px, strong balance and negative space. Deep solid black square background, flat safety orange #FF7900 emblem, optional tiny off-white spark only. No text, no letters, no gradients, no shadows, no 3D, no photo, no bicycle rider, no literal bicycle, no map screenshot, no pin symbol, no lightning bolt, no existing brand resemblance, no watermark. Centered with generous optical padding, crisp vector-like geometry, premium iOS app icon composition, fully opaque.
 
 ## `RideHero`
 

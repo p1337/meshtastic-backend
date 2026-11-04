@@ -44,6 +44,11 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
         location.desiredAccuracy = kCLLocationAccuracyBest
         location.distanceFilter = 5
     }
+    func refreshLocation() {
+        guard location.authorizationStatus == .authorizedWhenInUse
+                || location.authorizationStatus == .authorizedAlways else { return }
+        location.requestLocation()
+    }
     func start() {
         guard !active else { return }
         if location.authorizationStatus == .notDetermined {
@@ -89,13 +94,18 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
         status = "Aufzeichnung läuft"
     }
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
-        guard pendingStartAfterAuthorization else { return }
-        if manager.authorizationStatus == .notDetermined { return }
-        pendingStartAfterAuthorization = false
-        if manager.authorizationStatus == .authorizedAlways || manager.authorizationStatus == .authorizedWhenInUse {
-            beginRecording()
-        } else {
-            status = "Standortzugriff verweigert"
+        let allowed = manager.authorizationStatus == .authorizedAlways
+            || manager.authorizationStatus == .authorizedWhenInUse
+        if pendingStartAfterAuthorization {
+            if manager.authorizationStatus == .notDetermined { return }
+            pendingStartAfterAuthorization = false
+            if allowed {
+                beginRecording()
+            } else {
+                status = "Standortzugriff verweigert"
+            }
+        } else if allowed {
+            manager.requestLocation()
         }
     }
     func stop() {
@@ -118,7 +128,17 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
         catch { status = error.localizedDescription }
     }
     func locationManager(_ manager: CLLocationManager, didUpdateLocations updates: [CLLocation]) {
-        guard active else { return }
+        if !active {
+            guard let point = updates.last(where: {
+                $0.horizontalAccuracy >= 0
+                    && $0.horizontalAccuracy < 100
+                    && abs($0.timestamp.timeIntervalSinceNow) < 30
+            }) else { return }
+            currentCoordinate = point.coordinate
+            currentHorizontalAccuracy = point.horizontalAccuracy
+            if point.verticalAccuracy >= 0 { elevation = point.altitude }
+            return
+        }
         for p in updates where p.horizontalAccuracy >= 0 && p.horizontalAccuracy < 40 && abs(p.timestamp.timeIntervalSinceNow) < 20 {
             if let last = track.last {
                 let d = p.distance(from:last)
@@ -205,16 +225,7 @@ struct MainView: View {
                         routeMessage = "Import fehlgeschlagen: \(error.localizedDescription)"
                     }
                 }
-                .navigationTitle("Aufzeichnung")
-                .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        NavigationLink {
-                            SettingsView()
-                        } label: {
-                            Image(systemName: "gearshape")
-                        }
-                    }
-                }
+                .toolbar(.hidden, for: .navigationBar)
             }
             .tabItem { Label("Aufzeichnung",systemImage:"record.circle") }
             .tag(AppTab.recording)
@@ -273,45 +284,31 @@ private struct RideDashboard: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 16) {
+            VStack(spacing: 12) {
                 HStack {
                     Circle()
                         .fill(ride.active ? Color.green : Color.orange)
                         .frame(width: 9, height: 9)
                     Text(ride.status)
                         .font(.subheadline.weight(.semibold))
+                        .lineLimit(1)
                     Spacer()
                     Text("GPS · \(ride.points)")
                         .font(.caption.monospacedDigit())
                         .foregroundStyle(.secondary)
+                    NavigationLink {
+                        SettingsView()
+                    } label: {
+                        Image(systemName: "gearshape.fill")
+                            .font(.title3.weight(.semibold))
+                            .frame(width: 48, height: 48)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.orange)
+                    .background(Color.white.opacity(0.07), in: Circle())
                 }
                 .padding(.horizontal, 4)
-
-                VStack(spacing: 2) {
-                    Text("GESCHWINDIGKEIT")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                    HStack(alignment: .firstTextBaseline, spacing: 7) {
-                        Text(String(format: "%.1f", ride.speedKmh))
-                            .font(.system(size: 68, weight: .black, design: .rounded))
-                            .monospacedDigit()
-                        Text("km/h")
-                            .font(.title3.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 10)
-                .background(Color.white.opacity(0.055), in: RoundedRectangle(cornerRadius: 22))
-
-                LazyVGrid(columns: columns, spacing: 10) {
-                    RideMetric(title: "Distanz", value: String(format: "%.2f", ride.distance / 1_000), unit: "km")
-                    RideMetric(title: "Ø Tempo", value: String(format: "%.1f", ride.averageSpeedKmh), unit: "km/h")
-                    RideMetric(title: "Maximum", value: String(format: "%.1f", ride.maximumSpeedKmh), unit: "km/h")
-                    RideMetric(title: "Zeit", value: formatDuration(ride.elapsedSeconds), unit: "")
-                    RideMetric(title: "Höhe", value: String(format: "%.0f", ride.elevation), unit: "m")
-                    RideMetric(title: "Auf · Ab", value: String(format: "%.0f · %.0f", ride.ascent, ride.descent), unit: "m")
-                }
 
                 LiveRideMap(
                     coordinates: ride.trackCoordinates,
@@ -320,31 +317,65 @@ private struct RideDashboard: View {
                     speedKmh: ride.speedKmh,
                     courseDegrees: ride.courseDegrees
                 )
+                .overlay(alignment: .top) {
+                    HStack(alignment: .center, spacing: 12) {
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text("TEMPO")
+                                .font(.caption2.weight(.bold))
+                                .foregroundStyle(.secondary)
+                            HStack(alignment: .firstTextBaseline, spacing: 5) {
+                                Text(String(format: "%.1f", ride.speedKmh))
+                                    .font(.system(size: 49, weight: .black, design: .rounded))
+                                    .monospacedDigit()
+                                Text("km/h")
+                                    .font(.caption.weight(.bold))
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .frame(minWidth: 128, alignment: .leading)
 
-                Button {
-                    showingCameraSync = true
-                } label: {
-                    Label("DJI Action 5 Pro synchronisieren", systemImage: "qrcode.viewfinder")
+                        LazyVGrid(columns: columns, spacing: 8) {
+                            RideMetric(title: "km", value: String(format: "%.2f", ride.distance / 1_000))
+                            RideMetric(title: "Ø", value: String(format: "%.1f", ride.averageSpeedKmh))
+                            RideMetric(title: "max", value: String(format: "%.1f", ride.maximumSpeedKmh))
+                            RideMetric(title: "Zeit", value: formatDuration(ride.elapsedSeconds))
+                            RideMetric(title: "Höhe", value: String(format: "%.0f m", ride.elevation))
+                            RideMetric(title: "↗ ↘", value: String(format: "%.0f · %.0f", ride.ascent, ride.descent))
+                        }
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background(.black.opacity(0.86), in: RoundedRectangle(cornerRadius: 18))
+                    .overlay(RoundedRectangle(cornerRadius: 18).stroke(.white.opacity(0.16)))
+                    .padding(10)
+                }
+
+                HStack(spacing: 10) {
+                    Button {
+                        if ride.active { ride.stop() } else { ride.start() }
+                    } label: {
+                        Label(
+                            ride.active ? "Fahrt beenden" : "Aufzeichnung starten",
+                            systemImage: ride.active ? "stop.fill" : "play.fill"
+                        )
                         .font(.headline)
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.bordered)
-                .tint(.orange)
-                .disabled(!ride.active && ride.points == 0)
+                        .frame(maxWidth: .infinity, minHeight: 56)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(ride.active ? .red : .orange)
 
-                Button {
-                    if ride.active { ride.stop() } else { ride.start() }
-                } label: {
-                    Label(
-                        ride.active ? "Fahrt beenden" : "Aufzeichnung starten",
-                        systemImage: ride.active ? "stop.fill" : "play.fill"
-                    )
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
+                    Button {
+                        showingCameraSync = true
+                    } label: {
+                        Image(systemName: "qrcode.viewfinder")
+                            .font(.title2.weight(.bold))
+                            .frame(width: 56, height: 56)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(.orange)
+                    .disabled(!ride.active && ride.points == 0)
+                    .accessibilityLabel("DJI Action 5 Pro synchronisieren")
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(ride.active ? .red : .orange)
 
                 if let url = ride.exportURL {
                     ShareLink(item: url) {
@@ -367,30 +398,6 @@ private struct RideDashboard: View {
                         Spacer()
                         Button("GPX importieren") { importing = true }
                     }
-                    if !route.isEmpty {
-                        RouteMap(coordinates: route)
-                    } else {
-                        Image("RideHero")
-                            .resizable()
-                            .scaledToFill()
-                            .frame(height: 190)
-                            .clipShape(RoundedRectangle(cornerRadius: 16))
-                            .overlay(alignment: .bottomLeading) {
-                                Text("GPX aus WhatsApp, Dateien oder Komoot hier öffnen")
-                                    .font(.headline.weight(.bold))
-                                    .foregroundStyle(.white)
-                                    .padding(14)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .background(
-                                        LinearGradient(
-                                            colors: [.clear, .black.opacity(0.9)],
-                                            startPoint: .top,
-                                            endPoint: .bottom
-                                        )
-                                    )
-                            }
-                            .accessibilityLabel("Gravel-Fahrer folgt einer orangefarbenen Route")
-                    }
                 }
                 .padding()
                 .background(Color.white.opacity(0.055), in: RoundedRectangle(cornerRadius: 18))
@@ -402,32 +409,27 @@ private struct RideDashboard: View {
         .sheet(isPresented: $showingCameraSync) {
             CameraSyncView(ride: ride)
         }
+        .onAppear { ride.refreshLocation() }
     }
 }
 
 private struct RideMetric: View {
     let title: String
     let value: String
-    let unit: String
 
     var body: some View {
-        VStack(spacing: 4) {
-            Text(title.uppercased())
-                .font(.caption2.weight(.semibold))
+        VStack(spacing: 1) {
+            Text(title)
+                .font(.system(size: 9, weight: .bold))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
             Text(value)
-                .font(.title3.weight(.bold))
+                .font(.caption.weight(.bold))
                 .monospacedDigit()
-                .minimumScaleFactor(0.65)
+                .minimumScaleFactor(0.55)
                 .lineLimit(1)
-            Text(unit.isEmpty ? " " : unit)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 12)
-        .background(Color.white.opacity(0.055), in: RoundedRectangle(cornerRadius: 15))
     }
 }
 

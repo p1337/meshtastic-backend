@@ -59,7 +59,7 @@ struct LiveRideMap: View {
             MapCompass()
             MapScaleView()
         }
-        .frame(height: 360)
+        .frame(height: 540)
         .clipShape(RoundedRectangle(cornerRadius: 22))
         .overlay(alignment: .topTrailing) {
             VStack(spacing: 10) {
@@ -74,7 +74,8 @@ struct LiveRideMap: View {
                     recenter()
                 }
             }
-            .padding(12)
+            .padding(.top, 122)
+            .padding(.trailing, 12)
         }
         .overlay(alignment: .topLeading) {
             Text(followsPosition ? "Position folgen" : "Karte frei")
@@ -82,20 +83,18 @@ struct LiveRideMap: View {
                 .padding(.horizontal, 10)
                 .padding(.vertical, 7)
                 .background(.black.opacity(0.72), in: Capsule())
-                .padding(12)
+                .padding(.top, 122)
+                .padding(.leading, 12)
         }
         .overlay(alignment: .bottom) {
             Button {
                 followsPosition = true
                 recenter()
             } label: {
-                Label(
-                    followsPosition ? "Zentriert" : "Fahrrad zentrieren",
-                    systemImage: followsPosition ? "location.fill" : "location"
-                )
-                .font(.headline.weight(.bold))
-                .padding(.horizontal, 18)
-                .frame(minHeight: 56)
+                Image(systemName: followsPosition ? "location.fill" : "location")
+                    .font(.title2.weight(.black))
+                    .frame(width: 64, height: 64)
+                    .contentShape(Circle())
             }
             .buttonStyle(.plain)
             .foregroundStyle(.black)

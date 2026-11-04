@@ -154,6 +154,15 @@ Jedes Modul erhält Unit- oder Referenzvektortests. Zusätzlich gelten:
 6. signierte IPA mit gültigem eingebettetem Profil und Code-Signatur,
 7. nach Deployment erneut abgerufene IPA, Manifest, Hash und funktionierender `itms-services`-Link.
 
+### Release-Versionierung
+
+Die von XcodeGen erzeugte `Info.plist` referenziert
+`$(MARKETING_VERSION)` und `$(CURRENT_PROJECT_VERSION)` ausdrücklich. Der
+signierte CI-Archivlauf setzt die Buildnummer auf die GitHub-Run-Nummer. Damit
+ein OTA-Update nicht versehentlich wieder als Build `1` ausgeliefert wird,
+müssen `release.json`, die öffentliche IPA und deren `Info.plist` nach jedem
+Deployment dieselbe neue Versions-/Buildkombination ausweisen.
+
 ## Primärquellen für Entscheidungen
 
 - Apple Multidevice Workouts: <https://developer.apple.com/documentation/healthkit/building-a-multidevice-workout-app>

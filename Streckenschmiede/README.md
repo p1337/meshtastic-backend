@@ -12,7 +12,8 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
 - Erster DJI-Action-5-Pro-Sync-Bildschirm mit Start-/Checkpoint-/End-QR, Fahrt-ID, UTC, Fahrtzeit, Prüfsumme und optionaler GPS-Position
 - GPX-Import aus Dateien sowie Empfang über „Öffnen mit“/Teilen aus WhatsApp, Komoot und anderen Apps
 - Live-Karte mit geplanter GPX-Linie, Fahrtrichtung/Vorausblick, großem Zentrieren-Knopf und Handschuh-Zoompresets
-- Eigenes schwarz-oranges Streckenschmiede-Routenmotiv als App-Asset
+- Eigenes schwarz-oranges Corporate-Zeichen aus Schmiedeamboss und
+  eingeschnittener Fahrradroute als App-Icon; separates Routenmotiv als Hero-Asset
 - BLE-Scan für Van Rysel D100 und Zwift Click V2
 - Dunkles Design mit orangefarbenem Akzent
 
