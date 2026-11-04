@@ -2,6 +2,8 @@ import SwiftUI
 import CoreLocation
 import CoreBluetooth
 import Foundation
+import MapKit
+import UniformTypeIdentifiers
 
 @main
 struct StreckenschmiedeApp: App {
@@ -89,6 +91,9 @@ final class TrainerScanner: NSObject, ObservableObject, CBCentralManagerDelegate
 struct MainView: View {
     @StateObject private var ride = RideTracker()
     @StateObject private var ble = TrainerScanner()
+    @State private var importing = false
+    @State private var route: [CLLocationCoordinate2D] = []
+    @State private var routeMessage = "Noch keine GPX-Strecke importiert"
     var body: some View {
         TabView {
             NavigationStack {
@@ -102,7 +107,18 @@ struct MainView: View {
                         if let url = ride.exportURL { ShareLink("GPX teilen",item:url) }
                     }
                     Section("Strecken") {
-                        Text("GPX-Import und Kartenansicht in Vorbereitung")
+                        Button("GPX-Datei importieren") { importing = true }
+                        Text(routeMessage).font(.caption)
+                        if !route.isEmpty { RouteMap(coordinates: route) }
+                    }
+                }
+                .fileImporter(isPresented: $importing, allowedContentTypes: [.xml, .data]) { result in
+                    do {
+                        let url = try result.get()
+                        route = try GPXParser.load(url)
+                        routeMessage = "\(route.count) Streckenpunkte importiert"
+                    } catch {
+                        routeMessage = "Import fehlgeschlagen: \(error.localizedDescription)"
                     }
                 }
                 .navigationTitle("Aufzeichnung")
