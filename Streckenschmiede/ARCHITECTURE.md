@@ -127,7 +127,11 @@ Rohmessungen bleiben unverändert. Zusammenfassungen, Rekorde und Diagrammreihen
 
 ## Kamera
 
-Kamerasteuerung ist ein optionaler Adapter. Vor der Implementierung müssen Modell, offiziell nutzbare API, Verbindungsart, Authentisierung und gewünschte Aktionen feststehen. Der Adapter darf weder die Fahrt- noch die Trainer-Session besitzen. Kameraereignisse werden mit monotoner Fahrtzeit protokolliert, sodass Clips später zur Route passen.
+Verbindliches erstes Modell ist die **DJI Osmo Action 5 Pro**. Die detaillierte Entscheidung und das optische Protokoll stehen in [CAMERA_SYNC.md](CAMERA_SYNC.md).
+
+Primär wird das Video nach der Fahrt mit der unabhängig aufgezeichneten Streckenschmiede-Spur verbunden. Ein gefilmter Start-QR liefert den Zeitversatz; ein Endcode oder weitere Checkpoints ermöglichen eine lineare Driftkorrektur. AVFoundation-Timecode und Aufnahmemetadaten sind zusätzliche Anker. FIT-Export ermöglicht den von DJI dokumentierten Import in Mimo.
+
+Der optionale `CameraAdapter` darf weder Fahrt- noch Trainer-Session besitzen. Eine direkte Kamerasteuerung wird erst aktiviert, wenn eine offiziell dokumentierte oder anderweitig rechtlich nutzbare Schnittstelle und echte Hardwaretests vorliegen. Bis dahin ist der DJI GPS Bluetooth Remote Controller der offizielle Start-/Stop-/GNSS-Weg. Kameraereignisse verwenden immer monotone Fahrtzeit; Systemzeitänderungen dürfen die Zuordnung nicht zerstören.
 
 ## Abnahme und Beweisführung
 

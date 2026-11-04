@@ -1,6 +1,6 @@
 # Streckenschmiede – Entwicklungsstand
 
-Verbindlicher Gesamtumfang und Status: [../TODO.md](../TODO.md) · Zielarchitektur und dauerhafte technische Entscheidungen: [ARCHITECTURE.md](ARCHITECTURE.md)
+Verbindlicher Gesamtumfang und Status: [../TODO.md](../TODO.md) · Zielarchitektur und dauerhafte technische Entscheidungen: [ARCHITECTURE.md](ARCHITECTURE.md) · DJI Action 5 Pro Video-/GPS-Sync: [CAMERA_SYNC.md](CAMERA_SYNC.md)
 
 ## Ziel
 Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Training, ohne laufendes Abonnement.
@@ -22,7 +22,7 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
 - Standardisierte BLE-Dienste für Puls, Geschwindigkeit/Kadenz, Leistung, FTMS und mehrere gleichzeitige Sensoren
 - FTMS-Verbindung und Leistung/Kadenz
 - Zwift Click V2 Tastenprotokoll und virtuelle Schaltung
-- RLV-Videoimport, automatische Osmo-/Fitmeter-Synchronisierung
+- DJI Osmo Action 5 Pro Videoimport, QR-/Timecode-/FIT-Synchronisierung und optionale Kamerasteuerung; das technische Konzept ist dokumentiert
 - Training/ERG, Apple-TV-App, Apple Look Around
 
 ## Build und Veröffentlichung
