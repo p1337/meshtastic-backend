@@ -55,6 +55,11 @@ jobs:
             echo "available=false" >> "$GITHUB_OUTPUT"
             echo "::warning::No signed release: IOS_CERTIFICATE_BASE64, IOS_CERTIFICATE_PASSWORD, IOS_PROVISIONING_PROFILE_BASE64 and IOS_TEAM_ID are required."
           fi
+      - name: Require signed installable release
+        if: steps.signing.outputs.available != 'true'
+        run: |
+          echo "::error::Signing blocked. Configure the four IOS_* repository secrets before the app can be installed."
+          exit 1
       - name: Install and check distribution profile
         if: steps.signing.outputs.available == 'true'
         env:
