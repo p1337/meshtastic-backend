@@ -101,7 +101,7 @@ def build_release(ipa: Path, store_html: Path, output: Path, base_url: str) -> N
             "assets": [{"kind": "software-package", "url": ipa_url}],
             "metadata": {
                 "bundle-identifier": EXPECTED_BUNDLE_ID,
-                "bundle-version": build,
+                "bundle-version": version,
                 "kind": "software",
                 "title": "Streckenschmiede",
             },
