@@ -1,9 +1,11 @@
 # Streckenschmiede – Entwicklungsstand
 
+Verbindlicher Gesamtumfang und Status: [../TODO.md](../TODO.md) · Zielarchitektur und dauerhafte technische Entscheidungen: [ARCHITECTURE.md](ARCHITECTURE.md)
+
 ## Ziel
 Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Training, ohne laufendes Abonnement.
 
-## Erste iOS-Testversion
+## Aktueller iOS-Grundprototyp
 - Zwei Hauptreiter: Aufzeichnung und Indoor-Training
 - GPS-Aufzeichnung mit Distanz und GPX-Export (nur Vordergrund)
 - GPX-Import aus Dateien und Apple-MapKit-Streckenkarte
@@ -11,8 +13,12 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
 - Dunkles Design mit orangefarbenem Akzent
 
 ## Noch nicht implementiert
+- Modernes anpassbares Fahrt-Cockpit mit Live-Karte, allen Fahrwerten und gespeicherten Zoomstufen
+- Zielnavigation mit Radweg-/Straßenprofilen, Apple-Fahrradrouting und OSM/Valhalla
 - GPS-Aufzeichnung bei gesperrtem Display / Background-Mode
 - Persistente Fahrtenbibliothek
+- Apple-Watch-Begleit-App, HealthKit-Workout/-Route und Übergabe an Apple Fitness
+- Standardisierte BLE-Dienste für Puls, Geschwindigkeit/Kadenz, Leistung, FTMS und mehrere gleichzeitige Sensoren
 - FTMS-Verbindung und Leistung/Kadenz
 - Zwift Click V2 Tastenprotokoll und virtuelle Schaltung
 - RLV-Videoimport, automatische Osmo-/Fitmeter-Synchronisierung
