@@ -90,27 +90,53 @@ struct MainView: View {
     @StateObject private var ride = RideTracker()
     @StateObject private var ble = TrainerScanner()
     var body: some View {
-        NavigationStack {
-            Form {
-                Section("GPS-Aufzeichnung") {
-                    Text(ride.status)
-                    Text(String(format:"%.2f km · %d Punkte",ride.distance/1000,ride.points))
-                    Button(ride.active ? "Fahrt beenden" : "Fahrt starten") {
-                        if ride.active { ride.stop() } else { ride.start() }
+        TabView {
+            NavigationStack {
+                Form {
+                    Section("Meine Fahrt") {
+                        Text(ride.status)
+                        Text(String(format:"%.2f km · %d GPS-Punkte",ride.distance/1000,ride.points))
+                        Button(ride.active ? "Fahrt beenden" : "Aufzeichnung starten") {
+                            if ride.active { ride.stop() } else { ride.start() }
+                        }
+                        if let url = ride.exportURL { ShareLink("GPX teilen",item:url) }
                     }
-                    if let url = ride.exportURL { ShareLink("GPX exportieren",item:url) }
+                    Section("Strecken") {
+                        Text("GPX-Import und Kartenansicht in Vorbereitung")
+                    }
                 }
-                Section("D100 / Zwift Click V2") {
-                    Text(ble.status)
-                    Button("Bluetooth-Geräte suchen") { ble.scan() }
-                    ForEach(ble.devices,id:\.self) { Text($0).font(.caption) }
-                }
-                Section("Testversion") {
-                    Text("GPS-Aufzeichnung im Vordergrund. Bluetooth-Gerätesuche ohne Schaltfunktion.")
-                }
+                .navigationTitle("Aufzeichnung")
+                .toolbar { NavigationLink(destination: SettingsView()) { Image(systemName:"gearshape") } }
             }
-            .navigationTitle("Streckenschmiede")
-            .tint(Color(red:1,green:0.57,blue:0))
+            .tabItem { Label("Aufzeichnung",systemImage:"record.circle") }
+            NavigationStack {
+                Form {
+                    Section("Indoor-Trainer") {
+                        Text(ble.status)
+                        Button("D100 und Clicks suchen") { ble.scan() }
+                        ForEach(ble.devices,id:\.self) { Text($0).font(.caption) }
+                    }
+                    Section("Trainingsprogramme") {
+                        Text("ERG, Intervalle und RLV werden vorbereitet")
+                    }
+                }
+                .navigationTitle("Indoor-Training")
+                .toolbar { NavigationLink(destination: SettingsView()) { Image(systemName:"gearshape") } }
+            }
+            .tabItem { Label("Indoor",systemImage:"bicycle") }
         }
+        .tint(Color(red:1,green:0.57,blue:0))
+        .preferredColorScheme(.dark)
+    }
+}
+struct SettingsView: View {
+    var body: some View {
+        Form {
+            Section("Streckenschmiede") {
+                Text("Einstellungen")
+                Text("Version: Entwicklungsstand")
+            }
+        }
+        .navigationTitle("Einstellungen")
     }
 }
