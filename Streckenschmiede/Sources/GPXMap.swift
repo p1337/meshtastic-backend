@@ -1,5 +1,7 @@
 import Foundation
+#if canImport(FoundationXML)
 import FoundationXML
+#endif
 import CoreLocation
 import MapKit
 
