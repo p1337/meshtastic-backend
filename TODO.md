@@ -131,20 +131,20 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 - [ ] GPS-Ausreißer, alte Punkte, Tunnel-/Empfangslücken und unrealistische Sprünge filtern, ohne echte schnelle Abschnitte zu verlieren.
 - [ ] Auto-Pause mit einstellbarer Geschwindigkeit und Zeit; manuelle Pause hat Vorrang.
 - [ ] Gesamtzeit, Fahrzeit und Pausenzeit getrennt führen.
-- [ ] Live-Werte: aktuelle, durchschnittliche und maximale Geschwindigkeit; Distanz; Höhe; Aufstieg; Abstieg; Steigung; Kalorien; Herzfrequenz; Trittfrequenz; Leistung; Leistungsbalance; verfügbare Sensor- und Akkudaten.
+- [~] Erste GPS-Live-Werte: aktuelle, durchschnittliche und maximale Geschwindigkeit, Distanz, Zeit, Höhe sowie Auf-/Abstieg. Steigung, Kalorien, Herzfrequenz, Trittfrequenz, Leistung, Balance und Sensor-/Akkudaten bleiben offen.
 - [ ] Datenherkunft je Wert sichtbar und testbar machen: Sensor, Apple Watch, GPS oder Schätzung.
 - [ ] Einheiten km/mi, kg/lb, °C/°F und konfigurierbarer Radumfang.
 
 ## P0 – modernes Fahrt-Cockpit und Karten
 
-- [ ] Moderne schwarze/orange Oberfläche mit großen, während der Fahrt gut lesbaren Feldern und Dynamic Type.
+- [~] Erste moderne schwarze/orange Cockpitansicht mit großen Live-Werten; Anpassbarkeit, vollständige Dynamic-Type- und Geräteabnahme bleiben offen.
 - [ ] Anpassbare Datenfelder und mindestens drei speicherbare Cockpit-Layouts.
-- [ ] Live-Karte immer im Fahrtbild verfügbar: aktuelle Position, gefahrene Spur, geplante Route und Abweichung klar getrennt.
+- [~] Live-Karte mit aktueller Position und gefahrenem Track im Fahrtbild; geplante Route und Abweichung fehlen noch.
 - [ ] Kartenmodi: Standard, Satellit, Hybrid und OSM-basierte Darstellung mit sichtbarer Quellenangabe.
 - [ ] Kartenorientierung: Norden oben, Fahrtrichtung oben und 3D-Perspektive.
-- [ ] Follow-Modus mit gut erreichbarer Zentrieren-Taste; manuelles Verschieben pausiert Follow kontrolliert.
-- [ ] Zoom mit Gesten sowie frei einstellbaren Presets in Metern/Kilometern für Fahrt, Navigation und Routenübersicht.
-- [ ] Zoom-Presets dauerhaft speichern; automatische Zoomstufe abhängig von Geschwindigkeit und nächstem Manöver optional zuschaltbar.
+- [~] Follow-Modus mit Zentrieren-Taste; Verschieben/Pinch schaltet auf freie Karte. Reale Gestenabnahme steht aus.
+- [~] Live-Karten-Zoom per Gesten und Tasten sowie dauerhaft einstellbarer Standardbereich von 250 m bis 10 km; getrennte Presets fehlen.
+- [~] Dauerhaft gespeicherter Live-Karten-Zoom und optionaler geschwindigkeitsabhängiger Auto-Zoom; manöverabhängiger Zoom fehlt.
 - [ ] Bildschirm-Wachhalten optional, Helligkeits-/OLED-schonender Nachtmodus und Live Activity/Lock-Screen-Status.
 
 ## P0 – Routenplaner und Zielnavigation
