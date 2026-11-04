@@ -230,7 +230,7 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 
 - [x] Erstes Kameramodell festgelegt: DJI Osmo Action 5 Pro. Offizielle Fähigkeiten für Timecode, GPS Bluetooth Remote Controller, Mimo und FIT-Import dokumentiert.
 - [x] Unabhängiges Synchronisierungskonzept mit Start-/End-QR, optionalen Checkpoints, Timecode-/Metadaten-Fallback und Driftkorrektur in `Streckenschmiede/CAMERA_SYNC.md` festgelegt.
-- [ ] Vollbild-QR-Generator mit Fahrt-ID, UTC, monotoner Fahrtzeit, Prüfsumme und optionaler GPS-Position.
+- [~] Vollbild-QR-Generator mit Fahrt-ID, UTC, monotoner Fahrtzeit, SHA-256-Prüfsumme und optionaler GPS-Position implementiert; Compiler-, Simulator-, Kamera- und Wiedererkennungstest stehen aus.
 - [ ] QR zu Beginn und Ende filmen; ab zwei Ankern Offset und Kameradrift robust berechnen.
 - [ ] Action-5-Pro-Video aus Fotos/Dateien/OTG importieren und Metadaten, Aufnahmedatum, Bildrate sowie Timecode-Track mit AVFoundation prüfen.
 - [ ] QR-Codes mit Apple Vision aus Videoframes erkennen; fehlende/mehrdeutige Codes nachvollziehbar behandeln.
