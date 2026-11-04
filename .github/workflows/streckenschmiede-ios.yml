@@ -109,15 +109,17 @@ jobs:
           if not isinstance(expiry, datetime.datetime) or expiry <= datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None):
               raise ValueError("Existing provisioning profile expired")
           certificates = profile.get("DeveloperCertificates", [])
-          if len(certificates) != 1:
-              raise ValueError("Expected exactly one distribution certificate in profile")
-          fingerprint = hashlib.sha1(certificates[0]).hexdigest().upper()
+          if not certificates:
+              raise ValueError("Provisioning profile contains no distribution certificates")
+          # A valid Ad Hoc profile may list several allowed distribution identities.
+          # Match the imported P12 to one of them instead of assuming exactly one.
+          fingerprints = {hashlib.sha1(cert).hexdigest().upper() for cert in certificates}
+          (root / "valid_profile_identities").write_text("\n".join(sorted(fingerprints)) + "\n")
           export_method = "enterprise" if profile.get("ProvisionsAllDevices") else "release-testing"
           values = {
               "bundle_id": bundle,
               "team_id": team,
               "profile_uuid": profile["UUID"],
-              "identity": fingerprint,
               "export_method": export_method,
           }
           for name, value in values.items():
@@ -147,7 +149,27 @@ jobs:
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN" >/dev/null
           security list-keychains -d user -s "$KEYCHAIN" /Library/Keychains/System.keychain
           security find-identity -v -p codesigning "$KEYCHAIN" > "$SIGNING_DIR/identities.txt"
-          grep -q "$(cat "$SIGNING_DIR/identity").*Apple Distribution" "$SIGNING_DIR/identities.txt"
+          python3 - <<'PY'
+          import os, re
+          from pathlib import Path
+          root = Path(os.environ["SIGNING_DIR"])
+          valid = set((root / "valid_profile_identities").read_text().splitlines())
+          installed = (root / "identities.txt").read_text()
+          matches = []
+          for line in installed.splitlines():
+              fingerprint = re.search(r"\b([0-9a-fA-F]{40})\b", line)
+              if fingerprint and "Apple Distribution:" in line:
+                  candidate = fingerprint.group(1).upper()
+                  if candidate in valid:
+                      matches.append(candidate)
+          if not matches:
+              raise ValueError("Existing P12 identity is not an Apple Distribution certificate allowed by the Ad Hoc profile")
+          identity = matches[0]
+          (root / "identity").write_text(identity)
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as outputs:
+              print(f"identity={identity}", file=outputs)
+          print("Validated that the imported Apple Distribution certificate is listed in the existing provisioning profile.")
+          PY
           mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
           cp "$SIGNING_DIR/profile.mobileprovision" "$HOME/Library/MobileDevice/Provisioning Profiles/$(cat "$SIGNING_DIR/profile_uuid").mobileprovision"
       - name: Archive signed Streckenschmiede
