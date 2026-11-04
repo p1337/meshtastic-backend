@@ -36,12 +36,13 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 
 - [~] Erste moderne schwarze/orange Cockpitansicht mit großen Live-Werten; Anpassbarkeit, vollständige Dynamic-Type- und Geräteabnahme bleiben offen.
 - [ ] Anpassbare Datenfelder und mindestens drei speicherbare Cockpit-Layouts.
-- [~] Live-Karte mit aktueller Position und gefahrenem Track im Fahrtbild; geplante Route und Abweichung fehlen noch.
+- [~] Live-Karte mit aktueller Position, gefahrenem Track und geplanter GPX-Linie im Fahrtbild; Abweichung und echte Navigation fehlen noch.
 - [ ] Kartenmodi: Standard, Satellit, Hybrid und OSM-basierte Darstellung mit sichtbarer Quellenangabe.
 - [ ] Kartenorientierung: Norden oben, Fahrtrichtung oben und 3D-Perspektive.
-- [~] Follow-Modus mit Zentrieren-Taste; Verschieben/Pinch schaltet auf freie Karte. Reale Gestenabnahme steht aus.
-- [~] Live-Karten-Zoom per Gesten und Tasten sowie dauerhaft einstellbarer Standardbereich von 250 m bis 10 km; getrennte Presets fehlen.
+- [~] Follow-Modus mit großem Zentrieren-Knopf unten mittig; Verschieben/Pinch schaltet auf freie Karte. Reale Gestenabnahme steht aus.
+- [~] Live-Karten-Zoom per Gesten und 56-Punkte-Tasten sowie dauerhaft einstellbarer Standardbereich von 250 m bis 10 km; Presets Nah/Fahrt/Voraus/Übersicht sind implementiert, reale Handschuhabnahme fehlt.
 - [~] Dauerhaft gespeicherter Live-Karten-Zoom und optionaler geschwindigkeitsabhängiger Auto-Zoom; manöverabhängiger Zoom fehlt.
+- [~] Fahrtrichtung/Vorausblick setzt das Fahrrad durch einen vorausliegenden Kartenmittelpunkt unten mittig; Glättung, Stillstandstest und echte Fahrabnahme fehlen.
 - [ ] Bildschirm-Wachhalten optional, Helligkeits-/OLED-schonender Nachtmodus und Live Activity/Lock-Screen-Status.
 
 ## P0 – Routenplaner und Zielnavigation
@@ -61,6 +62,8 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 - [ ] GPX-Route kann als Navigationsroute ohne Neuberechnung verfolgt oder auf das Wegenetz angepasst werden.
 - [ ] Routen und erforderliche Manöverdaten für eine begonnene Fahrt lokal speichern.
 - [ ] Für Offline-Karten nur einen Provider oder eigene Vektorkacheln verwenden, der Offline-/Prefetch ausdrücklich erlaubt; `tile.openstreetmap.org` nicht vorladen.
+- [ ] MapLibre-Native-Prototyp mit explizit offline erlaubten PMTiles/MBTiles; Gebiet, Zoomspanne, Größe, Fortschritt, Stand, Attribution und Löschen anzeigen.
+- [ ] Umschaltbaren OSM-Fahrradstil erst nach eindeutiger Provider-, Lizenz-, Offline- und Kostenentscheidung integrieren; „OpenBikeMap“ ist als Anbieterbezeichnung zu präzisieren.
 
 ## P0 – Apple Watch, HealthKit und Apple Fitness
 
@@ -118,10 +121,20 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 
 ## P1 – Import, Export und Teilen
 
+- [~] Streckenschmiede als `com.topografix.gpx`-Dokument-App registrieren und GPX per „Öffnen mit“/Share Sheet aus WhatsApp, Dateien, Komoot und anderen Apps empfangen; Compiler- und echter App-zu-App-Test stehen aus.
 - [ ] GPX 1.0/1.1 robust importieren/exportieren, inklusive Route, Track, Zeit und Höhe.
 - [ ] FIT, TCX und CSV importieren/exportieren; unbekannte Felder erhalten, soweit praktikabel.
 - [ ] Teilen als Datei und als datenschutzbewusste Karte/Bildzusammenfassung ohne Zwangskonto.
 - [ ] Export-Validierung mit Roundtrip-Tests und unabhängigen Beispielwerkzeugen.
+- [x] Komoot-, Offlinekarten-, GPX-Dateihandler- und Standortfreigabegrenzen in `Streckenschmiede/ROUTES_MAPS_INTEGRATIONS.md` dokumentiert.
+- [ ] Komoot-Austausch zunächst ausschließlich über offiziellen GPX-Import/-Export und iOS Share Sheet; Kontosync nur mit offiziell vereinbarter Partner-API.
+
+## P1 – Gruppenfahrt und freiwillige Live-Position
+
+- [ ] Zeitlich begrenzte Fahrtgruppe per Einladungslink/QR, ausdrücklicher Beitritt und jederzeitiger Widerruf.
+- [ ] Verschlüsselte Live-Positionen mit Zeit, Genauigkeit und optional Akku/ETA; veraltete oder ungenaue Werte sichtbar kennzeichnen.
+- [ ] Automatische Löschung nach der Tour, Teilnehmer blockieren/entfernen und keine stille Standortfreigabe.
+- [ ] Keine Auslese privater Google-Maps- oder Apple-„Wo ist?“-Positionen; nur eigene, dokumentierte Freigabe verwenden.
 
 ## P2 – Kamera und Medien
 
@@ -139,6 +152,15 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 - [ ] Timecode-Grenzen testen: über 60 fps und Pre-Rec benötigen den optischen QR-Fallback.
 - [ ] Kamerazeit und Fahrtzeit synchronisieren; Clips anhand der Fahrtposition referenzieren.
 - [ ] Kameraausfall darf Fahrt, Navigation und Sensoraufzeichnung niemals beenden.
+
+## P2 – RLV / Real-Life-Video
+
+- [x] RLV-Formatlandschaft, portablen MP4+GPX-Korridor sowie Tacx-RLV/PGMF-Blöcke und Lizenzgrenzen in `Streckenschmiede/RLV_COMPATIBILITY.md` dokumentiert.
+- [ ] Portable RLV-Paare importieren: gleichnamiges MP4/AVI plus GPX mit Zeit und Höhe; H.264/H.265 zuerst.
+- [ ] Video-/GPX-Offset sowie Drift mit denselben QR-/Timecode-Ankern wie Action 5 Pro bestimmen.
+- [ ] Tacx `.rlv`/`.pgmf` defensiv lesen, MIT-Hinweise erhalten und mit eigenen/lizenzierten Referenzdateien gegen Incyclist sowie GoldenCheetah prüfen.
+- [ ] Steigungen ausschließlich über `TrainerCore`, FTMS-Fähigkeiten, Wertebereiche und Not-Stopp anwenden.
+- [ ] Tacx-Export erst nach Roundtrip-Nachweis; fremde RLV-Videos nie ungefragt kopieren oder verteilen.
 
 ## Qualität, Datenschutz und Veröffentlichung
 

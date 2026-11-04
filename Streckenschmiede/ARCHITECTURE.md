@@ -25,6 +25,7 @@ Stand: 4. November 2026. Dieses Dokument beschreibt die geplante Architektur. De
 | `Persistence` | Fahrten, Routen, Einstellungen, Sensorzuordnung, atomare Zwischenstände | Rohdaten bleiben erhalten; abgeleitete Werte sind neu berechenbar |
 | `ImportExport` | GPX, FIT, TCX, CSV und Teilen | Parser isoliert und mit Referenzdateien testbar |
 | `CameraAdapter` | Herstellerspezifische Kameraverbindung und Kommandos | Optional; Fehler beeinflussen Fahrt/Navigation nicht |
+| `LiveGroupCore` | Freiwillige, zeitlich begrenzte Gruppenpositionen | Keine Google-/Find-My-Auslese; explizite Zustimmung, Widerruf und Ablauf sind Pflicht |
 
 Die Oberfläche liest einen zusammengeführten, unveränderlichen `RideSnapshot`. GPS, Watch und Sensoren schreiben zeitgestempelte Rohmessungen in den jeweiligen Dienst. `RideCore` bestimmt anhand der konfigurierten Quellenpriorität und Qualität den angezeigten Wert. So werden weder Distanz noch Kalorien doppelt gezählt.
 
@@ -104,6 +105,8 @@ Apple Fitness erhält Drittanbieterfahrten über HealthKit-Workout- und Aktivit�
 
 Die Provider-URL ist konfigurierbar und nicht fest an einen öffentlichen Demo-Dienst gekoppelt. Produktionsbetrieb benötigt einen verlässlich betriebenen oder beauftragten Valhalla-Dienst.
 
+GPX ist zugleich die erste Interoperabilitätsschicht zu WhatsApp, Dateien und Komoot. Die App registriert einen GPX-Dokumenttyp und verarbeitet externe Dokument-URLs über denselben Parser wie den Dateiauswahldialog. Eine Kontosynchronisation mit Komoot wird nicht aus undokumentierten Web-Endpunkten gebaut; bis zu einer offiziellen Partnervereinbarung bleibt es beim lokalen Dateiaustausch.
+
 Kartenanzeige und Routing sind getrennt. Apple MapKit bleibt die sichere Standarddarstellung. Eine OSM-Darstellung benötigt sichtbare Attribution und einen geeigneten Vector-Tile-Anbieter oder eigene Kacheln. Die öffentlichen `tile.openstreetmap.org`-Server erlauben kein Offline-Prefetch und bieten keine Verfügbarkeitsgarantie; deshalb werden sie nicht als Offline-Backend verwendet.
 
 ### Zoom- und Follow-Modell
@@ -114,6 +117,10 @@ Zoom wird als sichtbare Breite/Höhe in Metern statt als anbieterspezifische Kac
 - Zentrieren aktiviert Follow erneut.
 - Auto-Zoom darf Geschwindigkeit, Distanz zum nächsten Manöver und Routenkrümmung verwenden, bleibt abschaltbar.
 - Fahrtrichtung oben nutzt geglätteten Kurs; bei Stillstand wird nicht unruhig gedreht.
+- Im Vorausblick wird der Kartenmittelpunkt in Fahrtrichtung vor das Fahrrad verschoben. Bei gleichzeitig gedrehter Karte erscheint das Fahrrad dadurch unten mittig, ohne die tatsächliche GPS-Position zu verändern.
+- Pflichtbedienelemente auf der Fahrkarte erhalten mindestens 52 × 52 Punkte; Zentrieren liegt unten mittig und aktiviert Follow erneut.
+
+Offline- und Integrationsentscheidungen stehen ausführlich in [ROUTES_MAPS_INTEGRATIONS.md](ROUTES_MAPS_INTEGRATIONS.md). MapLibre/PMTiles ist die Zielrichtung für lokale Vektorkarten; öffentliche OSM-Standardkacheln werden nicht vorgeladen.
 
 ## Navigation
 
@@ -132,6 +139,8 @@ Verbindliches erstes Modell ist die **DJI Osmo Action 5 Pro**. Die detaillierte 
 Primär wird das Video nach der Fahrt mit der unabhängig aufgezeichneten Streckenschmiede-Spur verbunden. Ein gefilmter Start-QR liefert den Zeitversatz; ein Endcode oder weitere Checkpoints ermöglichen eine lineare Driftkorrektur. AVFoundation-Timecode und Aufnahmemetadaten sind zusätzliche Anker. FIT-Export ermöglicht den von DJI dokumentierten Import in Mimo.
 
 Der optionale `CameraAdapter` darf weder Fahrt- noch Trainer-Session besitzen. Eine direkte Kamerasteuerung wird erst aktiviert, wenn eine offiziell dokumentierte oder anderweitig rechtlich nutzbare Schnittstelle und echte Hardwaretests vorliegen. Bis dahin ist der DJI GPS Bluetooth Remote Controller der offizielle Start-/Stop-/GNSS-Weg. Kameraereignisse verwenden immer monotone Fahrtzeit; Systemzeitänderungen dürfen die Zuordnung nicht zerstören.
+
+Für Indoor-Real-Life-Video ist zunächst MP4 plus zeitgestempeltes, gleichnamiges GPX der portable Austauschweg. Tacx-RLV/PGMF ist eine zusätzliche Binärformatstufe und wird gemäß [RLV_COMPATIBILITY.md](RLV_COMPATIBILITY.md) nur mit defensivem Parser, Referenzdateien und Lizenzhinweisen ergänzt.
 
 ## Abnahme und Beweisführung
 
