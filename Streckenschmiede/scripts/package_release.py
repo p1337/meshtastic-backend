@@ -7,6 +7,7 @@ Run on a macOS GitHub Actions runner; no third-party Python dependencies.
 import argparse
 import hashlib
 import json
+import os
 import plistlib
 import re
 import shutil
@@ -18,7 +19,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urljoin, urlsplit
 
-EXPECTED_BUNDLE_ID = "de.p1337.Streckenschmiede"
+EXPECTED_BUNDLE_ID = os.environ.get("STRECKENSCHMIEDE_BUNDLE_ID", "de.p1337.Streckenschmiede")
 
 
 def fail(message: str) -> None:
@@ -68,7 +69,10 @@ def verify_ipa(ipa: Path) -> tuple[str, str]:
             profile = plistlib.loads(output.stdout)
             entitlement = profile.get("Entitlements", {})
             profile_bundle = str(entitlement.get("application-identifier", ""))
-            if not profile_bundle.endswith("." + EXPECTED_BUNDLE_ID):
+            profile_suffix = profile_bundle.split(".", 1)[1] if "." in profile_bundle else ""
+            if profile_suffix != EXPECTED_BUNDLE_ID and not (
+                profile_suffix.endswith(".*") and EXPECTED_BUNDLE_ID.startswith(profile_suffix[:-1])
+            ):
                 fail("Provisioning profile does not match Streckenschmiede's bundle ID")
             if not (profile.get("ProvisionedDevices") or profile.get("ProvisionsAllDevices")):
                 fail("Provisioning profile is not for ad-hoc or in-house OTA distribution")

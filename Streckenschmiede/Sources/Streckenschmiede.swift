@@ -138,7 +138,15 @@ struct MainView: View {
                     }
                 }
                 .navigationTitle("Aufzeichnung")
-                .toolbar { NavigationLink(destination: SettingsView()) { Image(systemName:"gearshape") } }
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        NavigationLink {
+                            SettingsView()
+                        } label: {
+                            Image(systemName: "gearshape")
+                        }
+                    }
+                }
             }
             .tabItem { Label("Aufzeichnung",systemImage:"record.circle") }
             NavigationStack {
@@ -153,7 +161,15 @@ struct MainView: View {
                     }
                 }
                 .navigationTitle("Indoor-Training")
-                .toolbar { NavigationLink(destination: SettingsView()) { Image(systemName:"gearshape") } }
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        NavigationLink {
+                            SettingsView()
+                        } label: {
+                            Image(systemName: "gearshape")
+                        }
+                    }
+                }
             }
             .tabItem { Label("Indoor",systemImage:"bicycle") }
         }

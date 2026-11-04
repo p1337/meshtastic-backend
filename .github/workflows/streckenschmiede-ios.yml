@@ -61,6 +61,7 @@ jobs:
           echo "::error::Signing blocked. Configure the four IOS_* repository secrets before the app can be installed."
           exit 1
       - name: Install and check distribution profile
+        id: provision
         if: steps.signing.outputs.available == 'true'
         env:
           CERT: ${{ secrets.IOS_CERTIFICATE_BASE64 }}
@@ -77,10 +78,16 @@ jobs:
           from pathlib import Path
           profile = plistlib.loads((Path(os.environ["RUNNER_TEMP"]) / "profile.plist").read_bytes())
           team = os.environ["TEAM"]
-          bundle = "de.p1337.Streckenschmiede"
           app_id = profile.get("Entitlements", {}).get("application-identifier")
-          if app_id != f"{team}.{bundle}":
-              sys.exit(f"ERROR: profile is for {app_id}, not {team}.{bundle}")
+          if not isinstance(app_id, str) or not app_id.startswith(team + "."):
+              sys.exit("ERROR: Existing profile does not belong to this Apple team")
+          profile_bundle = app_id[len(team) + 1:]
+          bundle = "de.p1337.Streckenschmiede" if profile_bundle.endswith(".*") else profile_bundle
+          if not bundle or "*" in bundle:
+              sys.exit("ERROR: Invalid bundle ID in existing profile")
+          with open(os.environ["GITHUB_OUTPUT"], "a") as outputs:
+              print("bundle_id=" + bundle, file=outputs)
+              print("export_method=" + ("enterprise" if profile.get("ProvisionsAllDevices") else "ad-hoc"), file=outputs)
           expiry = profile.get("ExpirationDate")
           if not isinstance(expiry, datetime.datetime) or expiry <= datetime.datetime.utcnow():
               sys.exit("ERROR: provisioning profile expired")
@@ -109,11 +116,13 @@ jobs:
         run: |
           set -euo pipefail
           PROFILE_NAME=$(cat "$RUNNER_TEMP/profile_name")
-          xcodebuild -project Streckenschmiede.xcodeproj -scheme Streckenschmiede -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/Streckenschmiede.xcarchive" DEVELOPMENT_TEAM="$TEAM" CODE_SIGN_STYLE=Manual PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" archive
+          xcodebuild -project Streckenschmiede.xcodeproj -scheme Streckenschmiede -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/Streckenschmiede.xcarchive" DEVELOPMENT_TEAM="$TEAM" PRODUCT_BUNDLE_IDENTIFIER="${{ steps.provision.outputs.bundle_id }}" CODE_SIGN_STYLE=Manual PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" archive
       - name: Export Apple-signed IPA
         if: steps.signing.outputs.available == 'true'
         env:
           TEAM: ${{ secrets.IOS_TEAM_ID }}
+          EXPORT_METHOD: ${{ steps.provision.outputs.export_method }}
+          STRECKENSCHMIEDE_BUNDLE_ID: ${{ steps.provision.outputs.bundle_id }}
         run: |
           set -euo pipefail
           python3 - <<'PY'
@@ -121,11 +130,11 @@ jobs:
           from pathlib import Path
           root=Path(os.environ["RUNNER_TEMP"])
           opts={
-            "method":"ad-hoc",
+            "method":os.environ["EXPORT_METHOD"],
             "teamID":os.environ["TEAM"],
             "signingStyle":"manual",
             "provisioningProfiles":{
-              "de.p1337.Streckenschmiede":(root/"profile_name").read_text().strip()
+              os.environ["STRECKENSCHMIEDE_BUNDLE_ID"]:(root/"profile_name").read_text().strip()
             }
           }
           (root/"ExportOptions.plist").write_bytes(plistlib.dumps(opts))
@@ -133,6 +142,8 @@ jobs:
           xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/Streckenschmiede.xcarchive" -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" -exportPath "$RUNNER_TEMP/export"
       - name: Verify signature and package OTA store
         if: steps.signing.outputs.available == 'true'
+        env:
+          STRECKENSCHMIEDE_BUNDLE_ID: ${{ steps.provision.outputs.bundle_id }}
         run: |
           set -euo pipefail
           IPA=$(find "$RUNNER_TEMP/export" -maxdepth 1 -name '*.ipa' -type f -print -quit)
