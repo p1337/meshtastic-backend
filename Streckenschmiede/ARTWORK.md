@@ -6,16 +6,18 @@
 - Projektdateien:
   `Sources/Assets.xcassets/CorporateLogo.imageset/corporate-logo.png` und
   `Sources/Assets.xcassets/AppIcon.appiconset/app-icon-1024.png`.
-- Bildidee: ein orangefarbener Schmiedeamboss als unverwechselbare
-  Markensilhouette; eine geschwungene schwarze Fahrradstrecke ist als
-  Negativraum in den Amboss geschnitten und führt zu einem Zielpunkt am Horn.
-  Ein einzelner heller Funke steht für die Schmiede.
-- Gestaltungsregeln: OLED-Schwarz, Safety-Orange `#FF7A00`, viel Negativraum,
-  kein Text und keine fremden Markenbestandteile.
+- Bildidee: ein exakt kreisförmiges schwarzes Rennrad-Vorderrad auf
+  Safety-Orange; vom mittigen Nabenkreis läuft eine steile gerade Gabel zu
+  einem angeschnittenen Rennlenker. Ober- und Unterrohr verlassen das Icon
+  rechts kurz nach dem Rahmenbeginn.
+- Gestaltungsregeln: Safety-Orange, tiefes Schwarz, sehr zurückhaltende
+  Satin-/Glaslichter, große Formen, kein Text und keine fremden
+  Markenbestandteile. Die Bilddatei bleibt quadratisch und ohne eingebrannte
+  Eckenmaske; iOS schneidet die App-Icon-Form selbst.
 
 Verwendeter Prompt:
 
-> Design one iconic, highly distinctive corporate app icon for a German bicycle navigation and training brand called Streckenschmiede. Create a single memorable emblem that fuses two ideas into one silhouette: a blacksmith anvil and a winding bicycle road. The outer shape is a compact, bold safety-orange anvil seen from the side; a clean black negative-space road cuts through the anvil in an elegant S curve, beginning as a small round wheel/hub at lower left and ending as a precise destination dot near the horn. Add exactly one tiny four-point forge spark above the horn. This must feel like an enduring global sports-tech logo: instantly recognizable, ownable, simple enough to draw from memory, legible at 24px, strong balance and negative space. Deep solid black square background, flat safety orange #FF7900 emblem, optional tiny off-white spark only. No text, no letters, no gradients, no shadows, no 3D, no photo, no bicycle rider, no literal bicycle, no map screenshot, no pin symbol, no lightning bolt, no existing brand resemblance, no watermark. Centered with generous optical padding, crisp vector-like geometry, premium iOS app icon composition, fully opaque.
+> Preserve the safety-orange background, black front wheel, steep black fork, cropped black frame tubes, and restrained satin Apple-style finish. Place the exact center of the circular wheel hub at the center of the square canvas; make the wheel ring a perfect circle. Keep one straight steep fork from the centered hub to the compact head tube. Refine the drop handlebar into one clean curved hook above the head tube whose low/drop segment ends as a short horizontal bar pointing right. Show one short top tube and one short down tube behind the head tube, both immediately cropped by the right edge. Keep large simple shapes and 24px readability. No text, letters, anvil, hammer, rider, second wheel, full bike, extra detail, texture or watermark. Opaque square with no baked rounded corners.
 
 ## `RideHero`
 

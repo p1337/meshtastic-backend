@@ -29,6 +29,11 @@ Stand: 4. November 2026. Dieses Dokument beschreibt die geplante Architektur. De
 
 Die Oberfläche liest einen zusammengeführten, unveränderlichen `RideSnapshot`. GPS, Watch und Sensoren schreiben zeitgestempelte Rohmessungen in den jeweiligen Dienst. `RideCore` bestimmt anhand der konfigurierten Quellenpriorität und Qualität den angezeigten Wert. So werden weder Distanz noch Kalorien doppelt gezählt.
 
+Ein einmaliger Core-Location-Abruf über `requestLocation()` wird nur mit beiden
+Delegate-Pfaden betrieben: `didUpdateLocations` und `didFailWithError`. Das ist
+ein Startpfad und deshalb Teil jedes Smoke-Tests mit bereits erteilter sowie
+noch nicht erteilter Standortfreigabe.
+
 ## Sitzungs- und Datenmodell
 
 Eine Fahrt hat eine stabile UUID und mindestens die Zustände `idle`, `preparing`, `recording`, `paused`, `finishing`, `finished` und `recoveryRequired`. Zustandswechsel werden vor Nebenwirkungen atomar gespeichert.
