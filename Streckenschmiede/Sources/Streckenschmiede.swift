@@ -13,11 +13,22 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
     @Published var active = false
     @Published var distance = 0.0
     @Published var points = 0
+    @Published var trackCoordinates: [CLLocationCoordinate2D] = []
+    @Published var currentCoordinate: CLLocationCoordinate2D?
+    @Published var speedKmh = 0.0
+    @Published var averageSpeedKmh = 0.0
+    @Published var maximumSpeedKmh = 0.0
+    @Published var elevation = 0.0
+    @Published var ascent = 0.0
+    @Published var descent = 0.0
+    @Published var elapsedSeconds = 0
     @Published var exportURL: URL?
     @Published var status = "Bereit"
     private let location = CLLocationManager()
     private var track: [CLLocation] = []
     private var pendingStartAfterAuthorization = false
+    private var startedAt: Date?
+    private var elapsedTimer: Timer?
     override init() {
         super.init()
         location.delegate = self
@@ -40,7 +51,28 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
         beginRecording()
     }
     private func beginRecording() {
-        track = []; distance = 0; points = 0; exportURL = nil
+        track = []
+        trackCoordinates = []
+        currentCoordinate = nil
+        distance = 0
+        points = 0
+        speedKmh = 0
+        averageSpeedKmh = 0
+        maximumSpeedKmh = 0
+        elevation = 0
+        ascent = 0
+        descent = 0
+        elapsedSeconds = 0
+        exportURL = nil
+        startedAt = Date()
+        elapsedTimer?.invalidate()
+        let timer = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
+            guard let self, let startedAt = self.startedAt else { return }
+            self.elapsedSeconds = max(0, Int(Date().timeIntervalSince(startedAt)))
+            self.updateAverageSpeed()
+        }
+        elapsedTimer = timer
+        RunLoop.main.add(timer, forMode: .common)
         active = true
         location.startUpdatingLocation()
         status = "Aufzeichnung läuft"
@@ -58,6 +90,9 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
     func stop() {
         active = false
         location.stopUpdatingLocation()
+        elapsedTimer?.invalidate()
+        elapsedTimer = nil
+        speedKmh = 0
         guard !track.isEmpty else { status = "Keine GPS-Daten"; return }
         let f = ISO8601DateFormatter()
         f.formatOptions = [.withInternetDateTime]
@@ -78,10 +113,31 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
                 let d = p.distance(from:last)
                 guard d >= 3 && d < 300 else { continue }
                 distance += d
+                if p.verticalAccuracy >= 0, p.verticalAccuracy < 30,
+                   last.verticalAccuracy >= 0, last.verticalAccuracy < 30 {
+                    let change = p.altitude - last.altitude
+                    if change >= 1 { ascent += change }
+                    if change <= -1 { descent += abs(change) }
+                }
+                let seconds = p.timestamp.timeIntervalSince(last.timestamp)
+                let measuredSpeed = p.speed >= 0 ? p.speed : (seconds > 0 ? d / seconds : 0)
+                speedKmh = max(0, measuredSpeed * 3.6)
+                maximumSpeedKmh = max(maximumSpeedKmh, speedKmh)
+            } else if p.speed >= 0 {
+                speedKmh = p.speed * 3.6
+                maximumSpeedKmh = max(maximumSpeedKmh, speedKmh)
             }
             track.append(p)
+            currentCoordinate = p.coordinate
+            if p.verticalAccuracy >= 0, p.verticalAccuracy < 30 { elevation = p.altitude }
         }
         points = track.count
+        trackCoordinates = track.map(\.coordinate)
+        updateAverageSpeed()
+    }
+    private func updateAverageSpeed() {
+        guard elapsedSeconds > 0 else { averageSpeedKmh = 0; return }
+        averageSpeedKmh = distance / Double(elapsedSeconds) * 3.6
     }
 }
 final class TrainerScanner: NSObject, ObservableObject, CBCentralManagerDelegate {
@@ -114,21 +170,12 @@ struct MainView: View {
     var body: some View {
         TabView {
             NavigationStack {
-                Form {
-                    Section("Meine Fahrt") {
-                        Text(ride.status)
-                        Text(String(format:"%.2f km · %d GPS-Punkte",ride.distance/1000,ride.points))
-                        Button(ride.active ? "Fahrt beenden" : "Aufzeichnung starten") {
-                            if ride.active { ride.stop() } else { ride.start() }
-                        }
-                        if let url = ride.exportURL { ShareLink("GPX teilen",item:url) }
-                    }
-                    Section("Strecken") {
-                        Button("GPX-Datei importieren") { importing = true }
-                        Text(routeMessage).font(.caption)
-                        if !route.isEmpty { RouteMap(coordinates: route) }
-                    }
-                }
+                RideDashboard(
+                    ride: ride,
+                    importing: $importing,
+                    route: route,
+                    routeMessage: routeMessage
+                )
                 .fileImporter(isPresented: $importing, allowedContentTypes: [UTType(filenameExtension: "gpx") ?? .xml, .xml, .data]) { result in
                     do {
                         let url = try result.get()
@@ -178,9 +225,165 @@ struct MainView: View {
         .preferredColorScheme(.dark)
     }
 }
+
+private struct RideDashboard: View {
+    @ObservedObject var ride: RideTracker
+    @Binding var importing: Bool
+    let route: [CLLocationCoordinate2D]
+    let routeMessage: String
+
+    private let columns = [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())]
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 16) {
+                HStack {
+                    Circle()
+                        .fill(ride.active ? Color.green : Color.orange)
+                        .frame(width: 9, height: 9)
+                    Text(ride.status)
+                        .font(.subheadline.weight(.semibold))
+                    Spacer()
+                    Text("GPS · \(ride.points)")
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, 4)
+
+                VStack(spacing: 2) {
+                    Text("GESCHWINDIGKEIT")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    HStack(alignment: .firstTextBaseline, spacing: 7) {
+                        Text(String(format: "%.1f", ride.speedKmh))
+                            .font(.system(size: 68, weight: .black, design: .rounded))
+                            .monospacedDigit()
+                        Text("km/h")
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
+                .background(Color.white.opacity(0.055), in: RoundedRectangle(cornerRadius: 22))
+
+                LazyVGrid(columns: columns, spacing: 10) {
+                    RideMetric(title: "Distanz", value: String(format: "%.2f", ride.distance / 1_000), unit: "km")
+                    RideMetric(title: "Ø Tempo", value: String(format: "%.1f", ride.averageSpeedKmh), unit: "km/h")
+                    RideMetric(title: "Maximum", value: String(format: "%.1f", ride.maximumSpeedKmh), unit: "km/h")
+                    RideMetric(title: "Zeit", value: formatDuration(ride.elapsedSeconds), unit: "")
+                    RideMetric(title: "Höhe", value: String(format: "%.0f", ride.elevation), unit: "m")
+                    RideMetric(title: "Auf · Ab", value: String(format: "%.0f · %.0f", ride.ascent, ride.descent), unit: "m")
+                }
+
+                LiveRideMap(
+                    coordinates: ride.trackCoordinates,
+                    currentCoordinate: ride.currentCoordinate,
+                    speedKmh: ride.speedKmh
+                )
+
+                Button {
+                    if ride.active { ride.stop() } else { ride.start() }
+                } label: {
+                    Label(
+                        ride.active ? "Fahrt beenden" : "Aufzeichnung starten",
+                        systemImage: ride.active ? "stop.fill" : "play.fill"
+                    )
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(ride.active ? .red : .orange)
+
+                if let url = ride.exportURL {
+                    ShareLink(item: url) {
+                        Label("Aufgezeichnete GPX teilen", systemImage: "square.and.arrow.up")
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .padding()
+                    .background(Color.white.opacity(0.055), in: RoundedRectangle(cornerRadius: 16))
+                }
+
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text("STRECKEN")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                            Text(routeMessage)
+                                .font(.subheadline)
+                        }
+                        Spacer()
+                        Button("GPX importieren") { importing = true }
+                    }
+                    if !route.isEmpty { RouteMap(coordinates: route) }
+                }
+                .padding()
+                .background(Color.white.opacity(0.055), in: RoundedRectangle(cornerRadius: 18))
+            }
+            .padding(.horizontal)
+            .padding(.bottom, 24)
+        }
+        .background(Color.black)
+    }
+}
+
+private struct RideMetric: View {
+    let title: String
+    let value: String
+    let unit: String
+
+    var body: some View {
+        VStack(spacing: 4) {
+            Text(title.uppercased())
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+            Text(value)
+                .font(.title3.weight(.bold))
+                .monospacedDigit()
+                .minimumScaleFactor(0.65)
+                .lineLimit(1)
+            Text(unit.isEmpty ? " " : unit)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 12)
+        .background(Color.white.opacity(0.055), in: RoundedRectangle(cornerRadius: 15))
+    }
+}
+
+private func formatDuration(_ seconds: Int) -> String {
+    let hours = seconds / 3_600
+    let minutes = (seconds % 3_600) / 60
+    let remainingSeconds = seconds % 60
+    return String(format: "%02d:%02d:%02d", hours, minutes, remainingSeconds)
+}
+
 struct SettingsView: View {
+    @AppStorage("rideMapZoomMeters") private var rideMapZoomMeters = 1_500.0
+    @AppStorage("rideMapAutoZoom") private var rideMapAutoZoom = true
+
     var body: some View {
         Form {
+            Section("Fahrtkarte") {
+                Toggle("Automatischer Zoom", isOn: $rideMapAutoZoom)
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text("Standard-Zoom")
+                        Spacer()
+                        Text(String(format: "%.2f km", rideMapZoomMeters / 1_000))
+                            .foregroundStyle(.secondary)
+                            .monospacedDigit()
+                    }
+                    Slider(value: $rideMapZoomMeters, in: 250...10_000, step: 250)
+                }
+                Text("Die Einstellung wird dauerhaft für die Live-Fahrtkarte gespeichert. Auf der Karte kann zusätzlich direkt hinein- und herausgezoomt werden.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
             Section("Streckenschmiede") {
                 Text("Einstellungen")
                 Text("Version: Entwicklungsstand")

@@ -8,12 +8,13 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
 ## Aktueller iOS-Grundprototyp
 - Zwei Hauptreiter: Aufzeichnung und Indoor-Training
 - GPS-Aufzeichnung mit Distanz und GPX-Export (nur Vordergrund)
+- Erstes modernes Fahrt-Cockpit mit Live-Karte, gefahrenem Track, GPS-Geschwindigkeit, Zeit, Höhe, Auf-/Abstieg und gespeichertem Karten-Zoom
 - GPX-Import aus Dateien und Apple-MapKit-Streckenkarte
 - BLE-Scan für Van Rysel D100 und Zwift Click V2
 - Dunkles Design mit orangefarbenem Akzent
 
 ## Noch nicht implementiert
-- Modernes anpassbares Fahrt-Cockpit mit Live-Karte, allen Fahrwerten und gespeicherten Zoomstufen
+- Vollständig anpassbares Fahrt-Cockpit, alle Sensorwerte und getrennte Zoom-Presets; die erste GPS-/Live-Karten-Ausbaustufe ist vorhanden
 - Zielnavigation mit Radweg-/Straßenprofilen, Apple-Fahrradrouting und OSM/Valhalla
 - GPS-Aufzeichnung bei gesperrtem Display / Background-Mode
 - Persistente Fahrtenbibliothek
