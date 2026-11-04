@@ -22,7 +22,7 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 ## P0 – verlässliche Fahrtaufzeichnung
 
 - [ ] `RideSessionEngine` als einzige Quelle für Start, Pause, Fortsetzen, Stop und Wiederherstellung einführen.
-- [ ] Standortfreigabe „Immer“, Background-Location und energieangepasste GPS-Genauigkeit korrekt konfigurieren.
+- [~] Background-Location-Modus und fortlaufende GPS-Updates während einer gestarteten Fahrt sind konfiguriert; Freigabestufe „Immer“, energieangepasste Genauigkeit und echte Sperrbildschirm-Abnahme bleiben offen.
 - [ ] Aufzeichnung bei gesperrtem Display und App im Hintergrund testen.
 - [ ] Laufende Fahrt absturzsicher und atomar zwischenspeichern; nach App-/Telefonneustart Wiederaufnahme oder sauberen Abschluss anbieten.
 - [ ] GPS-Ausreißer, alte Punkte, Tunnel-/Empfangslücken und unrealistische Sprünge filtern, ohne echte schnelle Abschnitte zu verlieren.

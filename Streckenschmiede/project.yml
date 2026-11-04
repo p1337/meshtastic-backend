@@ -14,7 +14,10 @@ targets:
         CFBundleShortVersionString: "$(MARKETING_VERSION)"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         NSLocationWhenInUseUsageDescription: "GPS-Fahrten aufzeichnen und auf der Fahrradkarte navigieren"
+        NSLocationAlwaysAndWhenInUseUsageDescription: "Eine gestartete Fahrradfahrt auch bei gesperrtem Display weiter aufzeichnen"
         NSBluetoothAlwaysUsageDescription: "Fahrradtrainer, Pulsmesser, Leistungsmesser und Zwift Click verbinden"
+        UIBackgroundModes:
+          - location
         UILaunchScreen: {}
         LSSupportsOpeningDocumentsInPlace: true
         CFBundleDocumentTypes:
