@@ -1,0 +1,24 @@
+name: Streckenschmiede iOS
+on:
+  push:
+    branches: [streckenschmiede-ios]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate project
+        run: |
+          cd Streckenschmiede
+          xcodegen generate
+      - name: Build unsigned simulator app
+        run: |
+          cd Streckenschmiede
+          xcodebuild -project Streckenschmiede.xcodeproj -scheme Streckenschmiede -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+      - name: Build unsigned iPhone app
+        run: |
+          cd Streckenschmiede
+          xcodebuild -project Streckenschmiede.xcodeproj -scheme Streckenschmiede -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO build
