@@ -228,9 +228,18 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 
 ## P2 – Kamera und Medien
 
-- [?] Exaktes Kameramodell und gewünschte Aktionen festlegen. Ohne Modell/Protokoll ist eine echte Steuerung nicht seriös implementierbar.
-- [ ] Geräte-API und Lizenz-/Netzwerkanforderungen prüfen; keine geratenen Bluetooth-/WLAN-Kommandos senden.
-- [ ] Verbinden, Aufnahme starten/stoppen, Status, Akku und Speicher anzeigen, soweit das Gerät dies offiziell erlaubt.
+- [x] Erstes Kameramodell festgelegt: DJI Osmo Action 5 Pro. Offizielle Fähigkeiten für Timecode, GPS Bluetooth Remote Controller, Mimo und FIT-Import dokumentiert.
+- [x] Unabhängiges Synchronisierungskonzept mit Start-/End-QR, optionalen Checkpoints, Timecode-/Metadaten-Fallback und Driftkorrektur in `Streckenschmiede/CAMERA_SYNC.md` festgelegt.
+- [ ] Vollbild-QR-Generator mit Fahrt-ID, UTC, monotoner Fahrtzeit, Prüfsumme und optionaler GPS-Position.
+- [ ] QR zu Beginn und Ende filmen; ab zwei Ankern Offset und Kameradrift robust berechnen.
+- [ ] Action-5-Pro-Video aus Fotos/Dateien/OTG importieren und Metadaten, Aufnahmedatum, Bildrate sowie Timecode-Track mit AVFoundation prüfen.
+- [ ] QR-Codes mit Apple Vision aus Videoframes erkennen; fehlende/mehrdeutige Codes nachvollziehbar behandeln.
+- [ ] `RideVideoLink` speichern und Video-Wiedergabe zeitlich mit Karte, GPS und Sensorwerten koppeln.
+- [ ] FIT-Export für DJI Mimo mit Position, Höhe, Geschwindigkeit, Puls, Kadenz und Leistung, soweit vorhanden.
+- [ ] DJI GPS Bluetooth Remote Controller als offiziell unterstützten externen Start-/Stop-/GNSS-Weg dokumentieren und mit echter Hardware testen.
+- [ ] Geräte-API und Lizenz-/Netzwerkanforderungen weiter prüfen; keine geratenen Bluetooth-/WLAN-Kommandos senden. Direkte Streckenschmiede-Steuerung bleibt optional.
+- [ ] Aufnahme starten/stoppen, Status, Akku und Speicher aus Streckenschmiede nur anzeigen/steuern, wenn das Gerät dies über eine belastbar nutzbare Schnittstelle erlaubt.
+- [ ] Timecode-Grenzen testen: über 60 fps und Pre-Rec benötigen den optischen QR-Fallback.
 - [ ] Kamerazeit und Fahrtzeit synchronisieren; Clips anhand der Fahrtposition referenzieren.
 - [ ] Kameraausfall darf Fahrt, Navigation und Sensoraufzeichnung niemals beenden.
 
