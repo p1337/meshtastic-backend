@@ -89,6 +89,16 @@ Ein Wechsel erfolgt nur bei veralteter oder ungültiger Quelle und wird im Fahrt
 
 Parser behandeln optionale Flags, Little Endian, Zählerüberläufe, Zeitüberläufe, fehlende Werte und ungültige Pakete explizit. Batterie- oder Geräteinformationsdienste können parallel zu jedem Messdienst vorliegen.
 
+Der erste `SensorHub`-Stand scannt bewusst allgemein, aktiviert Adapter aber
+erst nach GATT-Dienst-/Merkmalserkennung. Er hält mehrere `CBPeripheral`-Sitzungen
+parallel, verwendet einen Restore-Identifier und versucht nur ausdrücklich
+gewünschte Verbindungen nach einem unerwarteten Abbruch erneut. Live unterstützt
+er Heart Rate Measurement, CSC Measurement, Cycling Power Measurement, FTMS
+Indoor Bike Data, Battery Level sowie Hersteller/Modell aus Device Information.
+Rad-/Kurbelzähler und deren 1/1024-Sekunden-Zeitbasis werden je Gerät getrennt
+geführt. Noch nicht festgelegte Quellenpriorität darf diese ersten Livewerte
+nicht später ungeprüft in Fahrtstrecke oder HealthKit doppelt einrechnen.
+
 „Alle Fahrradsensoren“ bedeutet in der Basisschicht alle relevanten öffentlichen BLE-Standarddienste und eine erweiterbare Adapterarchitektur. Proprietäre Gerätefamilien wie manche Radar-, Licht-, Reifendruck-, E-Bike-, elektronische Schalt- und Kamera-Systeme benötigen jeweils dokumentierte Protokolle, Lizenzprüfung und echte Hardware. Reines ANT+ ist auf dem iPhone nicht nativ erreichbar; es braucht Dual-BLE oder einen getesteten Bridge-Adapter. Diese Grenzen werden in der UI sichtbar, nicht verschwiegen.
 
 ## D100 und Click V2
@@ -185,5 +195,8 @@ Deployment dieselbe neue Versions-/Buildkombination ausweisen.
 - Apple MapKit Cycling: <https://developer.apple.com/documentation/mapkit/mkdirectionstransporttype/cycling>
 - Valhalla Route API: <https://valhalla.github.io/valhalla/api/route/api-reference/>
 - Bluetooth Assigned Numbers: <https://www.bluetooth.com/specifications/assigned-numbers/>
+- Bluetooth Heart Rate Service: <https://www.bluetooth.com/wp-content/uploads/Files/Specification/HTML/HRS_v1.0/out/en/index-en.html>
+- Bluetooth Cycling Speed and Cadence Service: <https://www.bluetooth.com/wp-content/uploads/Files/Specification/HTML/CSCS_v1.0/out/en/index-en.html>
+- Apple Core Bluetooth State Restoration: <https://developer.apple.com/documentation/corebluetooth/central-manager-state-restoration-options>
 - OpenStreetMap Tile Usage Policy: <https://operations.osmfoundation.org/policies/tiles/>
 

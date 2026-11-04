@@ -17,7 +17,9 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
 - Live-Karte mit geplanter GPX-Linie, Fahrtrichtung/Vorausblick, großem Zentrieren-Knopf und Handschuh-Zoompresets
 - Eigenes orange/schwarzes Corporate-Zeichen mit mittigem Rennrad-Vorderrad,
   steiler Gabel und angeschnittenem Rennlenker; separates Routenmotiv als Hero-Asset
-- BLE-Scan für Van Rysel D100 und Zwift Click V2
+- Mehrere gleichzeitige BLE-Verbindungen mit State Restoration sowie Live-Parsern
+  für Heart Rate, Cycling Speed/Cadence, Cycling Power, FTMS Indoor Bike,
+  Battery und Device Information; echte Sensorabnahme steht noch aus
 - Dunkles Design mit orangefarbenem Akzent
 
 ## Noch nicht implementiert
@@ -27,8 +29,9 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
   erzwungenen App-/Telefonneustart
 - Persistente Fahrtenbibliothek
 - Apple-Watch-Begleit-App, HealthKit-Workout/-Route und Übergabe an Apple Fitness
-- Standardisierte BLE-Dienste für Puls, Geschwindigkeit/Kadenz, Leistung, FTMS und mehrere gleichzeitige Sensoren
-- FTMS-Verbindung und Leistung/Kadenz
+- Vollständige Hardwareabnahme, dauerhafte Fahrradzuordnung und Quellenpriorität
+  für standardisierte BLE-Sensoren
+- FTMS-Steuerung für Widerstand, Steigung und ERG; FTMS-Livewerte sind vorhanden
 - Zwift Click V2 Tastenprotokoll und virtuelle Schaltung
 - DJI Osmo Action 5 Pro Videoimport, QR-/Timecode-/FIT-Synchronisierung und optionale Kamerasteuerung; das technische Konzept ist dokumentiert
 - Offline-Vektorkarten/OSM-Fahrradstil, Komoot-Kontosync und freiwillige Gruppenpositionen; Grenzen und Providerentscheidung sind dokumentiert

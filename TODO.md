@@ -185,12 +185,12 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 
 ## P0 – Bluetooth- und Fahrradsensoren
 
-- [ ] `SensorHub` mit mehreren gleichzeitigen Geräten, dauerhafter Zuordnung pro Fahrrad, Wiederverbindung und Zustandswiederherstellung.
-- [ ] Heart Rate Service (`0x180D`): Puls, RR-Intervalle und Sensor-Kontaktstatus, soweit geliefert.
-- [ ] Cycling Speed and Cadence Service (`0x1816`): Rad-/Kurbelumdrehungen, Geschwindigkeit, Distanz und Trittfrequenz mit Überlaufbehandlung.
-- [ ] Cycling Power Service (`0x1818`): Leistung, Kadenz, Balance, Drehmoment- und Rad-/Kurbelwerte, soweit vom Sensor geliefert.
-- [ ] Fitness Machine Service (`0x1826`): Indoor-Bike-Daten, Status, unterstützte Bereiche und Control Point.
-- [ ] Battery Service (`0x180F`) und Device Information Service (`0x180A`).
+- [~] `SensorHub` unterstützt mehrere gleichzeitige Verbindungen, Wiederverbindung und Core-Bluetooth-State-Restoration; dauerhafte Zuordnung pro Fahrrad und echte Hardwareabnahme fehlen.
+- [~] Heart Rate Service (`0x180D`): Puls, RR-Intervalle und Sensor-Kontaktstatus werden defensiv dekodiert; reale Brustgurt-/Watch-Abnahme fehlt.
+- [~] Cycling Speed and Cadence Service (`0x1816`): Rad-/Kurbelumdrehungen, Geschwindigkeit und Trittfrequenz einschließlich Zeitüberlauf sind implementiert; Radumfang-Einstellung, Distanzquelle und Hardwaretest fehlen.
+- [~] Cycling Power Service (`0x1818`): Leistung, Balance und optionale Rad-/Kurbelwerte werden dekodiert; Drehmoment-/Extremkraftfelder, Quellenwahl und Hardwaretest fehlen.
+- [~] Fitness Machine Service (`0x1826`): Indoor-Bike-Livewerte für Tempo, Kadenz, Widerstand, Leistung und Puls sind implementiert; Features, Bereiche, Status und Control Point fehlen.
+- [~] Battery Service (`0x180F`) und Device Information Service (`0x180A`) werden gelesen und pro Gerät angezeigt; echte Geräteabnahme fehlt.
 - [ ] Environmental Sensing (`0x181A`) für Temperatur und weitere für die Fahrt sinnvolle standardisierte Werte, falls vorhanden.
 - [ ] Location and Navigation Service (`0x1819`) nur nach Capability-Prüfung; keine Doppelzählung gegenüber GPS/Route.
 - [ ] Mehrere Sensoren desselben Typs unterstützen und pro Messgröße eine Priorität/Quelle auswählen lassen.
@@ -198,7 +198,7 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 - [ ] Apple-Watch-Sensoren und direkt mit der Watch gekoppelte Fahrrad-Leistungs-/Kadenz-/Geschwindigkeitssensoren über die Workout-Session übernehmen.
 - [ ] Reine ANT+-Geräte ehrlich als nicht nativ iPhone-kompatibel kennzeichnen; Unterstützung nur über BLE-Dualmodus oder einen konkret getesteten externen ANT+-BLE-Bridge-Adapter.
 - [ ] Proprietäre Radar-, Licht-, Reifendruck-, E-Bike- und elektronische-Schaltsysteme über getrennte Adapter ergänzen, sobald öffentlich dokumentierte oder rechtlich nutzbare Protokolle und Testhardware vorliegen.
-- [ ] Sensor-Simulatoren und Referenzvektoren für Parser; physische Testmatrix für mindestens Puls, CSC, Leistung und FTMS.
+- [~] CI-Referenzvektoren prüfen Puls, RR, CSC, Leistung, Balance, FTMS und Batterie einschließlich gekürzter Pakete; physische Testmatrix fehlt.
 
 ## P0 – D100, Click V2 und Indoor-Training
 
@@ -268,7 +268,7 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 
 ## Qualität, Datenschutz und Veröffentlichung
 
-- [~] CI-Selbsttest deckt Sitzungszustände, getrennte Zeiten, GPS-Sprungfilter und atomare Relaunch-Wiederherstellung ab; Auto-Pause, Formate, Sensorparser und Routingprofile fehlen.
+- [~] CI-Selbsttests decken Sitzungszustände, getrennte Zeiten, GPS-Sprungfilter, atomare Relaunch-Wiederherstellung sowie BLE-Paketparser ab; Auto-Pause, Dateiformate und Routingprofile fehlen.
 - [ ] UI-/Simulator-Smoke-Test für beide Hauptreiter, Einstellungen, Historie, Routenplaner und Wiederherstellung.
 - [ ] Reale iPhone-Testfahrten: mindestens 30 und 120 Minuten, Display an/aus, Hintergrund, Telefonat, Bluetooth-Abbruch, GPS-Lücke und Akkumessung.
 - [ ] Reale Watch-Testfahrt mit gespiegelter Session und anschließendem Health-/Fitness-Nachweis.

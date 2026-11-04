@@ -325,27 +325,6 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
             : 0
     }
 }
-final class TrainerScanner: NSObject, ObservableObject, CBCentralManagerDelegate {
-    @Published var status = "Bluetooth wird gestartet"
-    @Published var devices: [String] = []
-    private var manager: CBCentralManager!
-    override init() { super.init(); manager = CBCentralManager(delegate:self,queue:.main) }
-    func centralManagerDidUpdateState(_ central: CBCentralManager) {
-        status = central.state == .poweredOn ? "Bluetooth bereit" : "Bluetooth nicht bereit"
-    }
-    func scan() {
-        guard manager.state == .poweredOn else { return }
-        devices = []
-        manager.scanForPeripherals(withServices:nil,options:[CBCentralManagerScanOptionAllowDuplicatesKey:false])
-        status = "Suche läuft"
-    }
-    func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral,
-                        advertisementData: [String:Any], rssi RSSI: NSNumber) {
-        let name = peripheral.name ?? (advertisementData[CBAdvertisementDataLocalNameKey] as? String) ?? "Unbekannt"
-        let entry = "\(name) – \(peripheral.identifier.uuidString.prefix(8)) – \(RSSI) dBm"
-        if !devices.contains(entry) { devices.append(entry) }
-    }
-}
 struct MainView: View {
     private enum AppTab: Hashable {
         case recording
@@ -353,7 +332,7 @@ struct MainView: View {
     }
 
     @StateObject private var ride = RideTracker()
-    @StateObject private var ble = TrainerScanner()
+    @StateObject private var sensors = SensorHub()
     @Environment(\.scenePhase) private var scenePhase
     @State private var selectedTab: AppTab = .recording
     @State private var importing = false
@@ -364,6 +343,7 @@ struct MainView: View {
             NavigationStack {
                 RideDashboard(
                     ride: ride,
+                    sensors: sensors,
                     importing: $importing,
                     route: route,
                     routeMessage: routeMessage
@@ -382,10 +362,26 @@ struct MainView: View {
             .tag(AppTab.recording)
             NavigationStack {
                 Form {
-                    Section("Indoor-Trainer") {
-                        Text(ble.status)
-                        Button("D100 und Clicks suchen") { ble.scan() }
-                        ForEach(ble.devices,id:\.self) { Text($0).font(.caption) }
+                    Section("Live-Sensordaten") {
+                        HStack {
+                            SensorValue(title: "Puls", value: sensors.heartRateBpm.map { "\($0) bpm" } ?? "–")
+                            SensorValue(title: "Kadenz", value: sensors.cadenceRpm.map { String(format: "%.0f rpm", $0) } ?? "–")
+                            SensorValue(title: "Leistung", value: sensors.powerWatts.map { "\($0) W" } ?? "–")
+                        }
+                    }
+                    Section("Fahrradsensoren und Trainer") {
+                        Text(sensors.status)
+                            .foregroundStyle(.secondary)
+                        Button {
+                            sensors.scan()
+                        } label: {
+                            Label("Sensoren, D100 und Clicks suchen", systemImage: "dot.radiowaves.left.and.right")
+                        }
+                        ForEach(sensors.devices) { device in
+                            SensorDeviceRow(device: device) {
+                                sensors.toggleConnection(device.id)
+                            }
+                        }
                     }
                     Section("Trainingsprogramme") {
                         Text("ERG, Intervalle und RLV werden vorbereitet")
@@ -431,6 +427,7 @@ struct MainView: View {
 
 private struct RideDashboard: View {
     @ObservedObject var ride: RideTracker
+    @ObservedObject var sensors: SensorHub
     @Binding var importing: Bool
     let route: [CLLocationCoordinate2D]
     let routeMessage: String
@@ -532,6 +529,31 @@ private struct RideDashboard: View {
                     .overlay(RoundedRectangle(cornerRadius: 18).stroke(.white.opacity(0.16)))
                     .padding(10)
                 }
+
+                HStack(spacing: 8) {
+                    SensorValue(
+                        title: "PULS",
+                        value: sensors.heartRateBpm.map { "\($0) bpm" } ?? "–",
+                        source: "BLE"
+                    )
+                    SensorValue(
+                        title: "KADENZ",
+                        value: sensors.cadenceRpm.map { String(format: "%.0f rpm", $0) } ?? "–",
+                        source: "BLE"
+                    )
+                    SensorValue(
+                        title: "LEISTUNG",
+                        value: sensors.powerWatts.map { "\($0) W" } ?? "–",
+                        source: "BLE"
+                    )
+                    SensorValue(
+                        title: "AKKU",
+                        value: sensors.batteryPercent.map { "\($0)%" } ?? "–",
+                        source: "Sensor"
+                    )
+                }
+                .padding(10)
+                .background(Color.white.opacity(0.055), in: RoundedRectangle(cornerRadius: 16))
 
                 HStack(spacing: 10) {
                     if ride.active {
@@ -636,6 +658,74 @@ private struct RideMetric: View {
                 .lineLimit(1)
         }
         .frame(maxWidth: .infinity)
+    }
+}
+
+private struct SensorValue: View {
+    let title: String
+    let value: String
+    var source: String? = nil
+
+    var body: some View {
+        VStack(spacing: 2) {
+            Text(title)
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(.secondary)
+            Text(value)
+                .font(.subheadline.weight(.bold))
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+            if let source {
+                Text(source)
+                    .font(.system(size: 8, weight: .semibold))
+                    .foregroundStyle(.orange)
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+}
+
+private struct SensorDeviceRow: View {
+    let device: SensorDeviceSnapshot
+    let toggleConnection: () -> Void
+
+    private var values: String {
+        var parts: [String] = []
+        if let heartRate = device.heartRateBpm { parts.append("\(heartRate) bpm") }
+        if let cadence = device.cadenceRpm { parts.append(String(format: "%.0f rpm", cadence)) }
+        if let power = device.powerWatts { parts.append("\(power) W") }
+        if let speed = device.speedKmh { parts.append(String(format: "%.1f km/h", speed)) }
+        if let battery = device.batteryPercent { parts.append("Akku \(battery)%") }
+        return parts.isEmpty ? "Noch keine Messwerte" : parts.joined(separator: " · ")
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(device.name)
+                        .font(.headline)
+                    Text(device.services.isEmpty ? "Dienste nach Verbindung" : device.services.joined(separator: " · "))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Button(device.isConnected ? "Trennen" : "Verbinden", action: toggleConnection)
+                    .buttonStyle(.bordered)
+                    .tint(device.isConnected ? .red : .orange)
+            }
+            Text(values)
+                .font(.caption.monospacedDigit())
+            HStack {
+                Text(device.connectionState)
+                Spacer()
+                Text("\(device.rssi) dBm")
+            }
+            .font(.caption2)
+            .foregroundStyle(.secondary)
+        }
+        .padding(.vertical, 4)
     }
 }
 
