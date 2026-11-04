@@ -17,6 +17,7 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
     @Published var status = "Bereit"
     private let location = CLLocationManager()
     private var track: [CLLocation] = []
+    private var pendingStartAfterAuthorization = false
     override init() {
         super.init()
         location.delegate = self
@@ -25,19 +26,34 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
         location.distanceFilter = 5
     }
     func start() {
+        guard !active else { return }
         if location.authorizationStatus == .notDetermined {
+            pendingStartAfterAuthorization = true
+            status = "Standortfreigabe wird angefordert"
             location.requestWhenInUseAuthorization()
-            status = "Standortfreigabe erteilen und erneut starten"
             return
         }
         guard location.authorizationStatus == .authorizedWhenInUse || location.authorizationStatus == .authorizedAlways else {
-            status = "Standortzugriff erforderlich"
+            status = "Standortzugriff in Einstellungen erlauben"
             return
         }
+        beginRecording()
+    }
+    private func beginRecording() {
         track = []; distance = 0; points = 0; exportURL = nil
         active = true
         location.startUpdatingLocation()
         status = "Aufzeichnung läuft"
+    }
+    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        guard pendingStartAfterAuthorization else { return }
+        if manager.authorizationStatus == .notDetermined { return }
+        pendingStartAfterAuthorization = false
+        if manager.authorizationStatus == .authorizedAlways || manager.authorizationStatus == .authorizedWhenInUse {
+            beginRecording()
+        } else {
+            status = "Standortzugriff verweigert"
+        }
     }
     func stop() {
         active = false
@@ -56,7 +72,7 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
     func locationManager(_ manager: CLLocationManager, didUpdateLocations updates: [CLLocation]) {
         guard active else { return }
-        for p in updates where p.horizontalAccuracy >= 0 && p.horizontalAccuracy < 40 {
+        for p in updates where p.horizontalAccuracy >= 0 && p.horizontalAccuracy < 40 && abs(p.timestamp.timeIntervalSinceNow) < 20 {
             if let last = track.last {
                 let d = p.distance(from:last)
                 guard d >= 3 && d < 300 else { continue }
