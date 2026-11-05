@@ -88,12 +88,19 @@ jobs:
           set -euo pipefail
           DEVICE_ID=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; groups=json.load(sys.stdin)["devices"].values(); devices=[d for group in groups for d in group if d.get("isAvailable") and d.get("name", "").startswith("iPhone")]; preferred=[d for d in devices if "Pro" in d["name"]]; print((preferred or devices)[0]["udid"])')
           xcrun simctl shutdown all >/dev/null 2>&1 || true
-          xcrun simctl boot "$DEVICE_ID"
-          xcrun simctl bootstatus "$DEVICE_ID" -b
+          xcrun simctl boot "$DEVICE_ID" || true
           xcodebuild -project Streckenschmiede.xcodeproj -scheme Streckenschmiede -configuration Release -sdk iphonesimulator -destination "id=$DEVICE_ID" -derivedDataPath "$RUNNER_TEMP/simulator" CODE_SIGNING_ALLOWED=NO build
           APP="$RUNNER_TEMP/simulator/Build/Products/Release-iphonesimulator/Streckenschmiede.app"
           test -d "$APP"
-          xcrun simctl install "$DEVICE_ID" "$APP"
+          installed=0
+          for attempt in $(seq 1 60); do
+            if xcrun simctl install "$DEVICE_ID" "$APP"; then
+              installed=1
+              break
+            fi
+            sleep 2
+          done
+          test "$installed" = 1
           xcrun simctl privacy "$DEVICE_ID" grant location de.p1337.Streckenschmiede || true
           xcrun simctl location "$DEVICE_ID" set 48.8300,9.3200
           xcrun simctl launch "$DEVICE_ID" de.p1337.Streckenschmiede
