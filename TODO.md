@@ -138,15 +138,15 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 
 ## P0 – modernes Fahrt-Cockpit und Karten
 
-- [~] Erste moderne schwarze/orange Cockpitansicht mit großen Live-Werten; Anpassbarkeit, vollständige Dynamic-Type- und Geräteabnahme bleiben offen.
+- [~] Bildschirmfüllende schwarze/orange Karten-Cockpitansicht beginnt oben und legt Live-Werte kompakt über die Karte; Anpassbarkeit, vollständige Dynamic-Type- und Geräteabnahme bleiben offen.
 - [ ] Anpassbare Datenfelder und mindestens drei speicherbare Cockpit-Layouts.
 - [~] Live-Karte mit aktueller Position, gefahrenem Track und geplanter GPX-Linie im Fahrtbild; Abweichung und echte Navigation fehlen noch.
 - [ ] Kartenmodi: Standard, Satellit, Hybrid und OSM-basierte Darstellung mit sichtbarer Quellenangabe.
 - [ ] Kartenorientierung: Norden oben, Fahrtrichtung oben und 3D-Perspektive.
-- [~] Follow-Modus mit großem Zentrieren-Knopf unten mittig; Verschieben/Pinch schaltet auf freie Karte. Reale Gestenabnahme steht aus.
+- [~] Follow-Modus mit eindeutigem Fadenkreuz-Zentrieren-Knopf unten mittig; Verschieben/Pinch schaltet auf freie Karte. Reale Gestenabnahme steht aus.
 - [~] Live-Karten-Zoom per Gesten und 56-Punkte-Tasten sowie dauerhaft einstellbarer Standardbereich von 250 m bis 10 km; Presets Nah/Fahrt/Voraus/Übersicht sind implementiert, reale Handschuhabnahme fehlt.
 - [~] Dauerhaft gespeicherter Live-Karten-Zoom und optionaler geschwindigkeitsabhängiger Auto-Zoom; manöverabhängiger Zoom fehlt.
-- [~] Fahrtrichtung/Vorausblick setzt das Fahrrad durch einen vorausliegenden Kartenmittelpunkt unten mittig; Glättung, Stillstandstest und echte Fahrabnahme fehlen.
+- [~] Fahrtrichtung/Vorausblick setzt den orangefarbenen Positionspfeil durch einen um 30 Prozent vorausliegenden Kartenmittelpunkt horizontal mittig ins untere Bildschirmdrittel; Kurs fällt auf Track- oder GPX-Richtung zurück. Glättung, Stillstandstest und echte Fahrabnahme fehlen.
 - [ ] Bildschirm-Wachhalten optional, Helligkeits-/OLED-schonender Nachtmodus und Live Activity/Lock-Screen-Status.
 
 ## P0 – Routenplaner und Zielnavigation

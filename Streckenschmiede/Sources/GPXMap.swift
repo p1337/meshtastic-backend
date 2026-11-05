@@ -46,11 +46,17 @@ struct LiveRideMap: View {
             }
             if let currentCoordinate {
                 Annotation("Aktuelle Position", coordinate: currentCoordinate) {
-                    Circle()
-                        .fill(.orange)
-                        .frame(width: 17, height: 17)
-                        .overlay(Circle().stroke(.white, lineWidth: 3))
-                        .shadow(radius: 4)
+                    ZStack {
+                        Circle()
+                            .fill(.black.opacity(0.86))
+                            .frame(width: 38, height: 38)
+                            .overlay(Circle().stroke(.white, lineWidth: 2))
+                        Image(systemName: "location.north.fill")
+                            .font(.system(size: 22, weight: .black))
+                            .foregroundStyle(.orange)
+                            .rotationEffect(.degrees(markerRotationDegrees))
+                    }
+                    .shadow(color: .black.opacity(0.65), radius: 5, y: 2)
                 }
             }
         }
@@ -59,9 +65,8 @@ struct LiveRideMap: View {
             MapCompass()
             MapScaleView()
         }
-        .frame(height: 540)
-        .clipShape(RoundedRectangle(cornerRadius: 22))
-        .overlay(alignment: .topTrailing) {
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .overlay(alignment: .trailing) {
             VStack(spacing: 10) {
                 mapButton(systemImage: "plus.magnifyingglass") {
                     rideMapZoomMeters = max(250, rideMapZoomMeters / 1.5)
@@ -74,34 +79,36 @@ struct LiveRideMap: View {
                     recenter()
                 }
             }
-            .padding(.top, 122)
             .padding(.trailing, 12)
+            .offset(y: -24)
         }
         .overlay(alignment: .topLeading) {
-            Text(followsPosition ? "Position folgen" : "Karte frei")
-                .font(.caption.weight(.semibold))
-                .padding(.horizontal, 10)
-                .padding(.vertical, 7)
-                .background(.black.opacity(0.72), in: Capsule())
-                .padding(.top, 122)
-                .padding(.leading, 12)
+            if !followsPosition {
+                Text("Karte verschoben")
+                    .font(.caption.weight(.semibold))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 7)
+                    .background(.black.opacity(0.78), in: Capsule())
+                    .padding(.top, 126)
+                    .padding(.leading, 12)
+            }
         }
         .overlay(alignment: .bottom) {
             Button {
                 followsPosition = true
                 recenter()
             } label: {
-                Image(systemName: followsPosition ? "location.fill" : "location")
+                Image(systemName: "scope")
                     .font(.title2.weight(.black))
-                    .frame(width: 64, height: 64)
+                    .frame(width: 60, height: 60)
                     .contentShape(Circle())
             }
             .buttonStyle(.plain)
-            .foregroundStyle(.black)
-            .background(.orange, in: Capsule())
-            .overlay(Capsule().stroke(.white.opacity(0.55), lineWidth: 1))
+            .foregroundStyle(followsPosition ? .orange : .white)
+            .background(.black.opacity(0.84), in: Circle())
+            .overlay(Circle().stroke(.white.opacity(0.65), lineWidth: 1))
             .shadow(color: .black.opacity(0.55), radius: 8, y: 3)
-            .padding(.bottom, 12)
+            .padding(.bottom, 154)
             .accessibilityLabel("Fahrrad auf der Karte zentrieren")
         }
         .simultaneousGesture(DragGesture(minimumDistance: 8).onChanged { _ in
@@ -121,7 +128,7 @@ struct LiveRideMap: View {
             if followsPosition, rideMapAutoZoom { recenter() }
         }
         .onChange(of: courseDegrees) { _, _ in
-            if followsPosition, rideMapHeadingUp { recenter() }
+            if followsPosition { recenter() }
         }
         .onChange(of: plannedRoute.count) { _, _ in
             if followsPosition { recenter() }
@@ -146,17 +153,74 @@ struct LiveRideMap: View {
 
     private func recenter() {
         guard let currentCoordinate else { return }
-        let hasReliableCourse = rideMapHeadingUp && courseDegrees.map { $0 >= 0 } == true
-        let heading = hasReliableCourse ? courseDegrees ?? 0 : 0
-        let center = hasReliableCourse
-            ? coordinate(from: currentCoordinate, bearingDegrees: heading, distanceMeters: effectiveZoomMeters * 0.22)
-            : currentCoordinate
+        let travelBearing = travelBearingDegrees
+        let heading = rideMapHeadingUp ? travelBearing ?? 0 : 0
+        let center = travelBearing.map {
+            coordinate(
+                from: currentCoordinate,
+                bearingDegrees: $0,
+                distanceMeters: effectiveZoomMeters * 0.30
+            )
+        } ?? currentCoordinate
         cameraPosition = .camera(MapCamera(
             centerCoordinate: center,
             distance: effectiveZoomMeters,
             heading: heading,
-            pitch: hasReliableCourse ? 38 : 0
+            pitch: rideMapHeadingUp && travelBearing != nil ? 40 : 0
         ))
+    }
+
+    private var markerRotationDegrees: Double {
+        guard let travelBearing = travelBearingDegrees else { return 0 }
+        let mapHeading = rideMapHeadingUp ? travelBearing : 0
+        let difference = (travelBearing - mapHeading).truncatingRemainder(dividingBy: 360)
+        return difference < 0 ? difference + 360 : difference
+    }
+
+    private var travelBearingDegrees: Double? {
+        if let courseDegrees, courseDegrees >= 0 { return courseDegrees }
+        if coordinates.count >= 2,
+           let previous = coordinates.dropLast().last,
+           let current = coordinates.last {
+            return bearing(from: previous, to: current)
+        }
+        guard let currentCoordinate, plannedRoute.count >= 2 else { return nil }
+        let nearestIndex = plannedRoute.indices.min { left, right in
+            squaredDistance(plannedRoute[left], currentCoordinate)
+                < squaredDistance(plannedRoute[right], currentCoordinate)
+        }
+        guard let nearestIndex, nearestIndex + 1 < plannedRoute.count else { return nil }
+        for nextIndex in (nearestIndex + 1)..<plannedRoute.count {
+            let candidate = plannedRoute[nextIndex]
+            if CLLocation(latitude: currentCoordinate.latitude, longitude: currentCoordinate.longitude)
+                .distance(from: CLLocation(latitude: candidate.latitude, longitude: candidate.longitude)) >= 10 {
+                return bearing(from: currentCoordinate, to: candidate)
+            }
+        }
+        return nil
+    }
+
+    private func squaredDistance(
+        _ left: CLLocationCoordinate2D,
+        _ right: CLLocationCoordinate2D
+    ) -> Double {
+        let latitude = left.latitude - right.latitude
+        let longitude = left.longitude - right.longitude
+        return latitude * latitude + longitude * longitude
+    }
+
+    private func bearing(
+        from origin: CLLocationCoordinate2D,
+        to destination: CLLocationCoordinate2D
+    ) -> Double {
+        let originLatitude = origin.latitude * .pi / 180
+        let destinationLatitude = destination.latitude * .pi / 180
+        let deltaLongitude = (destination.longitude - origin.longitude) * .pi / 180
+        let y = sin(deltaLongitude) * cos(destinationLatitude)
+        let x = cos(originLatitude) * sin(destinationLatitude)
+            - sin(originLatitude) * cos(destinationLatitude) * cos(deltaLongitude)
+        let degrees = atan2(y, x) * 180 / .pi
+        return degrees < 0 ? degrees + 360 : degrees
     }
 
     private func coordinate(

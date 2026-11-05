@@ -157,8 +157,9 @@ Zoom wird als sichtbare Breite/Höhe in Metern statt als anbieterspezifische Kac
 - Zentrieren aktiviert Follow erneut.
 - Auto-Zoom darf Geschwindigkeit, Distanz zum nächsten Manöver und Routenkrümmung verwenden, bleibt abschaltbar.
 - Fahrtrichtung oben nutzt geglätteten Kurs; bei Stillstand wird nicht unruhig gedreht.
-- Im Vorausblick wird der Kartenmittelpunkt in Fahrtrichtung vor das Fahrrad verschoben. Bei gleichzeitig gedrehter Karte erscheint das Fahrrad dadurch unten mittig, ohne die tatsächliche GPS-Position zu verändern.
-- Pflichtbedienelemente auf der Fahrkarte erhalten mindestens 52 × 52 Punkte; Zentrieren liegt unten mittig und aktiviert Follow erneut.
+- Die Fahrtkarte füllt die verfügbare Aufzeichnungsfläche bis an den oberen Bildschirmrand. Messwerte und Fahrtaktionen liegen als kompakte kontrastreiche Overlays darauf; es gibt keine separate dauerhaft sichtbare „Bereit“- oder GPS-Punkt-Zeile.
+- Im Vorausblick wird der Kartenmittelpunkt um 30 Prozent des wirksamen Sichtbereichs in Fahrtrichtung vor das Fahrrad verschoben. Bei gleichzeitig gedrehter Karte erscheint der Positionspfeil dadurch horizontal mittig im unteren Bildschirmdrittel, ohne die tatsächliche GPS-Position zu verändern. Fehlt ein aktueller Kurs, dienen zuletzt gefahrene Spur oder nächste GPX-Richtung als Fallback.
+- Pflichtbedienelemente auf der Fahrkarte erhalten mindestens 52 × 52 Punkte; Zentrieren liegt als Fadenkreuz unten mittig, ist optisch vom Positionspfeil getrennt und aktiviert Follow erneut.
 
 Offline- und Integrationsentscheidungen stehen ausführlich in [ROUTES_MAPS_INTEGRATIONS.md](ROUTES_MAPS_INTEGRATIONS.md). MapLibre/PMTiles ist die Zielrichtung für lokale Vektorkarten; öffentliche OSM-Standardkacheln werden nicht vorgeladen.
 
