@@ -140,8 +140,12 @@ struct AppleMusicRideFlyout: View {
     let openLibrary: () -> Void
     let close: () -> Void
 
+    private var railWidth: CGFloat {
+        min(64, max(52, UIScreen.main.bounds.width * 0.15))
+    }
+
     var body: some View {
-        VStack(spacing: 2) {
+        VStack(spacing: 0) {
             flyoutButton("xmark", label: "Musiksteuerung schließen", action: close)
             if music.hasAccess {
                 flyoutButton("backward.fill", label: "Vorheriger Titel", action: music.previous)
@@ -157,10 +161,14 @@ struct AppleMusicRideFlyout: View {
             Divider().overlay(.white.opacity(0.18))
             flyoutButton("music.note.list", label: "Quelle und Playlists", action: openLibrary)
         }
-        .padding(5)
-        .background(.ultraThinMaterial, in: Capsule())
-        .overlay(Capsule().stroke(.white.opacity(0.25), lineWidth: 1))
-        .shadow(color: .black.opacity(0.62), radius: 8, y: 3)
+        .padding(.vertical, 4)
+        .frame(width: railWidth)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .stroke(.white.opacity(0.25), lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.62), radius: 8, x: -2, y: 3)
         .onAppear { music.refresh() }
     }
 
@@ -172,7 +180,7 @@ struct AppleMusicRideFlyout: View {
         Button(action: action) {
             Image(systemName: systemImage)
                 .font(.system(size: 18, weight: .bold))
-                .frame(width: 44, height: 44)
+                .frame(maxWidth: .infinity, minHeight: 44, maxHeight: 44)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

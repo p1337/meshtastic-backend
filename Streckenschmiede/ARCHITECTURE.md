@@ -271,9 +271,11 @@ Musik ist ein optionales, standardmäßig ausgeschaltetes Cockpit-Modul. Nur die
 Einstellungen dürfen es aktivieren. Aktiviert erscheint auf der Fahrtkarte
 ausschließlich ein kleiner Doppelnotenknopf. Sein oberer Abstand wird aus
 Cockpit-Zeile, Feldanzahl und Typografiestufe berechnet; er darf kein Datenfeld
-und keine GPS-Schutzzone überdecken. Antippen öffnet einen vertikalen
-Mini-Player von rechts. Dessen Quelle-/Playlist-Aktion öffnet ein wegwischbares
-Blatt von unten; nach dem Schließen bleibt der seitliche Mini-Player erhalten.
+und keine GPS-Schutzzone überdecken. Antippen öffnet unterhalb des Cockpits
+einen vertikalen Mini-Player, der bündig am rechten Bildschirmrand verankert
+und auf ungefähr 15 Prozent der Bildschirmbreite beziehungsweise 52–64 Punkte
+begrenzt ist. Dessen Quelle-/Playlist-Aktion öffnet ein wegwischbares Blatt von
+unten; nach dem Schließen bleibt der seitliche Mini-Player erhalten.
 Kontozugangsdaten oder versteckte Kopplungsschritte erscheinen nie im Cockpit.
 
 Die erste Implementierung verwendet auf dem Main Thread

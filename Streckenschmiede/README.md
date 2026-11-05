@@ -58,8 +58,9 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
   Einstellungen aktiviert werden; im Outdoor-Cockpit bleibt danach nur ein
   kleiner Doppelnotenknopf, dessen Position aus der tatsächlichen Feldanzahl
   und Schriftgröße berechnet wird und deshalb niemals ein Datenfeld überdeckt.
-  Er öffnet rechts einen vertikalen Mini-Player; Quelle und Playlists erscheinen
-  als wegwischbares Blatt von unten. Apple-Music-Playlists werden nach
+  Er öffnet direkt am rechten Bildschirmrand unterhalb des Cockpits einen
+  vertikalen, nur etwa 15 Prozent breiten Symbol-Mini-Player; Quelle und
+  Playlists erscheinen als wegwischbares Blatt von unten. Apple-Music-Playlists werden nach
   ausdrücklicher Freigabe direkt gelesen und gestartet;
   Spotify, Amazon Music und eigener iCloud-/Dateien-Player sind als getrennte
   Adapter dokumentiert
