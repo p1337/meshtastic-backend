@@ -141,7 +141,7 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 
 ## P1 – optionale Musiksteuerung
 
-- [~] Musiksteuerung ist standardmäßig aus und ausschließlich in **Einstellungen > Musik** aktivierbar. Im Outdoor-Cockpit erscheint danach nur ein kleiner Doppelnotenknopf; der dunkle Player mit Titel/Künstler sowie Zurück, Play/Pause und Weiter klappt als Sheet auf und belegt geschlossen keinen Kartenplatz. Compiler- und echter Apple-Music-Gerätetest stehen aus.
+- [~] Musiksteuerung ist standardmäßig aus und ausschließlich in **Einstellungen > Musik** aktivierbar. Im Outdoor-Cockpit erscheint danach nur ein kleiner Doppelnotenknopf; der dunkle Player mit Titel/Künstler sowie Zurück, Play/Pause und Weiter klappt als Sheet auf und belegt geschlossen keinen Kartenplatz. Der signierte Release-Build 75 kompiliert und paketiert diesen Stand erfolgreich; der echte Apple-Music-Gerätetest steht noch aus.
 - [ ] Spotify App Remote als getrennten Adapter ergänzen. Voraussetzung sind eine registrierte Spotify-Developer-App, Client-ID, Redirect-URI, Spotify-App auf dem Gerät und ausdrückliche Autorisierung; keine Zugangsdaten im Repository.
 - [ ] Amazon Music erst integrieren, wenn Amazon den Zugriff auf die derzeit geschlossene Beta freigibt, die App zertifiziert ist und eine belastbare iOS-Schnittstelle bereitsteht; keine undokumentierte Fernsteuerung.
 - [ ] Eigenen lokalen Player für MP3/AAC/ALAC aus einem vom Nutzer gewählten Dateien-/iCloud-Drive-Ordner bauen: Security-Scoped Bookmark, Bibliotheksindex, Wiedergabeliste, Unterbrechungsbehandlung, Background Audio, Sperrbildschirm-/Headset-Steuerung und nachvollziehbarer Rechteentzug.
