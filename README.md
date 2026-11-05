@@ -29,8 +29,10 @@ Verbindlicher Gesamtumfang und Abnahmestatus: [TODO.md](TODO.md) · Technische Z
   der manuellen Pause;
   optional ausschließlich in den Einstellungen aktivierbare Apple-Music-
   Steuerung: Auf der Karte bleibt nur ein kleiner Doppelnotenknopf unterhalb
-  des tatsächlichen Cockpits. Er öffnet von rechts Zurück, Play/Pause, Weiter
-  und die Mediathek; das Blatt von unten bietet Apple-Music-Playlists;
+  des tatsächlichen Cockpits. Er öffnet eine nur ungefähr 15 Prozent breite,
+  bündig am rechten Bildschirmrand sitzende Symbolleiste unter dem Cockpit mit
+  Zurück, Play/Pause, Weiter und Mediathek; das Blatt von unten bietet
+  Apple-Music-Playlists;
   atomare Notfall-Wiederherstellung, Distanz und Tages-GPX-Export; Planung,
   Import, Teilen und Kamera-Sync liegen außerhalb der störungsfreien Fahrkarte
 - **Indoor:** gleichzeitige BLE-Sensorverbindungen mit Puls, Tempo,

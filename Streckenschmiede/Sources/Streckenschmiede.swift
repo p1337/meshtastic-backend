@@ -764,7 +764,6 @@ private struct RideDashboard: View {
                     }
                 }
                     .padding(.top, musicOverlayTopPadding)
-                    .padding(.trailing, 12)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
             }
         }
