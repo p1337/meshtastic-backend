@@ -40,8 +40,11 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
   Fahrtkarte übernehmen
 - Erste Live-Routenführung für Apple- und GPX-Linien: Fortschritt auf der
   Geometrie, nächstes Apple-Manöver samt Entfernung, Restdistanz, anteilige
-  Restzeit und sichtbare Abweichung ab 60 Metern; echte Fahrt, Haptik,
-  Sprache und kontrollierte Neuberechnung stehen noch aus
+  Restzeit und sichtbare Abweichung ab 60 Metern; die aktive Route und ihre
+  Manöver werden begrenzt, versioniert und atomar gesichert, nach App-Neustart
+  wiederhergestellt und über das X ausdrücklich beendet; beschädigte
+  Routensicherungen werden sicher verworfen; echte Fahrt, Haptik, Sprache und
+  kontrollierte Neuberechnung stehen noch aus
 - Eigenes orange/schwarzes Corporate-Zeichen mit mittigem Rennrad-Vorderrad,
   steiler Gabel und angeschnittenem Rennlenker; separates Routenmotiv als Hero-Asset
 - Mehrere gleichzeitige BLE-Verbindungen mit State Restoration sowie Live-Parsern

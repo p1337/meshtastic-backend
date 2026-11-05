@@ -419,7 +419,24 @@ struct MainView: View {
     @State private var selectedTab: AppTab = .recording
     @State private var importing = false
     @State private var routePlan: RideRoutePlan?
-    @State private var routeMessage = "Noch keine GPX-Strecke importiert"
+    @State private var routeMessage: String
+
+    init() {
+        do {
+            let restored = try RoutePlanStore.load()
+            _routePlan = State(initialValue: restored)
+            _routeMessage = State(initialValue:
+                restored?.summary ?? "Noch keine GPX-Strecke importiert"
+            )
+        } catch {
+            try? RoutePlanStore.clear()
+            _routePlan = State(initialValue: nil)
+            _routeMessage = State(initialValue:
+                "Gespeicherte Route konnte nicht geladen werden"
+            )
+        }
+    }
+
     var body: some View {
         TabView(selection: $selectedTab) {
             NavigationStack {
@@ -430,9 +447,9 @@ struct MainView: View {
                     routePlan: routePlan,
                     routeMessage: routeMessage,
                     selectPlannedRoute: { plan in
-                        routePlan = plan
-                        routeMessage = plan.summary
-                    }
+                        activateRoute(plan)
+                    },
+                    clearRoute: clearRoute
                 )
                 .fileImporter(isPresented: $importing, allowedContentTypes: [.gpx, .xml]) { result in
                     do {
@@ -512,18 +529,38 @@ struct MainView: View {
             let points = coordinates.map {
                 RoutePoint(latitude: $0.latitude, longitude: $0.longitude)
             }
-            routeMessage = "\(name) · \(coordinates.count) Punkte · \(source)"
-            routePlan = RideRoutePlan(
+            let summary = "\(name) · \(coordinates.count) Punkte · \(source)"
+            activateRoute(RideRoutePlan(
                 destinationName: name,
                 providerName: "GPX",
-                summary: routeMessage,
+                summary: summary,
                 distanceMeters: NavigationProgressEngine.routeLengthMeters(points),
                 expectedTravelTime: 0,
                 points: points,
                 maneuvers: []
-            )
+            ))
         } catch {
             routeMessage = "Import fehlgeschlagen: \(error.localizedDescription)"
+        }
+    }
+
+    private func activateRoute(_ plan: RideRoutePlan) {
+        routePlan = plan
+        routeMessage = plan.summary
+        do {
+            try RoutePlanStore.save(plan)
+        } catch {
+            routeMessage = "\(plan.summary) · Sicherung fehlgeschlagen"
+        }
+    }
+
+    private func clearRoute() {
+        routePlan = nil
+        routeMessage = "Keine aktive Route"
+        do {
+            try RoutePlanStore.clear()
+        } catch {
+            routeMessage = "Route beendet · Löschen der Sicherung fehlgeschlagen"
         }
     }
 }
@@ -535,6 +572,7 @@ private struct RideDashboard: View {
     let routePlan: RideRoutePlan?
     let routeMessage: String
     let selectPlannedRoute: (RideRoutePlan) -> Void
+    let clearRoute: () -> Void
     @State private var showingCameraSync = false
     @State private var showingRoutePlanner = false
 
@@ -642,12 +680,17 @@ private struct RideDashboard: View {
             if let navigationProgress {
                 navigationBanner(navigationProgress)
             } else if routePlan != nil {
-                Text(routeMessage)
-                    .font(.caption.weight(.semibold))
-                    .lineLimit(1)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 7)
-                    .background(.black.opacity(0.78), in: Capsule())
+                HStack(spacing: 8) {
+                    Text(routeMessage)
+                        .font(.caption.weight(.semibold))
+                        .lineLimit(1)
+                    Spacer(minLength: 0)
+                    clearRouteButton
+                }
+                .padding(.leading, 12)
+                .padding(.trailing, 4)
+                .padding(.vertical, 4)
+                .background(.black.opacity(0.78), in: Capsule())
             }
 
             if ride.active {
@@ -756,6 +799,7 @@ private struct RideDashboard: View {
                 .foregroundStyle(.secondary)
             }
             Spacer(minLength: 0)
+            clearRouteButton
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 9)
@@ -764,7 +808,18 @@ private struct RideDashboard: View {
             RoundedRectangle(cornerRadius: 14)
                 .stroke(isOffRoute ? Color.red.opacity(0.8) : Color.orange.opacity(0.55))
         )
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .contain)
+    }
+
+    private var clearRouteButton: some View {
+        Button(action: clearRoute) {
+            Image(systemName: "xmark")
+                .font(.caption.weight(.black))
+                .frame(width: 36, height: 36)
+                .background(.white.opacity(0.12), in: Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Navigation beenden")
     }
 
     private func formatRouteDistance(_ meters: Double) -> String {
