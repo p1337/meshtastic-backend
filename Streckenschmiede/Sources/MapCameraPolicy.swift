@@ -24,15 +24,20 @@ enum MapCameraPolicy {
         viewHeight: Double,
         controlHitSize: Double,
         controlsBottomPadding: Double,
-        markerDiameter: Double
+        markerDiameter: Double,
+        additionalBottomReservedHeight: Double = 0
     ) -> Double {
         let safeHeight = max(0, viewHeight)
         let safeControlSize = max(0, controlHitSize)
         let safeBottomPadding = max(0, controlsBottomPadding)
         let safeMarkerDiameter = max(0, markerDiameter)
+        let safeAdditionalReserve = max(0, additionalBottomReservedHeight)
         let markerRadius = safeMarkerDiameter / 2
         let preferredY = safeHeight * preferredRiderScreenFraction
-        let controlsTop = safeHeight - safeBottomPadding - safeControlSize
+        let controlsTop = safeHeight
+            - safeBottomPadding
+            - safeControlSize
+            - safeAdditionalReserve
         let maximumSafeY = controlsTop - minimumRiderControlGap - markerRadius
         return max(markerRadius, min(preferredY, maximumSafeY))
     }

@@ -42,7 +42,9 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
   den tiefen 84-Punkte-Kartenknöpfen. Die Position wird auch ohne verfügbaren
   Fahrkurs aus der Bildschirmmitte in den unteren Kartenbereich gesetzt. Die
   geneigte 3D-Ansicht wirkt auch im Stand und ist separat abschaltbar
-- Puls, Kadenz, Leistung und Sensorakku stehen im oberen Daten-Cockpit
+- Garmin-artig konfigurierbares oberes Daten-Cockpit: 1, 2, 4, 6 oder 8
+  Felder sind in Einstellungen wählbar; jedes Feld lässt sich im Hauptbild per
+  Antippen dauerhaft auf einen Fahrt-, Höhen-, Zeit- oder Sensorwert umstellen
 - Dauerhaft gespeicherte Kartenwahl ausschließlich unter Einstellungen:
   Apple Karte, Apple Satellit, Apple Hybrid, interaktives OpenStreetMap und
   CyclOSM sind aktiv. OpenCycleMap erscheint nur mit gültigem
@@ -80,7 +82,7 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
 - Dunkles Design mit orangefarbenem Akzent
 
 ## Noch nicht implementiert
-- Vollständig anpassbares Fahrt-Cockpit, alle Sensorwerte und getrennte Zoom-Presets; die erste GPS-/Live-Karten-Ausbaustufe ist vorhanden
+- Mehrere benannte Cockpit-Layouts, alle Ziel-/Sensorwerte und getrennte Zoom-Presets; die erste frei konfigurierbare 1/2/4/6/8-Felder-Stufe ist vorhanden
 - Zielnavigation mit Radweg-/Straßenprofilen, Apple-Fahrradrouting und OSM/Valhalla
 - Reale Abnahme der GPS-Aufzeichnung bei gesperrtem Display und nach einem
   erzwungenen App-/Telefonneustart

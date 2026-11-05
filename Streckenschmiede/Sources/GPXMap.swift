@@ -17,6 +17,7 @@ struct LiveRideMap: View {
     let currentCoordinate: CLLocationCoordinate2D?
     let speedKmh: Double
     let courseDegrees: Double?
+    let bottomOverlayHeight: CGFloat
 
     @AppStorage("rideMapZoomMeters") private var rideMapZoomMeters = 1_500.0
     @AppStorage("rideMapAutoZoom") private var rideMapAutoZoom = true
@@ -137,6 +138,9 @@ struct LiveRideMap: View {
             if followsPosition { recenter() }
         }
         .onChange(of: plannedRoute.count) { _, _ in
+            if followsPosition { recenter() }
+        }
+        .onChange(of: bottomOverlayHeight) { _, _ in
             if followsPosition { recenter() }
         }
         .accessibilityLabel("Live-Fahrtkarte mit aktueller Position und gefahrenem Track")
@@ -268,7 +272,8 @@ struct LiveRideMap: View {
             riderCoordinate: currentCoordinate,
             distance: effectiveZoomMeters,
             heading: heading,
-            pitch: pitch
+            pitch: pitch,
+            bottomOverlayHeight: bottomOverlayHeight
         )
         cameraRevision &+= 1
     }

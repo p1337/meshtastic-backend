@@ -8,6 +8,7 @@ struct RasterCameraTarget: Equatable {
     let distance: CLLocationDistance
     let heading: CLLocationDirection
     let pitch: CGFloat
+    let bottomOverlayHeight: CGFloat
 
     static func == (left: RasterCameraTarget, right: RasterCameraTarget) -> Bool {
         left.center.latitude == right.center.latitude
@@ -17,6 +18,7 @@ struct RasterCameraTarget: Equatable {
             && left.distance == right.distance
             && left.heading == right.heading
             && left.pitch == right.pitch
+            && left.bottomOverlayHeight == right.bottomOverlayHeight
     }
 }
 
@@ -167,12 +169,17 @@ struct RasterRideMap: UIViewRepresentable {
                 heading: target.heading
             )
             mapView.setCamera(camera, animated: false)
-            anchorRider(target.riderCoordinate, on: mapView)
+            anchorRider(
+                target.riderCoordinate,
+                bottomOverlayHeight: target.bottomOverlayHeight,
+                on: mapView
+            )
             lastCameraRevision = parent.cameraRevision
         }
 
         private func anchorRider(
             _ coordinate: CLLocationCoordinate2D,
+            bottomOverlayHeight: CGFloat,
             on mapView: MKMapView
         ) {
             let desiredPoint = CGPoint(
@@ -181,7 +188,8 @@ struct RasterRideMap: UIViewRepresentable {
                     viewHeight: Double(mapView.bounds.height),
                     controlHitSize: 84,
                     controlsBottomPadding: 34,
-                    markerDiameter: 42
+                    markerDiameter: 42,
+                    additionalBottomReservedHeight: Double(bottomOverlayHeight)
                 ))
             )
             for _ in 0..<2 {
