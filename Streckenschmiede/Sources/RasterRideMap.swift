@@ -59,7 +59,7 @@ struct RasterRideMap: UIViewRepresentable {
         mapView.addSubview(compass)
         NSLayoutConstraint.activate([
             compass.leadingAnchor.constraint(equalTo: mapView.safeAreaLayoutGuide.leadingAnchor, constant: 10),
-            compass.topAnchor.constraint(equalTo: mapView.safeAreaLayoutGuide.topAnchor, constant: 2)
+            compass.topAnchor.constraint(equalTo: mapView.safeAreaLayoutGuide.topAnchor, constant: -8)
         ])
         context.coordinator.installMapStyle(on: mapView)
         return mapView

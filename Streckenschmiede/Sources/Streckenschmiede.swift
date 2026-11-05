@@ -530,7 +530,7 @@ struct MainView: View {
 
                 statusBarBackdrop
                 modeToolbar
-                    .padding(.top, 1)
+                    .padding(.top, -8)
                     .padding(.trailing, 10)
             }
             .toolbar(.hidden, for: .navigationBar)
@@ -566,7 +566,7 @@ struct MainView: View {
     private var statusBarBackdrop: some View {
         Rectangle()
             .fill(.ultraThinMaterial)
-            .overlay(Color.black.opacity(0.48))
+            .overlay(Color.black.opacity(0.76))
             .frame(maxWidth: .infinity)
             .frame(height: 26)
             .ignoresSafeArea(edges: .top)
@@ -745,7 +745,7 @@ private struct RideDashboard: View {
                 }
             }
             .padding(.horizontal, 10)
-            .padding(.top, 43)
+            .padding(.top, 34)
 
             if rideMusicControlsEnabled {
                 musicLauncher
