@@ -162,8 +162,8 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 - [ ] OSM-basiertes Valhalla-Routing als austauschbaren Provider anbinden, damit Radweg-/Straßenanteil, Fahrradtyp, Untergrund und Hügel tatsächlich steuerbar sind.
 - [ ] Keine Produktionsabhängigkeit von einem ungarantierten öffentlichen Test-Endpunkt; Server/Provider austauschbar konfigurieren.
 - [~] Von Apple gelieferte Alternativrouten werden mit Distanz, Fahrzeit und Hinweisen verglichen; mindestens zwei sind providerabhängig, Auf-/Abstieg und Untergrundhinweise fehlen.
-- [ ] Turn-by-turn-Manöver, Restdistanz, Restzeit, nächste Abbiegung und Höhenprofil anzeigen.
-- [ ] Abweichung erkennen, akustisch/haptisch warnen und kontrolliert neu berechnen; ursprüngliche Route auf Wunsch behalten.
+- [~] Apple-Manöver, Entfernung zur nächsten Anweisung, Restdistanz und anteilige Restzeit werden kompakt über der Fahrtkarte angezeigt und durch Geometrietests belegt; Symbolklassifizierung, Höhenprofil, Sprache/Haptik und echte Fahrabnahme fehlen.
+- [~] Querabstand zur Route wird laufend berechnet und ab 60 Metern sichtbar gewarnt; zeitliche Entprellung, akustische/haptische Warnung und kontrollierte Neuberechnung mit Erhalt der ursprünglichen Route fehlen.
 - [ ] Sprachansagen und Apple-Watch-Haptik mit getrennten Lautstärke-/Hinweisoptionen.
 - [ ] GPX-Route kann als Navigationsroute ohne Neuberechnung verfolgt oder auf das Wegenetz angepasst werden.
 - [ ] Routen und erforderliche Manöverdaten für eine begonnene Fahrt lokal speichern.
@@ -270,7 +270,7 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 
 ## Qualität, Datenschutz und Veröffentlichung
 
-- [~] CI-Selbsttests decken Sitzungszustände, getrennte Zeiten, GPS-Sprungfilter, atomare Relaunch-Wiederherstellung, dauerhafte Vordergrund-Liveposition versus Hintergrund-Aufzeichnung, Auto-Pause einschließlich manuellem Vorrang, ausschließlich sichere vollständig aufgelöste HTTPS-Kachel-URLs sowie BLE-/FTMS-Paketparser ab; Dateiformate und Routingprofile fehlen.
+- [~] CI-Selbsttests decken Sitzungszustände, getrennte Zeiten, GPS-Sprungfilter, atomare Relaunch-Wiederherstellung, dauerhafte Vordergrund-Liveposition versus Hintergrund-Aufzeichnung, Auto-Pause einschließlich manuellem Vorrang, Routenfortschritt/Restwerte/Manöver/Querabstand, ausschließlich sichere vollständig aufgelöste HTTPS-Kachel-URLs sowie BLE-/FTMS-Paketparser ab; Dateiformate und Routingprofile fehlen.
 - [ ] UI-/Simulator-Smoke-Test für beide Hauptreiter, Einstellungen, Historie, Routenplaner und Wiederherstellung.
 - [ ] Reale iPhone-Testfahrten: mindestens 30 und 120 Minuten, Display an/aus, Hintergrund, Telefonat, Bluetooth-Abbruch, GPS-Lücke und Akkumessung.
 - [ ] Reale Watch-Testfahrt mit gespiegelter Session und anschließendem Health-/Fitness-Nachweis.

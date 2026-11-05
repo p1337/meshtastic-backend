@@ -15,6 +15,8 @@ Verbindlicher Gesamtumfang und Abnahmestatus: [TODO.md](TODO.md) · Technische Z
   Ebenenknopf rechts oben für Apple Karte, Satellit, Hybrid, Online-OSM und
   die offene Fahrradkarte CyclOSM;
   erster Zielplaner mit Adress-/POI-Suche, Apple-Fahrradrouten und Alternativen;
+  kompakte Live-Führung mit nächstem Apple-Manöver, Entfernung, Reststrecke,
+  Restzeit und sichtbarer Routenabweichung;
   einstellbare GPS-Auto-Pause mit Verzögerung, Hysterese und sicherem Vorrang
   der manuellen Pause;
   GPS-Fahrt mit Pause/Fortsetzen, atomarer Notfall-Wiederherstellung, Distanz

@@ -38,6 +38,10 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
   suchen, Apple-Fahrradrouten ab aktueller GPS-Position einschließlich
   verfügbarer Alternativen vergleichen und ausgewählte Linie auf die
   Fahrtkarte übernehmen
+- Erste Live-Routenführung für Apple- und GPX-Linien: Fortschritt auf der
+  Geometrie, nächstes Apple-Manöver samt Entfernung, Restdistanz, anteilige
+  Restzeit und sichtbare Abweichung ab 60 Metern; echte Fahrt, Haptik,
+  Sprache und kontrollierte Neuberechnung stehen noch aus
 - Eigenes orange/schwarzes Corporate-Zeichen mit mittigem Rennrad-Vorderrad,
   steiler Gabel und angeschnittenem Rennlenker; separates Routenmotiv als Hero-Asset
 - Mehrere gleichzeitige BLE-Verbindungen mit State Restoration sowie Live-Parsern
