@@ -4,6 +4,7 @@ import SwiftUI
 
 struct RasterCameraTarget: Equatable {
     let center: CLLocationCoordinate2D
+    let riderCoordinate: CLLocationCoordinate2D
     let distance: CLLocationDistance
     let heading: CLLocationDirection
     let pitch: CGFloat
@@ -11,15 +12,24 @@ struct RasterCameraTarget: Equatable {
     static func == (left: RasterCameraTarget, right: RasterCameraTarget) -> Bool {
         left.center.latitude == right.center.latitude
             && left.center.longitude == right.center.longitude
+            && left.riderCoordinate.latitude == right.riderCoordinate.latitude
+            && left.riderCoordinate.longitude == right.riderCoordinate.longitude
             && left.distance == right.distance
             && left.heading == right.heading
             && left.pitch == right.pitch
     }
 }
 
+enum NativeRideMapStyle {
+    case standard
+    case imagery
+    case hybrid
+}
+
 struct RasterRideMap: UIViewRepresentable {
     let providerID: String
-    let tileTemplate: String
+    let tileTemplate: String?
+    let nativeStyle: NativeRideMapStyle
     let coordinates: [CLLocationCoordinate2D]
     let plannedRoute: [CLLocationCoordinate2D]
     let currentCoordinate: CLLocationCoordinate2D?
@@ -35,19 +45,17 @@ struct RasterRideMap: UIViewRepresentable {
     func makeUIView(context: Context) -> MKMapView {
         let mapView = MKMapView(frame: .zero)
         mapView.delegate = context.coordinator
-        mapView.mapType = .mutedStandard
-        mapView.pointOfInterestFilter = .excludingAll
         mapView.showsCompass = true
         mapView.showsScale = true
         mapView.isRotateEnabled = true
         mapView.isPitchEnabled = true
-        context.coordinator.installTiles(on: mapView)
+        context.coordinator.installMapStyle(on: mapView)
         return mapView
     }
 
     func updateUIView(_ mapView: MKMapView, context: Context) {
         context.coordinator.parent = self
-        context.coordinator.installTiles(on: mapView)
+        context.coordinator.installMapStyle(on: mapView)
         context.coordinator.updatePolylines(on: mapView)
         context.coordinator.updatePosition(on: mapView)
         context.coordinator.applyCameraIfNeeded(on: mapView)
@@ -68,15 +76,32 @@ struct RasterRideMap: UIViewRepresentable {
             self.parent = parent
         }
 
-        func installTiles(on mapView: MKMapView) {
+        func installMapStyle(on mapView: MKMapView) {
             guard installedProviderID != parent.providerID else { return }
             if let tileOverlay { mapView.removeOverlay(tileOverlay) }
-            let overlay = PolicyTileOverlay(urlTemplate: parent.tileTemplate)
-            overlay.canReplaceMapContent = true
-            overlay.minimumZ = 0
-            overlay.maximumZ = 19
-            mapView.addOverlay(overlay, level: .aboveLabels)
-            tileOverlay = overlay
+            tileOverlay = nil
+            switch parent.nativeStyle {
+            case .standard:
+                mapView.preferredConfiguration = MKStandardMapConfiguration(
+                    elevationStyle: .realistic
+                )
+            case .imagery:
+                mapView.preferredConfiguration = MKImageryMapConfiguration(
+                    elevationStyle: .realistic
+                )
+            case .hybrid:
+                mapView.preferredConfiguration = MKHybridMapConfiguration(
+                    elevationStyle: .realistic
+                )
+            }
+            if let tileTemplate = parent.tileTemplate {
+                let overlay = PolicyTileOverlay(urlTemplate: tileTemplate)
+                overlay.canReplaceMapContent = true
+                overlay.minimumZ = 0
+                overlay.maximumZ = 19
+                mapView.addOverlay(overlay, level: .aboveLabels)
+                tileOverlay = overlay
+            }
             installedProviderID = parent.providerID
         }
 
@@ -132,8 +157,9 @@ struct RasterRideMap: UIViewRepresentable {
 
         func applyCameraIfNeeded(on mapView: MKMapView) {
             guard lastCameraRevision != parent.cameraRevision,
-                  let target = parent.cameraTarget else { return }
-            lastCameraRevision = parent.cameraRevision
+                  let target = parent.cameraTarget,
+                  mapView.bounds.width > 0,
+                  mapView.bounds.height > 0 else { return }
             let camera = MKMapCamera(
                 lookingAtCenter: target.center,
                 fromDistance: target.distance,
@@ -141,6 +167,36 @@ struct RasterRideMap: UIViewRepresentable {
                 heading: target.heading
             )
             mapView.setCamera(camera, animated: false)
+            anchorRider(target.riderCoordinate, on: mapView)
+            lastCameraRevision = parent.cameraRevision
+        }
+
+        private func anchorRider(
+            _ coordinate: CLLocationCoordinate2D,
+            on mapView: MKMapView
+        ) {
+            let desiredPoint = CGPoint(
+                x: mapView.bounds.midX,
+                y: CGFloat(MapCameraPolicy.riderScreenY(
+                    viewHeight: Double(mapView.bounds.height),
+                    controlHitSize: 84,
+                    controlsBottomPadding: 34,
+                    markerDiameter: 42
+                ))
+            )
+            for _ in 0..<2 {
+                let actualPoint = mapView.convert(coordinate, toPointTo: mapView)
+                guard actualPoint.x.isFinite, actualPoint.y.isFinite else { return }
+                let adjustedCenterPoint = CGPoint(
+                    x: mapView.bounds.midX + actualPoint.x - desiredPoint.x,
+                    y: mapView.bounds.midY + actualPoint.y - desiredPoint.y
+                )
+                let adjustedCenter = mapView.convert(
+                    adjustedCenterPoint,
+                    toCoordinateFrom: mapView
+                )
+                mapView.setCenter(adjustedCenter, animated: false)
+            }
         }
 
         func mapView(_ mapView: MKMapView, regionWillChangeAnimated animated: Bool) {

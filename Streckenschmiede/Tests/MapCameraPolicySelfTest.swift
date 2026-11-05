@@ -46,6 +46,32 @@ enum MapCameraPolicySelfTest {
             MapCameraPolicy.pitchDegrees(is3DEnabled: false) == 0,
             "disabled 3D must return to a flat map"
         )
+        let phoneHeight = 844.0
+        let controlTop = phoneHeight - 34 - 84
+        let riderY = MapCameraPolicy.riderScreenY(
+            viewHeight: phoneHeight,
+            controlHitSize: 84,
+            controlsBottomPadding: 34,
+            markerDiameter: 42
+        )
+        mapCameraExpect(
+            mapCameraApproximatelyEqual(riderY, phoneHeight * 2 / 3),
+            "normal screens must anchor the rider one third above the bottom"
+        )
+        mapCameraExpect(
+            riderY + 21 + MapCameraPolicy.minimumRiderControlGap <= controlTop,
+            "the rider marker must never enter the bottom control hit area"
+        )
+        let compactRiderY = MapCameraPolicy.riderScreenY(
+            viewHeight: 300,
+            controlHitSize: 84,
+            controlsBottomPadding: 34,
+            markerDiameter: 42
+        )
+        mapCameraExpect(
+            compactRiderY + 21 + MapCameraPolicy.minimumRiderControlGap <= 300 - 34 - 84,
+            "compact screens must move the rider upward before controls overlap"
+        )
         print("Map camera policy self-test passed")
     }
 }

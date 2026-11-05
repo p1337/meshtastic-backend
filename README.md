@@ -12,7 +12,8 @@ Verbindlicher Gesamtumfang und Abnahmestatus: [TODO.md](TODO.md) · Technische Z
   durch Auto-Pause getrennt und pro Kalendertag in einer Route gesammelt;
   Puls, Kadenz, Leistung und Sensorakku stehen kompakt im oberen Cockpit;
   handschuhtaugliche 84-Punkte-Trefferflächen mit visuell kompaktem Minus
-  links, Zentrieren mittig und Plus rechts;
+  links, Zentrieren mittig und Plus rechts; der Pfeil bleibt im Follow-Modus
+  mit reserviertem Abstand oberhalb dieser Bedienzone;
   Kartenwahl in den Einstellungen für Apple Karte, Satellit, Hybrid,
   Online-OSM und die offene Fahrradkarte CyclOSM, ohne zusätzlichen
   Ebenenknopf über der Fahrkarte;

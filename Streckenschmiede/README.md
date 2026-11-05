@@ -36,10 +36,12 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
   Tab-Leisten, „Bereit“- und GPS-Punkt-Zeilen sowie die untere Sensorleiste
   wurden zugunsten der Karte entfernt
 - Zentrieren stellt den sicheren Vorausblick statt einer Bildschirmmitte wieder
-  her; dessen begrenzter 2D-/3D-Kameraversatz hält den Fahrer über den tiefen
-  Kartenknöpfen sichtbar. Die Position wird auch ohne verfügbaren Fahrkurs aus
-  der Bildschirmmitte in den unteren Kartenbereich gesetzt. Die geneigte
-  3D-Ansicht wirkt auch im Stand und ist separat abschaltbar
+  her; ein gemeinsamer MapKit-Kamerapfad verankert den Fahrer auf Apple- und
+  OSM-Karten ein Drittel über dem unteren Rand. Auf kompakten Displays wandert
+  der Pfeil automatisch nach oben und hält mindestens 24 Punkte Abstand vor
+  den tiefen 84-Punkte-Kartenknöpfen. Die Position wird auch ohne verfügbaren
+  Fahrkurs aus der Bildschirmmitte in den unteren Kartenbereich gesetzt. Die
+  geneigte 3D-Ansicht wirkt auch im Stand und ist separat abschaltbar
 - Puls, Kadenz, Leistung und Sensorakku stehen im oberen Daten-Cockpit
 - Dauerhaft gespeicherte Kartenwahl ausschließlich unter Einstellungen:
   Apple Karte, Apple Satellit, Apple Hybrid, interaktives OpenStreetMap und

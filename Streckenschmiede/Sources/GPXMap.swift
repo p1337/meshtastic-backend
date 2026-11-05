@@ -24,7 +24,6 @@ struct LiveRideMap: View {
     @AppStorage("rideMap3DEnabled") private var rideMap3DEnabled = true
     @AppStorage("rideMapStickToRoute") private var rideMapStickToRoute = false
     @AppStorage("rideMapLayer") private var rideMapLayerRaw = RideMapLayer.appleStandard.rawValue
-    @State private var cameraPosition: MapCameraPosition = .automatic
     @State private var rasterCameraTarget: RasterCameraTarget?
     @State private var cameraRevision = 0
     @State private var followsPosition = true
@@ -150,6 +149,7 @@ struct LiveRideMap: View {
             RasterRideMap(
                 providerID: selectedMapLayer.rawValue,
                 tileTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                nativeStyle: .standard,
                 coordinates: coordinates,
                 plannedRoute: plannedRoute,
                 currentCoordinate: displayedCoordinate,
@@ -162,6 +162,7 @@ struct LiveRideMap: View {
             RasterRideMap(
                 providerID: selectedMapLayer.rawValue,
                 tileTemplate: "https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png",
+                nativeStyle: .standard,
                 coordinates: coordinates,
                 plannedRoute: plannedRoute,
                 currentCoordinate: displayedCoordinate,
@@ -175,6 +176,7 @@ struct LiveRideMap: View {
                 RasterRideMap(
                     providerID: selectedMapLayer.rawValue,
                     tileTemplate: "https://tile.thunderforest.com/cycle/{z}/{x}/{y}.png?apikey=\(openCycleMapKey)",
+                    nativeStyle: .standard,
                     coordinates: coordinates,
                     plannedRoute: plannedRoute,
                     currentCoordinate: displayedCoordinate,
@@ -192,47 +194,25 @@ struct LiveRideMap: View {
     }
 
     private var appleMap: some View {
-        Map(position: $cameraPosition, interactionModes: .all) {
-            if plannedRoute.count > 1 {
-                MapPolyline(coordinates: plannedRoute)
-                    .stroke(
-                        Color(red: 0.82, green: 1.0, blue: 0.1),
-                        style: StrokeStyle(lineWidth: 8, lineCap: .round, lineJoin: .round)
-                    )
-            }
-            if coordinates.count > 1 {
-                MapPolyline(coordinates: coordinates)
-                    .stroke(.orange, style: StrokeStyle(lineWidth: 6, lineCap: .round, lineJoin: .round))
-            }
-            if let displayedCoordinate {
-                Annotation("", coordinate: displayedCoordinate) {
-                    ZStack {
-                        Circle()
-                            .fill(.black.opacity(0.86))
-                            .frame(width: 38, height: 38)
-                            .overlay(Circle().stroke(.white, lineWidth: 2))
-                        Image(systemName: "location.north.fill")
-                            .font(.system(size: 22, weight: .black))
-                            .foregroundStyle(.orange)
-                            .rotationEffect(.degrees(markerRotationDegrees))
-                    }
-                    .shadow(color: .black.opacity(0.65), radius: 5, y: 2)
-                    .accessibilityLabel("Aktuelle Position")
-                }
-            }
-        }
-        .mapStyle(appleMapStyle)
-        .mapControls {
-            MapCompass()
-            MapScaleView()
-        }
+        RasterRideMap(
+            providerID: selectedMapLayer.rawValue,
+            tileTemplate: nil,
+            nativeStyle: nativeMapStyle,
+            coordinates: coordinates,
+            plannedRoute: plannedRoute,
+            currentCoordinate: displayedCoordinate,
+            courseDegrees: courseDegrees,
+            cameraTarget: rasterCameraTarget,
+            cameraRevision: cameraRevision,
+            followsPosition: $followsPosition
+        )
     }
 
-    private var appleMapStyle: MapStyle {
+    private var nativeMapStyle: NativeRideMapStyle {
         switch selectedMapLayer {
         case .appleSatellite: .imagery
         case .appleHybrid: .hybrid
-        default: .standard(elevation: .realistic)
+        default: .standard
         }
     }
 
@@ -283,27 +263,14 @@ struct LiveRideMap: View {
             )
         )
         let pitch = CGFloat(MapCameraPolicy.pitchDegrees(is3DEnabled: rideMap3DEnabled))
-        let camera = MapCamera(
-            centerCoordinate: center,
-            distance: effectiveZoomMeters,
-            heading: heading,
-            pitch: pitch
-        )
-        cameraPosition = .camera(camera)
         rasterCameraTarget = RasterCameraTarget(
             center: center,
+            riderCoordinate: currentCoordinate,
             distance: effectiveZoomMeters,
             heading: heading,
             pitch: pitch
         )
         cameraRevision &+= 1
-    }
-
-    private var markerRotationDegrees: Double {
-        guard let travelBearing = travelBearingDegrees else { return 0 }
-        let mapHeading = rideMapHeadingUp ? travelBearing : 0
-        let difference = (travelBearing - mapHeading).truncatingRemainder(dividingBy: 360)
-        return difference < 0 ? difference + 360 : difference
     }
 
     private var travelBearingDegrees: Double? {
