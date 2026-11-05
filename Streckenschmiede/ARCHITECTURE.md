@@ -121,7 +121,11 @@ erst nach GATT-Dienst-/Merkmalserkennung. Er hält mehrere `CBPeripheral`-Sitzun
 parallel, verwendet einen Restore-Identifier und versucht nur ausdrücklich
 gewünschte Verbindungen nach einem unerwarteten Abbruch erneut. Live unterstützt
 er Heart Rate Measurement, CSC Measurement, Cycling Power Measurement, FTMS
-Indoor Bike Data, Battery Level sowie Hersteller/Modell aus Device Information.
+Indoor Bike Data, Environmental-Sensing-Temperatur, Battery Level sowie
+Hersteller/Modell aus Device Information. Die standardisierte Temperature-
+Characteristic `0x2A6E` wird als vorzeichenbehafteter 16-Bit-Wert mit
+0,01-Grad-Celsius-Auflösung gelesen; Pedalbalance und Temperatur bleiben wie
+alle Messgrößen an ihre tatsächliche Sensorquelle gebunden.
 Rad-/Kurbelzähler und deren 1/1024-Sekunden-Zeitbasis werden je Gerät getrennt
 geführt. Noch nicht festgelegte Quellenpriorität darf diese ersten Livewerte
 nicht später ungeprüft in Fahrtstrecke oder HealthKit doppelt einrechnen.
@@ -228,7 +232,7 @@ Zoom wird als sichtbare Breite/Höhe in Metern statt als anbieterspezifische Kac
 - „An geplante Straße kleben“ ist eine reine Darstellungshilfe und standardmäßig aus. In der ersten Stufe darf sie nur den sichtbaren Positionspfeil innerhalb einer engen Schwelle auf die aktive Routengeometrie projizieren. Roh-GPS, gespeicherte Spur und Abweichungslogik verwenden immer die unveränderte Messung. Allgemeines Street-Matching gehört in einen austauschbaren Provider und darf niemals still aktiviert werden.
 - Das obere Outdoor-Cockpit besitzt genau 1, 2, 4, 6 oder 8 sichtbare Felder. Die Anzahl wird in Einstellungen gewählt; jedes Feld besitzt eine stabile Slot-ID und kann im Hauptbild per Menü unabhängig auf einen verfügbaren Fahrt-/Sensorwert gelegt werden. Klein, Mittel und Groß sind persistente, ausdrücklich wählbare Typografiestufen. Beim Wechsel der Feldanzahl wird 1→Groß, 2/4→Mittel und 6/8→Klein vorgeschlagen; anschließend hat die Nutzerwahl Vorrang. Der erste persistente Stand nutzt acht versionierbare UserDefaults-Slots und stabile `RideDataField`-Kennungen; unbekannte Kennungen fallen auf sichere Slot-Standardwerte zurück. Mehrere benannte Layoutprofile folgen später.
 - `MKMapView.showsTraffic` ist eine optionale Apple-Kartenfähigkeit. Sie wird nur für Apple Standard, Satellit und Hybrid zugesagt; externe OSM-Rasterebenen besitzen keine behauptete Apple-Verkehrsabdeckung.
-- Puls, Kadenz, Leistung und Sensorakku sind reguläre wählbare Datenfelder. Eine zusätzliche untere Sensorleiste darf die freie Kartenfläche und die Fahrtaktionen nicht verkleinern.
+- Puls, Kadenz, Leistung, Pedalbalance, BLE-Umgebungstemperatur und Sensorakku sind reguläre wählbare Datenfelder. Eine zusätzliche untere Sensorleiste darf die freie Kartenfläche und die Fahrtaktionen nicht verkleinern.
 - Die GPS-Position besitzt im Follow-Modus eine exklusive Schutzzone. Untere Overlays melden ihre reservierte Höhe an `MapCameraPolicy`; der native Kartenpfad verschiebt den unveränderten Positionspunkt bei Bedarf weiter nach oben. Cockpit, Manöverbanner, Kamera, Musik und Bedienelemente dürfen nicht über diese Zone gelegt werden.
 
 Offline- und Integrationsentscheidungen stehen ausführlich in [ROUTES_MAPS_INTEGRATIONS.md](ROUTES_MAPS_INTEGRATIONS.md). MapLibre/PMTiles ist die Zielrichtung für lokale Vektorkarten; öffentliche OSM-Standardkacheln werden nicht vorgeladen.

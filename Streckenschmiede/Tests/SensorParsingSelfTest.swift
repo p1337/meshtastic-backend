@@ -44,10 +44,20 @@ enum SensorParsingSelfTest {
         sensorExpect(indoor.heartRateBpm == 150, "FTMS heart rate")
         let battery = try BikeSensorParser.batteryLevel(Data([87]))
         sensorExpect(battery == 87, "battery")
+        let positiveTemperature = try BikeSensorParser.temperatureCelsius(Data([0x29, 0x09]))
+        sensorExpect(positiveTemperature == 23.45, "positive environmental temperature")
+        let negativeTemperature = try BikeSensorParser.temperatureCelsius(Data([0xF3, 0xFD]))
+        sensorExpect(negativeTemperature == -5.25, "negative environmental temperature")
 
         do {
             _ = try BikeSensorParser.cyclingPower(Data([0x00]))
             sensorExpect(false, "truncated packet must fail")
+        } catch SensorParseError.truncated {
+            // Expected.
+        }
+        do {
+            _ = try BikeSensorParser.temperatureCelsius(Data([0x01]))
+            sensorExpect(false, "truncated temperature must fail")
         } catch SensorParseError.truncated {
             // Expected.
         }

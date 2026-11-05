@@ -131,6 +131,12 @@ enum BikeSensorParser {
         var cursor = ByteCursor(data)
         return min(100, Int(try cursor.readUInt8()))
     }
+
+    static func temperatureCelsius(_ data: Data) throws -> Double {
+        var cursor = ByteCursor(data)
+        let rawValue = Int16(bitPattern: try cursor.readUInt16())
+        return Double(rawValue) / 100
+    }
 }
 
 private struct ByteCursor {
