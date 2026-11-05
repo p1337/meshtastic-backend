@@ -664,8 +664,8 @@ private struct RideDashboard: View {
     }
 
     private var cockpitOverlay: some View {
-        VStack(spacing: 7) {
-            HStack(alignment: .center, spacing: 10) {
+        VStack(spacing: 3) {
+            HStack(alignment: .center, spacing: 8) {
                 VStack(alignment: .leading, spacing: 0) {
                     HStack(spacing: 6) {
                         Circle()
@@ -677,14 +677,14 @@ private struct RideDashboard: View {
                     }
                     HStack(alignment: .firstTextBaseline, spacing: 4) {
                         Text(String(format: "%.1f", ride.speedKmh))
-                            .font(.system(size: 44, weight: .black, design: .rounded))
+                            .font(.system(size: 36, weight: .black, design: .rounded))
                             .monospacedDigit()
                         Text("km/h")
                             .font(.caption.weight(.bold))
                             .foregroundStyle(.secondary)
                     }
                 }
-                .frame(minWidth: 122, alignment: .leading)
+                .frame(minWidth: 108, alignment: .leading)
 
                 LazyVGrid(columns: columns, spacing: 6) {
                     RideMetric(title: "km", value: String(format: "%.2f", ride.distance / 1_000))
@@ -699,8 +699,8 @@ private struct RideDashboard: View {
                     SettingsView()
                 } label: {
                     Image(systemName: "gearshape.fill")
-                        .font(.title3.weight(.semibold))
-                        .frame(width: 48, height: 48)
+                        .font(.body.weight(.semibold))
+                        .frame(width: 42, height: 42)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -709,21 +709,22 @@ private struct RideDashboard: View {
                 .accessibilityLabel("Einstellungen")
             }
 
-            HStack(spacing: 6) {
-                RideMetric(title: "PULS", value: sensors.heartRateBpm.map { "\($0)" } ?? "–")
-                RideMetric(title: "KADENZ", value: sensors.cadenceRpm.map { String(format: "%.0f", $0) } ?? "–")
-                RideMetric(title: "WATT", value: sensors.powerWatts.map { "\($0)" } ?? "–")
-                RideMetric(title: "AKKU", value: sensors.batteryPercent.map { "\($0)%" } ?? "–")
+            HStack(spacing: 12) {
+                SensorChip(systemImage: "heart.fill", value: sensors.heartRateBpm.map { "\($0)" } ?? "–")
+                SensorChip(systemImage: "arrow.triangle.2.circlepath", value: sensors.cadenceRpm.map { String(format: "%.0f", $0) } ?? "–")
+                SensorChip(systemImage: "bolt.fill", value: sensors.powerWatts.map { "\($0) W" } ?? "–")
+                SensorChip(systemImage: "battery.75percent", value: sensors.batteryPercent.map { "\($0)%" } ?? "–")
             }
+            .frame(maxWidth: .infinity)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(.black.opacity(0.82), in: RoundedRectangle(cornerRadius: 18))
-        .overlay(RoundedRectangle(cornerRadius: 18).stroke(.white.opacity(0.18)))
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(.black.opacity(0.76), in: RoundedRectangle(cornerRadius: 16))
+        .overlay(RoundedRectangle(cornerRadius: 16).stroke(.white.opacity(0.14)))
     }
 
     private var bottomOverlay: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 6) {
             if let navigationProgress {
                 navigationBanner(navigationProgress)
             } else if routePlan != nil {
@@ -740,69 +741,63 @@ private struct RideDashboard: View {
                 .background(.black.opacity(0.78), in: Capsule())
             }
 
-            if ride.active {
-                HStack(spacing: 10) {
-                    primaryRideButton
+            HStack(spacing: 8) {
+                compactAction("map.fill", label: "Zielroute planen") {
+                    showingRoutePlanner = true
+                }
+
+                if ride.active {
+                    compactAction("qrcode.viewfinder", label: "DJI Action 5 Pro synchronisieren") {
+                        showingCameraSync = true
+                    }
+                } else {
+                    compactAction("square.and.arrow.down", label: "GPX-Strecke importieren") {
+                        importing = true
+                    }
+                }
+
+                if !ride.active, let url = ride.exportURL {
+                    ShareLink(item: url) {
+                        Image(systemName: "square.and.arrow.up")
+                            .font(.system(size: 19, weight: .semibold))
+                            .frame(width: 48, height: 48)
+                    }
+                    .compactToolButton()
+                    .accessibilityLabel("Aufgezeichnete GPX teilen")
+                }
+
+                primaryRideButton
+
+                if ride.active {
                     Button { ride.stop() } label: {
                         Image(systemName: "stop.fill")
-                            .font(.title2.weight(.bold))
-                            .frame(width: 60, height: 60)
+                            .font(.system(size: 18, weight: .bold))
+                            .frame(width: 48, height: 48)
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.red)
                     .accessibilityLabel("Fahrt beenden")
                 }
-            } else {
-                primaryRideButton
-            }
-
-            HStack(spacing: 8) {
-                Button { showingRoutePlanner = true } label: {
-                    Image(systemName: "map.fill")
-                        .font(.title3.weight(.bold))
-                        .frame(maxWidth: .infinity, minHeight: 50)
-                }
-                .compactToolButton()
-                .accessibilityLabel("Zielroute planen")
-
-                Button { importing = true } label: {
-                    Image(systemName: "square.and.arrow.down")
-                        .font(.title3.weight(.bold))
-                        .frame(maxWidth: .infinity, minHeight: 50)
-                }
-                .compactToolButton()
-                .accessibilityLabel("GPX-Strecke importieren")
-
-                Button { showingCameraSync = true } label: {
-                    Image(systemName: "qrcode.viewfinder")
-                        .font(.title3.weight(.bold))
-                        .frame(maxWidth: .infinity, minHeight: 50)
-                }
-                .compactToolButton()
-                .disabled(!ride.active && ride.points == 0)
-                .accessibilityLabel("DJI Action 5 Pro synchronisieren")
-
-                if let url = ride.exportURL {
-                    ShareLink(item: url) {
-                        Image(systemName: "square.and.arrow.up")
-                            .font(.title3.weight(.bold))
-                            .frame(maxWidth: .infinity, minHeight: 50)
-                    }
-                    .compactToolButton()
-                    .accessibilityLabel("Aufgezeichnete GPX teilen")
-                } else {
-                    Button {} label: {
-                        Image(systemName: "square.and.arrow.up")
-                            .font(.title3.weight(.bold))
-                            .frame(maxWidth: .infinity, minHeight: 50)
-                    }
-                    .compactToolButton()
-                    .disabled(true)
-                    .accessibilityLabel("GPX-Teilen nach abgeschlossener Aufzeichnung verfügbar")
-                }
             }
             .frame(maxWidth: .infinity)
+            .padding(5)
+            .background(.black.opacity(0.80), in: RoundedRectangle(cornerRadius: 17))
+            .overlay(RoundedRectangle(cornerRadius: 17).stroke(.white.opacity(0.16)))
         }
+    }
+
+    private func compactAction(
+        _ systemImage: String,
+        label: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .font(.system(size: 19, weight: .semibold))
+                .frame(width: 48, height: 48)
+        }
+        .compactToolButton()
+        .accessibilityLabel(label)
     }
 
     private var routeCoordinates: [CLLocationCoordinate2D] {
@@ -894,19 +889,19 @@ private struct RideDashboard: View {
                 if ride.isPaused { ride.resume() } else { ride.pause() }
             } label: {
                 Label(
-                    ride.isPaused ? "Aufzeichnung fortsetzen" : "Aufzeichnung pausieren",
+                    ride.isPaused ? "Weiter" : "Pause",
                     systemImage: ride.isPaused ? "play.fill" : "pause.fill"
                 )
-                .font(.headline)
-                .frame(maxWidth: .infinity, minHeight: 60)
+                .font(.subheadline.weight(.bold))
+                .frame(maxWidth: .infinity, minHeight: 48)
             }
             .buttonStyle(.borderedProminent)
             .tint(.orange)
         } else if !ride.recoveryAvailable {
             Button { ride.start() } label: {
-                Label("Aufzeichnung starten", systemImage: "play.fill")
-                    .font(.title3.weight(.bold))
-                    .frame(maxWidth: .infinity, minHeight: 64)
+                Label("Start", systemImage: "record.circle.fill")
+                    .font(.subheadline.weight(.bold))
+                    .frame(maxWidth: .infinity, minHeight: 48)
             }
             .buttonStyle(.borderedProminent)
             .tint(.orange)
@@ -957,6 +952,25 @@ private struct RideMetric: View {
                 .lineLimit(1)
         }
         .frame(maxWidth: .infinity)
+    }
+}
+
+private struct SensorChip: View {
+    let systemImage: String
+    let value: String
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(systemName: systemImage)
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(.orange)
+            Text(value)
+                .font(.caption2.weight(.bold))
+                .monospacedDigit()
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .combine)
     }
 }
 

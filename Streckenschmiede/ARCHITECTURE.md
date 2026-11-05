@@ -220,9 +220,9 @@ Zoom wird als sichtbare Breite/Höhe in Metern statt als anbieterspezifische Kac
 - Fahrtrichtung oben nutzt geglätteten Kurs; bei Stillstand wird nicht unruhig gedreht.
 - Die Fahrtkarte füllt die verfügbare Aufzeichnungsfläche bis an den oberen Bildschirmrand. Messwerte und Fahrtaktionen liegen als kompakte kontrastreiche Overlays darauf; es gibt keine separate dauerhaft sichtbare „Bereit“- oder GPS-Punkt-Zeile.
 - Live-GPS und Aufzeichnung sind auch in der Bedienung getrennt: Eine breite orange Haupttaste „Aufzeichnung starten“ beginnt erst die Speicherung. Import, Kamera und Teilen stehen in einer eigenen Werkzeugzeile und dürfen die Starttaste nicht zusammendrücken.
-- Im Vorausblick wird der Kartenmittelpunkt so weit in Fahrtrichtung vor das Fahrrad verschoben, dass der Positionspfeil horizontal mittig bei ungefähr zwei Dritteln der Bildschirmhöhe, also ein Drittel über dem unteren Rand, erscheint, ohne die tatsächliche GPS-Position zu verändern. Weil `MKMapCamera.distance` nicht der sichtbaren Kartenhöhe entspricht, begrenzt `MapCameraPolicy` den Versatz auf 16 % in 2D und 12 % in der geneigten 3D-Ansicht; größere frühere Werte konnten den Fahrer aus dem Bildschirm schieben. Fehlt ein aktueller Kurs, dienen zuletzt gefahrene Spur oder nächste GPX-Richtung als Fallback. Eine separat gespeicherte 3D-Option steuert die Neigung.
-- Die untere Kartensteuerung ist symmetrisch und handschuhtauglich: Minus unten links, das optisch vom Positionspfeil getrennte Fadenkreuz-Zentrieren mittig und Plus unten rechts. Alle drei Kartenknöpfe sind mit 84 × 84 Punkten exakt Faktor 1,5 gegenüber der ersten 56-Punkte-Zoomstufe vergrößert.
-- Bei aktiver Navigation rückt die Kartensteuerung um die Höhe des Manöverbanners nach oben. Route, GPX-Import, Kamera-Sync und Teilen liegen darunter als vier gleich große kompakte Werkzeugflächen; Start/Pause/Stop bleiben eigene große Fahrtaktionen.
+- Im Vorausblick wird der Kartenmittelpunkt nur so weit in Fahrtrichtung verschoben, dass der Positionspfeil horizontal mittig im unteren Kartenbereich sichtbar bleibt, ohne die tatsächliche GPS-Position zu verändern. Weil `MKMapCamera.distance` nicht der sichtbaren Kartenhöhe entspricht, begrenzt `MapCameraPolicy` den Versatz auf 12 % in 2D und 8 % in der geneigten 3D-Ansicht; größere frühere Werte konnten den Fahrer hinter die Bedienknöpfe oder aus dem Bildschirm schieben. Fehlt ein aktueller Kurs, dienen zuletzt gefahrene Spur oder nächste GPX-Richtung als Fallback. Die gespeicherte 3D-Option setzt die Neigung auch im Stand; ein Fahrkurs ist nur für Ausrichtung und Vorausblick nötig.
+- Die untere Kartensteuerung ist symmetrisch und handschuhtauglich: Minus unten links, das optisch vom Positionspfeil getrennte Fadenkreuz-Zentrieren mittig und Plus unten rechts. Alle drei Kartenknöpfe behalten eine unsichtbare 84 × 84 Punkte große Trefferfläche, werden visuell aber als deutlich ruhigere 58-Punkte-Kreise dargestellt und näher an die kontextabhängige Aktionsleiste geschoben.
+- Bei aktiver Navigation rückt die Kartensteuerung nur um die Höhe des Manöverbanners nach oben. Die untere Aktionsleiste ist kontextabhängig: vor der Fahrt Route, Import, optional Teilen nach abgeschlossenem Export und Start; während der Fahrt Route, Kamera-Sync, Pause/Fortsetzen und Stop. Teilen und Import erscheinen niemals während einer laufenden Fahrt.
 - „An geplante Straße kleben“ ist eine reine Darstellungshilfe und standardmäßig aus. In der ersten Stufe darf sie nur den sichtbaren Positionspfeil innerhalb einer engen Schwelle auf die aktive Routengeometrie projizieren. Roh-GPS, gespeicherte Spur und Abweichungslogik verwenden immer die unveränderte Messung. Allgemeines Street-Matching gehört in einen austauschbaren Provider und darf niemals still aktiviert werden.
 - Puls, Kadenz, Leistung und Sensorakku werden kompakt in das obere Daten-Cockpit integriert. Eine zusätzliche untere Sensorleiste darf die freie Kartenfläche und die Fahrtaktionen nicht verkleinern.
 
@@ -342,6 +342,12 @@ Für Indoor-Real-Life-Video ist zunächst MP4 plus zeitgestempeltes, gleichnamig
 ## Abnahme und Beweisführung
 
 Jedes Modul erhält Unit- oder Referenzvektortests. Zusätzlich gelten:
+
+Der CI-Lauf baut außerdem die Simulator-App, setzt eine synthetische GPS-
+Position, startet den Outdoor-Hauptreiter und erzeugt einen echten iPhone-
+Screenshot. Der Screenshot wird als Artefakt und neben dem OTA-Paket als
+`ui-outdoor.png` bereitgestellt, damit visuelle Regressionen nicht erst durch
+Nutzerfotos sichtbar werden. Das ersetzt keine echte Geräte- oder Fahrtprüfung.
 
 1. reproduzierbarer Xcode-Projekt-/Paket-Build,
 2. Simulator-Smoke-Test ohne erfundene Hardwareergebnisse,

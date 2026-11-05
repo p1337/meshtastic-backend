@@ -31,11 +31,14 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
   links, Zentrieren mittig, Plus rechts; separate „Bereit“- und GPS-Punkt-
   Zeilen sowie die untere Sensorleiste wurden zugunsten der Karte entfernt
 - Zentrieren stellt den sicheren Vorausblick statt einer Bildschirmmitte wieder
-  her; dessen begrenzter 2D-/3D-Kameraversatz hält den Fahrer sichtbar. Die
-  geneigte 3D-Ansicht ist separat abschaltbar. Bei aktiver Navigation
+  her; dessen begrenzter 2D-/3D-Kameraversatz hält den Fahrer über den tiefer
+  liegenden Kartenknöpfen sichtbar. Die geneigte 3D-Ansicht wirkt auch im
+  Stand und ist separat abschaltbar. Bei aktiver Navigation
   rücken die drei Kartenknöpfe nach oben, damit die Führung sie nicht verdeckt
-- Die vier unteren Werkzeuge Route, GPX-Import, Kamera-Sync und Teilen besitzen
-  jetzt gleiche kompakte Flächen; Start/Pause/Stop bleiben davon getrennt groß
+- Die untere Leiste zeigt nur passende Aktionen: vor der Fahrt Route, Import,
+  optional Teilen und einen kompakten Start; während der Fahrt Route, Kamera-
+  Sync, Pause/Fortsetzen und Stop. Import und Teilen verschwinden während der
+  Fahrt vollständig
 - Puls, Kadenz, Leistung und Sensorakku stehen im oberen Daten-Cockpit
 - Dauerhaft gespeicherte Kartenwahl ausschließlich unter Einstellungen:
   Apple Karte, Apple Satellit, Apple Hybrid, interaktives OpenStreetMap und
@@ -99,3 +102,8 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
 Workflow: `.github/workflows/streckenschmiede-ios.yml`
 
 Die Pipeline nutzt die vorhandene GitHub-Environment `apple-signing` mit `IOS_DISTRIBUTION_P12_BASE64`, `IOS_P12_PASSWORD` und `IOS_ADHOC_PROFILE_BASE64`. Bundle-ID und Team-ID werden aus dem bestehenden Profil übernommen; dadurch ersetzt die App die frühere Werkbeleg-/LoRaLab-Test-App. Nach Compiler-, Profil- und Signaturprüfung werden IPA, Manifest und Store gemeinsam über GitHub Pages veröffentlicht. Ein fehlgeschlagener Build überschreibt den letzten funktionierenden Store nicht.
+
+Vor dem Gerätebuild startet die Pipeline zusätzlich die App auf einem iPhone-
+Simulator mit synthetischer Testposition und erzeugt `ui-outdoor.png`. Dadurch
+wird der reale Outdoor-Bildschirm pro Release visuell prüfbar; echte Geräte-
+und Handschuhtests bleiben trotzdem erforderlich.

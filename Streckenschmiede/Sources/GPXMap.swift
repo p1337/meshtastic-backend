@@ -28,10 +28,12 @@ struct LiveRideMap: View {
     @State private var rasterCameraTarget: RasterCameraTarget?
     @State private var cameraRevision = 0
     @State private var followsPosition = true
-    private let mapControlSize: CGFloat = 84
+    private let mapControlHitSize: CGFloat = 84
+    private let mapControlVisualSize: CGFloat = 58
 
     private var hasActiveRoute: Bool { plannedRoute.count > 1 }
-    private var mapControlsBottomPadding: CGFloat { hasActiveRoute ? 222 : 142 }
+    private var mapControlsBottomPadding: CGFloat { hasActiveRoute ? 134 : 76 }
+    private var attributionBottomPadding: CGFloat { mapControlsBottomPadding + 88 }
 
     private var effectiveZoomMeters: Double {
         guard rideMapAutoZoom else { return rideMapZoomMeters }
@@ -54,7 +56,7 @@ struct LiveRideMap: View {
                         .background(.black.opacity(0.78), in: Capsule())
                 }
                 .padding(.trailing, 12)
-                .padding(.bottom, hasActiveRoute ? 314 : 234)
+                .padding(.bottom, attributionBottomPadding)
             }
         }
         .overlay(alignment: .bottom) {
@@ -205,7 +207,7 @@ struct LiveRideMap: View {
                     .stroke(.orange, style: StrokeStyle(lineWidth: 6, lineCap: .round, lineJoin: .round))
             }
             if let displayedCoordinate {
-                Annotation("Aktuelle Position", coordinate: displayedCoordinate) {
+                Annotation("", coordinate: displayedCoordinate) {
                     ZStack {
                         Circle()
                             .fill(.black.opacity(0.86))
@@ -217,6 +219,7 @@ struct LiveRideMap: View {
                             .rotationEffect(.degrees(markerRotationDegrees))
                     }
                     .shadow(color: .black.opacity(0.65), radius: 5, y: 2)
+                    .accessibilityLabel("Aktuelle Position")
                 }
             }
         }
@@ -247,16 +250,20 @@ struct LiveRideMap: View {
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            Image(systemName: systemImage)
-                .font(.system(size: 30, weight: .black))
-                .frame(width: mapControlSize, height: mapControlSize)
-                .contentShape(Circle())
+            ZStack {
+                Circle()
+                    .fill(.black.opacity(0.82))
+                    .frame(width: mapControlVisualSize, height: mapControlVisualSize)
+                    .overlay(Circle().stroke(.white.opacity(0.42), lineWidth: 1.5))
+                    .shadow(color: .black.opacity(0.55), radius: 6, y: 2)
+                Image(systemName: systemImage)
+                    .font(.system(size: 22, weight: .bold))
+            }
+            .frame(width: mapControlHitSize, height: mapControlHitSize)
+            .contentShape(Circle())
         }
         .buttonStyle(.plain)
         .foregroundStyle(foreground)
-        .background(.black.opacity(0.86), in: Circle())
-        .overlay(Circle().stroke(.white.opacity(0.55), lineWidth: 2))
-        .shadow(color: .black.opacity(0.6), radius: 8, y: 3)
         .accessibilityLabel(accessibilityLabel)
     }
 
@@ -274,7 +281,7 @@ struct LiveRideMap: View {
                 )
             )
         } ?? currentCoordinate
-        let pitch: CGFloat = rideMap3DEnabled && travelBearing != nil ? 55 : 0
+        let pitch = CGFloat(MapCameraPolicy.pitchDegrees(is3DEnabled: rideMap3DEnabled))
         let camera = MapCamera(
             centerCoordinate: center,
             distance: effectiveZoomMeters,
