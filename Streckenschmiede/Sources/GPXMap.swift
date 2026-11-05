@@ -509,6 +509,8 @@ final class GPXParser: NSObject, XMLParserDelegate {
 
 struct RouteMap: View {
     let coordinates: [CLLocationCoordinate2D]
+    var height: CGFloat = 300
+    var isInteractive = true
 
     private var initialCamera: MapCameraPosition {
         guard let first = coordinates.first else { return .automatic }
@@ -525,7 +527,10 @@ struct RouteMap: View {
     }
 
     var body: some View {
-        Map(initialPosition: initialCamera) {
+        Map(
+            initialPosition: initialCamera,
+            interactionModes: isInteractive ? .all : []
+        ) {
             if coordinates.count > 1 {
                 MapPolyline(coordinates: coordinates)
                     .stroke(.orange, lineWidth: 5)
@@ -548,7 +553,7 @@ struct RouteMap: View {
             }
         }
         .mapStyle(.standard(elevation: .realistic))
-        .frame(height: 300)
+        .frame(height: height)
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .accessibilityLabel("Streckenkarte mit Start und Ziel")
     }

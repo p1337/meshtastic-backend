@@ -314,6 +314,22 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
         return url
     }
 
+    func deleteHistoryEntry(_ entry: RideArchiveEntry) {
+        if active, entry.rideID == rideID {
+            status = "Die aktuell laufende Tagesfahrt kann erst nach ihrem Abschluss gelöscht werden"
+            return
+        }
+        do {
+            rideHistory = try RideArchiveStore.delete(entry)
+            if exportURL?.lastPathComponent == entry.gpxFileName {
+                exportURL = nil
+            }
+            status = "Fahrt gelöscht"
+        } catch {
+            status = "Fahrt konnte nicht gelöscht werden: \(error.localizedDescription)"
+        }
+    }
+
     func persistNow() {
         sessionEngine.persistNow(now: Date())
         if sessionEngine.lastPersistenceError != nil, active {
@@ -639,6 +655,20 @@ struct MainView: View {
                 }
             }
             TrainerControlPanel(sensors: sensors)
+            Section("Gefahrene Strecken") {
+                NavigationLink {
+                    IndoorRideLibraryView(ride: ride)
+                } label: {
+                    Label("Alle Fahrten mit Karte", systemImage: "map.fill")
+                    Spacer()
+                    Text("\(ride.rideHistory.count)")
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                }
+                Text("Jede gespeicherte Fahrt zeigt ihre GPX-Linie und Fahrdaten und kann einzeln gelöscht werden.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
             Section("Fahrradsensoren und Trainer") {
                 Text(sensors.status)
                     .foregroundStyle(.secondary)
