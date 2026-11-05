@@ -23,8 +23,10 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
 - Erster DJI-Action-5-Pro-Sync-Bildschirm mit Start-/Checkpoint-/End-QR, Fahrt-ID, UTC, Fahrtzeit, Prüfsumme und optionaler GPS-Position
 - GPX-Import aus Dateien sowie Empfang über „Öffnen mit“/Teilen aus WhatsApp, Komoot und anderen Apps
 - Live-Karte mit geplanter GPX-Linie, Fahrtrichtung/Vorausblick, eindeutigem
-  Fadenkreuz-Zentrieren-Knopf und Handschuh-Zoompresets; separate „Bereit“- und
-  GPS-Punkt-Zeilen wurden zugunsten der Karte entfernt
+  Fadenkreuz-Zentrieren-Knopf und 84-Punkte-Handschuhsteuerung unten: Minus
+  links, Zentrieren mittig, Plus rechts; separate „Bereit“- und GPS-Punkt-
+  Zeilen sowie die untere Sensorleiste wurden zugunsten der Karte entfernt
+- Puls, Kadenz, Leistung und Sensorakku stehen im oberen Daten-Cockpit
 - Eigenes orange/schwarzes Corporate-Zeichen mit mittigem Rennrad-Vorderrad,
   steiler Gabel und angeschnittenem Rennlenker; separates Routenmotiv als Hero-Asset
 - Mehrere gleichzeitige BLE-Verbindungen mit State Restoration sowie Live-Parsern

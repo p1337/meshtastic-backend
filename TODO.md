@@ -145,7 +145,8 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 - [ ] Kartenmodi: Standard, Satellit, Hybrid und OSM-basierte Darstellung mit sichtbarer Quellenangabe.
 - [ ] Kartenorientierung: Norden oben, Fahrtrichtung oben und 3D-Perspektive.
 - [~] Follow-Modus mit eindeutigem Fadenkreuz-Zentrieren-Knopf unten mittig; Verschieben/Pinch schaltet auf freie Karte. Reale Gestenabnahme steht aus.
-- [~] Live-Karten-Zoom per Gesten und 56-Punkte-Tasten sowie dauerhaft einstellbarer Standardbereich von 250 m bis 10 km; Presets Nah/Fahrt/Voraus/Übersicht sind implementiert, reale Handschuhabnahme fehlt.
+- [~] Live-Karten-Zoom per Gesten und auf 84 Punkte beziehungsweise Faktor 1,5 vergrößerten Tasten: Minus unten links, Zentrieren unten mittig, Plus unten rechts; Standardbereich 250 m bis 10 km und Presets Nah/Fahrt/Voraus/Übersicht sind implementiert, reale Handschuhabnahme fehlt.
+- [~] Puls, Kadenz, Leistung und Sensorakku stehen im oberen Daten-Cockpit; die untere Sensorleiste entfällt für mehr freie Kartenfläche. Reale Geräte- und Dynamic-Type-Abnahme fehlt.
 - [~] Dauerhaft gespeicherter Live-Karten-Zoom und optionaler geschwindigkeitsabhängiger Auto-Zoom; manöverabhängiger Zoom fehlt.
 - [~] Fahrtrichtung/Vorausblick setzt den orangefarbenen Positionspfeil durch einen um ein Drittel vorausliegenden Kartenmittelpunkt horizontal mittig auf zwei Drittel der Bildschirmhöhe, also ein Drittel über den unteren Rand; Kurs fällt auf Track- oder GPX-Richtung zurück. Glättung, Stillstandstest und echte Fahrabnahme fehlen.
 - [ ] Bildschirm-Wachhalten optional, Helligkeits-/OLED-schonender Nachtmodus und Live Activity/Lock-Screen-Status.
