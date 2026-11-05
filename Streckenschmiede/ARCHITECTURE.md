@@ -29,10 +29,19 @@ Stand: 4. November 2026. Dieses Dokument beschreibt die geplante Architektur. De
 
 Die Oberfläche liest einen zusammengeführten, unveränderlichen `RideSnapshot`. GPS, Watch und Sensoren schreiben zeitgestempelte Rohmessungen in den jeweiligen Dienst. `RideCore` bestimmt anhand der konfigurierten Quellenpriorität und Qualität den angezeigten Wert. So werden weder Distanz noch Kalorien doppelt gezählt.
 
-Ein einmaliger Core-Location-Abruf über `requestLocation()` wird nur mit beiden
-Delegate-Pfaden betrieben: `didUpdateLocations` und `didFailWithError`. Das ist
-ein Startpfad und deshalb Teil jedes Smoke-Tests mit bereits erteilter sowie
-noch nicht erteilter Standortfreigabe.
+Der Core-Location-Pfad verarbeitet immer beide Delegate-Ausgänge:
+`didUpdateLocations` und `didFailWithError`. Autorisierungswechsel starten oder
+beenden den passenden Modus ausdrücklich; verweigerte oder ausgeschaltete
+Ortung darf weder abstürzen noch eine Fahrt vortäuschen.
+
+Die Kartenposition ist kein Nebenprodukt einer laufenden Fahrt. Mit erteilter
+Freigabe verwendet die aktive App kontinuierliche Vordergrund-Updates, damit
+Position, Kurs und Vorausblick schon vor „Start“ und während manueller Pause
+aktuell bleiben. Nur `RideSessionPhase.recording` schreibt Trackpunkte und darf
+Ortung im Hintergrund fortsetzen. Eine inaktive App ohne laufende Aufzeichnung
+beendet Updates, damit „Live-GPS“ nicht unbemerkt dauerhaft Akku verbraucht.
+Diese drei Modi (`foregroundLive`, `recordingBackground`, `off`) werden als
+reine Policy mit Referenztests abgesichert.
 
 ## Sitzungs- und Datenmodell
 
@@ -158,7 +167,7 @@ Zoom wird als sichtbare Breite/Höhe in Metern statt als anbieterspezifische Kac
 - Auto-Zoom darf Geschwindigkeit, Distanz zum nächsten Manöver und Routenkrümmung verwenden, bleibt abschaltbar.
 - Fahrtrichtung oben nutzt geglätteten Kurs; bei Stillstand wird nicht unruhig gedreht.
 - Die Fahrtkarte füllt die verfügbare Aufzeichnungsfläche bis an den oberen Bildschirmrand. Messwerte und Fahrtaktionen liegen als kompakte kontrastreiche Overlays darauf; es gibt keine separate dauerhaft sichtbare „Bereit“- oder GPS-Punkt-Zeile.
-- Im Vorausblick wird der Kartenmittelpunkt um 30 Prozent des wirksamen Sichtbereichs in Fahrtrichtung vor das Fahrrad verschoben. Bei gleichzeitig gedrehter Karte erscheint der Positionspfeil dadurch horizontal mittig im unteren Bildschirmdrittel, ohne die tatsächliche GPS-Position zu verändern. Fehlt ein aktueller Kurs, dienen zuletzt gefahrene Spur oder nächste GPX-Richtung als Fallback.
+- Im Vorausblick wird der Kartenmittelpunkt um ein Drittel des wirksamen Sichtbereichs in Fahrtrichtung vor das Fahrrad verschoben. Bei gleichzeitig gedrehter Karte erscheint der Positionspfeil dadurch horizontal mittig bei ungefähr zwei Dritteln der Bildschirmhöhe, also ein Drittel über dem unteren Rand, ohne die tatsächliche GPS-Position zu verändern. Fehlt ein aktueller Kurs, dienen zuletzt gefahrene Spur oder nächste GPX-Richtung als Fallback.
 - Pflichtbedienelemente auf der Fahrkarte erhalten mindestens 52 × 52 Punkte; Zentrieren liegt als Fadenkreuz unten mittig, ist optisch vom Positionspfeil getrennt und aktiviert Follow erneut.
 
 Offline- und Integrationsentscheidungen stehen ausführlich in [ROUTES_MAPS_INTEGRATIONS.md](ROUTES_MAPS_INTEGRATIONS.md). MapLibre/PMTiles ist die Zielrichtung für lokale Vektorkarten; öffentliche OSM-Standardkacheln werden nicht vorgeladen.

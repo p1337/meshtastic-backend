@@ -7,9 +7,10 @@ Verbindlicher Gesamtumfang und Abnahmestatus: [TODO.md](TODO.md) · Technische Z
 ## App (iOS 17+)
 **Exakt zwei Hauptreiter:**
 - **Aufzeichnung:** bildschirmfüllendes Karten-Cockpit mit Positionspfeil im
-  unteren Drittel und großem Vorausblick; GPS-Fahrt mit Pause/Fortsetzen,
-  atomarer Notfall-Wiederherstellung, Distanz und GPX-Export; GPX-Import und
-  Kartenansicht über Apple MapKit
+  unteren Drittel und großem Vorausblick; Live-Position läuft bei geöffneter
+  App dauerhaft, während Trackpunkte erst nach Start geschrieben werden;
+  GPS-Fahrt mit Pause/Fortsetzen, atomarer Notfall-Wiederherstellung, Distanz
+  und GPX-Export; GPX-Import und Kartenansicht über Apple MapKit
 - **Indoor-Training:** gleichzeitige BLE-Sensorverbindungen mit Puls, Tempo,
   Kadenz, Leistung, FTMS-Livewerten und Akku sowie erste begrenzte
   FTMS-Steuerung für D100-kompatible Trainer mit ERG, Widerstand, Steigung,

@@ -9,12 +9,15 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
 - Zwei Hauptreiter: Aufzeichnung und Indoor-Training
 - GPS-Aufzeichnung mit Distanz, GPX-Export, manueller Pause/Fortsetzung,
   getrennter Gesamt-/Fahrt-/Pausenzeit und atomarem Wiederherstellungsstand
+- Dauerhafte Live-Position und Live-Kurs im geöffneten Kartenbild bereits vor
+  dem Aufzeichnungsstart und während manueller Pause; Trackpunkte werden davon
+  getrennt ausschließlich im Zustand „Aufzeichnung läuft“ gespeichert
 - Hintergrund-Ortung ist für eine laufende Fahrt konfiguriert; die echte
   Sperrbildschirm- und Langzeittestfahrt steht noch aus
 - Bildschirmfüllendes, oben beginnendes Karten-Cockpit mit kompakten
   transparenten Messwert-Overlays, gefahrenem Track, Geschwindigkeit, Zeit,
   Höhe, Auf-/Abstieg und gespeichertem Karten-Zoom; die laufende Position liegt
-  beim Folgen horizontal mittig im unteren Bildschirmdrittel
+  beim Folgen horizontal mittig ungefähr ein Drittel über dem unteren Rand
 - Erster DJI-Action-5-Pro-Sync-Bildschirm mit Start-/Checkpoint-/End-QR, Fahrt-ID, UTC, Fahrtzeit, Prüfsumme und optionaler GPS-Position
 - GPX-Import aus Dateien sowie Empfang über „Öffnen mit“/Teilen aus WhatsApp, Komoot und anderen Apps
 - Live-Karte mit geplanter GPX-Linie, Fahrtrichtung/Vorausblick, eindeutigem

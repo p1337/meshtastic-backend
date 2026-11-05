@@ -23,7 +23,7 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 
 - [~] `RideSessionEngine` ist als einzige Quelle für Start, Pause, Fortsetzen, Stop, Zeiten, Metriken und Wiederherstellung eingeführt; Compiler- und echter Relaunch-Test stehen noch aus.
 - [~] Background-Location-Modus und fortlaufende GPS-Updates während einer gestarteten Fahrt sind konfiguriert; Freigabestufe „Immer“, energieangepasste Genauigkeit und echte Sperrbildschirm-Abnahme bleiben offen.
-- [~] Core-Location-Startpfad verarbeitet erfolgreiche Einmalposition und Fehler-Callback; echter Relaunch-Test mit erteilter, verweigerter und ausgeschalteter Standortfreigabe bleibt offen.
+- [~] Core Location hält bei geöffneter App Live-Position, Tempo und Kurs dauerhaft aktuell, verarbeitet Autorisierungswechsel und Fehler-Callback und trennt die Live-Position von aufgezeichneten Trackpunkten; echter Relaunch-Test mit erteilter, verweigerter und ausgeschalteter Standortfreigabe bleibt offen.
 - [ ] Aufzeichnung bei gesperrtem Display und App im Hintergrund testen.
 - [~] Laufende Fahrt wird spätestens alle fünf Sekunden sowie bei Zustands-/App-Wechsel atomar zwischengespeichert; Wiederaufnahme oder GPX-Abschluss werden nach Relaunch angeboten. Echter Abbruch-/Telefonneustart-Test bleibt offen.
 - [~] Alte, ungenaue, nicht monotone und über 126 km/h implizierende GPS-Punkte sowie Sprünge ab 300 m werden verworfen; Tunnel-/Empfangslücken und reale Grenzfälle bleiben zu testen.
@@ -43,7 +43,7 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 - [~] Follow-Modus mit eindeutigem Fadenkreuz-Zentrieren-Knopf unten mittig; Verschieben/Pinch schaltet auf freie Karte. Reale Gestenabnahme steht aus.
 - [~] Live-Karten-Zoom per Gesten und 56-Punkte-Tasten sowie dauerhaft einstellbarer Standardbereich von 250 m bis 10 km; Presets Nah/Fahrt/Voraus/Übersicht sind implementiert, reale Handschuhabnahme fehlt.
 - [~] Dauerhaft gespeicherter Live-Karten-Zoom und optionaler geschwindigkeitsabhängiger Auto-Zoom; manöverabhängiger Zoom fehlt.
-- [~] Fahrtrichtung/Vorausblick setzt den orangefarbenen Positionspfeil durch einen um 30 Prozent vorausliegenden Kartenmittelpunkt horizontal mittig ins untere Bildschirmdrittel; Kurs fällt auf Track- oder GPX-Richtung zurück. Glättung, Stillstandstest und echte Fahrabnahme fehlen.
+- [~] Fahrtrichtung/Vorausblick setzt den orangefarbenen Positionspfeil durch einen um ein Drittel vorausliegenden Kartenmittelpunkt horizontal mittig auf zwei Drittel der Bildschirmhöhe, also ein Drittel über den unteren Rand; Kurs fällt auf Track- oder GPX-Richtung zurück. Glättung, Stillstandstest und echte Fahrabnahme fehlen.
 - [ ] Bildschirm-Wachhalten optional, Helligkeits-/OLED-schonender Nachtmodus und Live Activity/Lock-Screen-Status.
 
 ## P0 – Routenplaner und Zielnavigation
@@ -165,7 +165,7 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 
 ## Qualität, Datenschutz und Veröffentlichung
 
-- [~] CI-Selbsttests decken Sitzungszustände, getrennte Zeiten, GPS-Sprungfilter, atomare Relaunch-Wiederherstellung sowie BLE-Paketparser ab; Auto-Pause, Dateiformate und Routingprofile fehlen.
+- [~] CI-Selbsttests decken Sitzungszustände, getrennte Zeiten, GPS-Sprungfilter, atomare Relaunch-Wiederherstellung, dauerhafte Vordergrund-Liveposition versus Hintergrund-Aufzeichnung sowie BLE-/FTMS-Paketparser ab; Auto-Pause, Dateiformate und Routingprofile fehlen.
 - [ ] UI-/Simulator-Smoke-Test für beide Hauptreiter, Einstellungen, Historie, Routenplaner und Wiederherstellung.
 - [ ] Reale iPhone-Testfahrten: mindestens 30 und 120 Minuten, Display an/aus, Hintergrund, Telefonat, Bluetooth-Abbruch, GPS-Lücke und Akkumessung.
 - [ ] Reale Watch-Testfahrt mit gespiegelter Session und anschließendem Health-/Fitness-Nachweis.

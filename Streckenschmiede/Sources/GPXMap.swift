@@ -159,7 +159,7 @@ struct LiveRideMap: View {
             coordinate(
                 from: currentCoordinate,
                 bearingDegrees: $0,
-                distanceMeters: effectiveZoomMeters * 0.30
+                distanceMeters: effectiveZoomMeters / 3
             )
         } ?? currentCoordinate
         cameraPosition = .camera(MapCamera(
