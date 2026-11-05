@@ -55,6 +55,10 @@ jobs:
         run: |
           xcrun swiftc Streckenschmiede/Sources/LocationModePolicy.swift Streckenschmiede/Tests/LocationModePolicySelfTest.swift -o "$RUNNER_TEMP/location-mode-tests"
           "$RUNNER_TEMP/location-mode-tests"
+      - name: Test safe rider camera placement
+        run: |
+          xcrun swiftc Streckenschmiede/Sources/MapCameraPolicy.swift Streckenschmiede/Tests/MapCameraPolicySelfTest.swift -o "$RUNNER_TEMP/map-camera-tests"
+          "$RUNNER_TEMP/map-camera-tests"
       - name: Test safe map tile URL templates
         run: |
           xcrun swiftc Streckenschmiede/Sources/TileURLTemplate.swift Streckenschmiede/Tests/TileURLTemplateSelfTest.swift -o "$RUNNER_TEMP/tile-url-tests"
