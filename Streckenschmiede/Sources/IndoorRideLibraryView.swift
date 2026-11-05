@@ -97,7 +97,7 @@ private struct IndoorRideCard: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(entry.startedAt, format: .dateTime.weekday(.wide).day().month(.wide).year())
                         .font(.headline)
-                    Text("Tagesfahrt · \(entry.pointCount) GPS-Punkte")
+                    Text("Fahrt · \(entry.pointCount) GPS-Punkte")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

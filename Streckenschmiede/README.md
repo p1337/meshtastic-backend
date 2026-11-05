@@ -16,13 +16,14 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
 - GPX-Tagesexport, getrennte Gesamt-/Fahrt-/Pausenzeit und atomarer
   Wiederherstellungsstand; Planung, Import, Teilen und DJI-Sync wurden aus der
   Fahrtkarte in die Einstellungen verschoben
-- Erste lokale Tagesfahrten-Historie unter Einstellungen: Datum, Distanz,
+- Erste lokale Fahrten-Historie unter Einstellungen: Datum, Distanz,
   Fahrtzeit, Durchschnitt, Maximum, Auf-/Abstieg und GPS-Punktzahl werden
   versioniert und atomar gesichert; jede Tages-GPX ist einzeln teilbar. Im
   Indoor-Bereich zeigt eine eigene Bibliothek jede gespeicherte Fahrt als
   Karten-Vorschau mit orangefarbener GPX-Linie und Datenkarte. Abgeschlossene
   Einträge lassen sich nach Bestätigung transaktional samt GPX löschen; eine
-  gerade laufende Tagesfahrt bleibt geschützt
+  gerade laufende Fahrt bleibt geschützt. Mehrere ausdrücklich gestoppte
+  Fahrten desselben Tages erhalten getrennte IDs und GPX-Dateien
 - Einstellbare GPS-Auto-Pause: Geschwindigkeit und Verzögerung sind wählbar,
   Wiederanfahren setzt automatisch fort, und eine manuelle Pause kann durch
   Bewegung niemals aufgehoben werden; reale Stop-and-go-Testfahrt steht aus
@@ -76,9 +77,10 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
   Spotify, Amazon Music und eigener iCloud-/Dateien-Player sind als getrennte
   Adapter dokumentiert
 - Ein gleich großer, kompakter Fahrtknopf sitzt am rechten Rand direkt unter
-  der optionalen Musiksteuerung. Er pausiert die automatisch laufende
-  Tagesfahrt manuell oder setzt sie fort; ein großer Startbalken kehrt nicht
-  zurück und die aktuelle Route bleibt beim Pausieren vollständig erhalten
+  der optionalen Musiksteuerung. Sein Menü pausiert beziehungsweise setzt fort,
+  stoppt und speichert die Fahrt oder setzt Route, Zeiten und Messwerte erst
+  nach Bestätigung auf 0. Stop bleibt auch nach einem Relaunch erhalten; eine
+  neue Fahrt startet ausdrücklich. Ein großer Startbalken kehrt nicht zurück
 - Versionierte lokale Fahrradprofile mit genau einem aktiven Rad: freier Name,
   28 verbreitete Typen einschließlich Rennrad, Gravel, Trekking, MTB,
   Lastenrad und E-Bike-Varianten, eigener Code-Vektor als Schattenbild sowie
