@@ -152,6 +152,16 @@ Apple Fitness erhält Drittanbieterfahrten über HealthKit-Workout- und Aktivit�
 - `ValhallaRouteProvider`: OSM-basiert und für die verlangten Profile. `bicycle_type`, `use_roads`, `use_hills`, `avoid_bad_surfaces`, Fähren und weitere Optionen werden aus dem Bike-Profil abgeleitet.
 - GPX-Provider: folgt der importierten Linie entweder unverändert oder lässt sie nach ausdrücklicher Wahl auf das Wegenetz anpassen.
 
+Der erste vertikale RouteCore-Pfad bleibt innerhalb des Aufzeichnungsbereichs:
+Eine MapKit-Suche löst Adresse oder POI auf, die aktuelle GPS-Position ist der
+Start und `MKDirections` fordert `.cycling` mit Alternativrouten an. Angezeigt
+werden tatsächliche Distanz, erwartete Zeit, Providerhinweise und die von Apple
+gelieferten Alternativen. Erst die ausdrückliche Auswahl übernimmt die
+Polyline in das gemeinsame Kartenmodell; dadurch erscheint sie identisch auf
+Apple-, OSM- und CyclOSM-Ebenen. Apple bietet keine Streckenschmiede-Regler für
+Gravel, Untergrund oder Straßenanteil; diese bleiben der getrennten Valhalla-
+Stufe vorbehalten und werden nicht simuliert.
+
 Die Provider-URL ist konfigurierbar und nicht fest an einen öffentlichen Demo-Dienst gekoppelt. Produktionsbetrieb benötigt einen verlässlich betriebenen oder beauftragten Valhalla-Dienst.
 
 GPX ist zugleich die erste Interoperabilitätsschicht zu WhatsApp, Dateien und Komoot. Die App registriert einen GPX-Dokumenttyp und verarbeitet externe Dokument-URLs über denselben Parser wie den Dateiauswahldialog. Eine Kontosynchronisation mit Komoot wird nicht aus undokumentierten Web-Endpunkten gebaut; bis zu einer offiziellen Partnervereinbarung bleibt es beim lokalen Dateiaustausch.

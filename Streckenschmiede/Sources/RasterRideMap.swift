@@ -60,7 +60,7 @@ struct RasterRideMap: UIViewRepresentable {
         private var routeOverlay: MKPolyline?
         private var trackOverlay: MKPolyline?
         private var positionAnnotation: RidePositionAnnotation?
-        private var lastRouteCount = -1
+        private var lastRouteSignature: Int?
         private var lastTrackCount = -1
         private var lastCameraRevision = -1
 
@@ -81,13 +81,14 @@ struct RasterRideMap: UIViewRepresentable {
         }
 
         func updatePolylines(on mapView: MKMapView) {
-            if lastRouteCount != parent.plannedRoute.count {
+            let routeSignature = coordinateSignature(parent.plannedRoute)
+            if lastRouteSignature != routeSignature {
                 if let routeOverlay { mapView.removeOverlay(routeOverlay) }
                 routeOverlay = parent.plannedRoute.count > 1
                     ? MKPolyline(coordinates: parent.plannedRoute, count: parent.plannedRoute.count)
                     : nil
                 if let routeOverlay { mapView.addOverlay(routeOverlay, level: .aboveLabels) }
-                lastRouteCount = parent.plannedRoute.count
+                lastRouteSignature = routeSignature
             }
             if lastTrackCount != parent.coordinates.count {
                 if let trackOverlay { mapView.removeOverlay(trackOverlay) }
@@ -97,6 +98,16 @@ struct RasterRideMap: UIViewRepresentable {
                 if let trackOverlay { mapView.addOverlay(trackOverlay, level: .aboveLabels) }
                 lastTrackCount = parent.coordinates.count
             }
+        }
+
+        private func coordinateSignature(_ coordinates: [CLLocationCoordinate2D]) -> Int {
+            var hasher = Hasher()
+            hasher.combine(coordinates.count)
+            for coordinate in coordinates {
+                hasher.combine(Int64((coordinate.latitude * 1_000_000).rounded()))
+                hasher.combine(Int64((coordinate.longitude * 1_000_000).rounded()))
+            }
+            return hasher.finalize()
         }
 
         func updatePosition(on mapView: MKMapView) {
