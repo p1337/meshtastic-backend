@@ -369,6 +369,7 @@ struct MainView: View {
                             SensorValue(title: "Leistung", value: sensors.powerWatts.map { "\($0) W" } ?? "–")
                         }
                     }
+                    TrainerControlPanel(sensors: sensors)
                     Section("Fahrradsensoren und Trainer") {
                         Text(sensors.status)
                             .foregroundStyle(.secondary)
@@ -378,9 +379,12 @@ struct MainView: View {
                             Label("Sensoren, D100 und Clicks suchen", systemImage: "dot.radiowaves.left.and.right")
                         }
                         ForEach(sensors.devices) { device in
-                            SensorDeviceRow(device: device) {
-                                sensors.toggleConnection(device.id)
-                            }
+                            SensorDeviceRow(
+                                device: device,
+                                isSelectedTrainer: sensors.trainerDeviceID == device.id,
+                                toggleConnection: { sensors.toggleConnection(device.id) },
+                                selectTrainer: { sensors.selectTrainer(device.id) }
+                            )
                         }
                     }
                     Section("Trainingsprogramme") {
@@ -686,9 +690,169 @@ private struct SensorValue: View {
     }
 }
 
+private struct TrainerControlPanel: View {
+    @ObservedObject var sensors: SensorHub
+    @State private var resistanceTarget = 0.0
+    @State private var powerTarget = 150.0
+    @State private var gradeTarget = 0.0
+
+    var body: some View {
+        Section("D100 / FTMS-Steuerung") {
+            if sensors.trainerDeviceID == nil {
+                Text("FTMS-Trainer verbinden und darunter „Als Trainer steuern“ wählen.")
+                    .foregroundStyle(.secondary)
+            } else {
+                HStack {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(sensors.trainerName ?? "FTMS-Trainer")
+                            .font(.headline)
+                        Text(sensors.trainerControlStatus)
+                            .font(.caption)
+                            .foregroundStyle(sensors.trainerHasControl ? .orange : .secondary)
+                    }
+                    Spacer()
+                    if sensors.trainerCommandInFlight { ProgressView() }
+                }
+
+                Button("Steuerung anfordern") { sensors.requestTrainerControl() }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.orange)
+                    .disabled(sensors.trainerHasControl || sensors.trainerCommandInFlight)
+
+                HStack(spacing: 12) {
+                    Button(sensors.trainerIsRunning ? "Läuft" : "Start") { sensors.startTrainer() }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.green)
+                        .disabled(!controlsReady || sensors.trainerIsRunning)
+                    Button("Pause") { sensors.pauseTrainer() }
+                        .buttonStyle(.bordered)
+                        .disabled(!controlsReady || !sensors.trainerIsRunning)
+                    Button("NOT-STOPP") { sensors.emergencyStopTrainer() }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.red)
+                        .disabled(!controlsReady)
+                }
+                .controlSize(.large)
+
+                if sensors.trainerCapabilities.resistance,
+                   let range = sensors.trainerResistanceRange {
+                    targetControl(
+                        title: "Widerstand",
+                        value: resistanceTarget,
+                        unit: "",
+                        decrement: { resistanceTarget = adjusted(resistanceTarget, range: range, direction: -1) },
+                        increment: { resistanceTarget = adjusted(resistanceTarget, range: range, direction: 1) },
+                        apply: { sensors.setTrainerResistance(resistanceTarget) }
+                    )
+                }
+
+                if sensors.trainerCapabilities.power,
+                   let range = sensors.trainerPowerRange {
+                    targetControl(
+                        title: "ERG-Leistung",
+                        value: powerTarget,
+                        unit: "W",
+                        decrement: { powerTarget = adjusted(powerTarget, range: range, direction: -1) },
+                        increment: { powerTarget = adjusted(powerTarget, range: range, direction: 1) },
+                        apply: { sensors.setTrainerPower(Int(powerTarget.rounded())) }
+                    )
+                }
+
+                if let range = safeGradeRange {
+                    targetControl(
+                        title: sensors.trainerCapabilities.indoorBikeSimulation ? "Simulierte Steigung" : "Steigung",
+                        value: gradeTarget,
+                        unit: "%",
+                        decrement: { gradeTarget = adjusted(gradeTarget, range: range, direction: -1) },
+                        increment: { gradeTarget = adjusted(gradeTarget, range: range, direction: 1) },
+                        apply: { sensors.setTrainerGrade(gradeTarget) }
+                    )
+                }
+
+                Text("Jeder Wert wird gegen den vom Trainer gemeldeten Bereich geprüft und erst nach FTMS-Bestätigung übernommen.")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .onAppear(perform: synchronizeTargets)
+        .onChange(of: sensors.trainerDeviceID) { _, _ in synchronizeTargets() }
+        .onChange(of: sensors.trainerResistanceRange) { _, _ in synchronizeTargets() }
+        .onChange(of: sensors.trainerPowerRange) { _, _ in synchronizeTargets() }
+        .onChange(of: sensors.trainerInclinationRange) { _, _ in synchronizeTargets() }
+    }
+
+    private var controlsReady: Bool {
+        sensors.trainerHasControl && !sensors.trainerCommandInFlight
+    }
+
+    private var safeGradeRange: FTMSValueRange? {
+        if sensors.trainerCapabilities.indoorBikeSimulation {
+            return FTMSValueRange(minimum: -10, maximum: 15, increment: 0.5)
+        }
+        guard sensors.trainerCapabilities.inclination,
+              let range = sensors.trainerInclinationRange else { return nil }
+        let minimum = max(-10, range.minimum)
+        let maximum = min(15, range.maximum)
+        guard minimum <= maximum else { return nil }
+        return FTMSValueRange(minimum: minimum, maximum: maximum, increment: max(0.1, range.increment))
+    }
+
+    @ViewBuilder
+    private func targetControl(
+        title: String,
+        value: Double,
+        unit: String,
+        decrement: @escaping () -> Void,
+        increment: @escaping () -> Void,
+        apply: @escaping () -> Void
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(title).font(.subheadline.weight(.semibold))
+                Spacer()
+                Text(String(format: unit == "W" ? "%.0f %@" : "%.1f %@", value, unit))
+                    .font(.headline.monospacedDigit())
+            }
+            HStack(spacing: 12) {
+                Button(action: decrement) { Image(systemName: "minus").frame(minWidth: 42, minHeight: 42) }
+                    .buttonStyle(.bordered)
+                Button(action: increment) { Image(systemName: "plus").frame(minWidth: 42, minHeight: 42) }
+                    .buttonStyle(.bordered)
+                Button("Übernehmen", action: apply)
+                    .buttonStyle(.borderedProminent)
+                    .tint(.orange)
+                    .frame(minHeight: 52)
+                    .disabled(!controlsReady)
+            }
+        }
+        .padding(.vertical, 4)
+    }
+
+    private func adjusted(_ value: Double, range: FTMSValueRange, direction: Double) -> Double {
+        let step = max(range.increment, range.increment == 0 ? 1 : range.increment)
+        return min(max(value + direction * step, range.minimum), range.maximum)
+    }
+
+    private func synchronizeTargets() {
+        if let range = sensors.trainerResistanceRange {
+            let candidate = sensors.trainerTargetResistance ?? sensors.resistanceLevel ?? max(0, range.minimum)
+            resistanceTarget = min(max(candidate, range.minimum), range.maximum)
+        }
+        if let range = sensors.trainerPowerRange {
+            let candidate = Double(sensors.trainerTargetPower ?? sensors.powerWatts ?? 150)
+            powerTarget = min(max(candidate, range.minimum), range.maximum)
+        }
+        if let range = safeGradeRange {
+            gradeTarget = min(max(sensors.trainerTargetGrade ?? 0, range.minimum), range.maximum)
+        }
+    }
+}
+
 private struct SensorDeviceRow: View {
     let device: SensorDeviceSnapshot
+    let isSelectedTrainer: Bool
     let toggleConnection: () -> Void
+    let selectTrainer: () -> Void
 
     private var values: String {
         var parts: [String] = []
@@ -717,6 +881,12 @@ private struct SensorDeviceRow: View {
             }
             Text(values)
                 .font(.caption.monospacedDigit())
+            if device.canControlFTMS {
+                Button(isSelectedTrainer ? "Aktiver Trainer" : "Als Trainer steuern", action: selectTrainer)
+                    .buttonStyle(.borderedProminent)
+                    .tint(.orange)
+                    .disabled(isSelectedTrainer)
+            }
             HStack {
                 Text(device.connectionState)
                 Spacer()

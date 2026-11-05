@@ -8,7 +8,9 @@ Verbindlicher Gesamtumfang und Abnahmestatus: [TODO.md](TODO.md) · Technische Z
 **Exakt zwei Hauptreiter:**
 - **Aufzeichnung:** GPS-Fahrt mit Pause/Fortsetzen, atomarer Notfall-Wiederherstellung, Distanz und GPX-Export; GPX-Import und Kartenansicht über Apple MapKit
 - **Indoor-Training:** gleichzeitige BLE-Sensorverbindungen mit Puls, Tempo,
-  Kadenz, Leistung, FTMS-Livewerten und Akku sowie Suche nach D100 und Click V2
+  Kadenz, Leistung, FTMS-Livewerten und Akku sowie erste begrenzte
+  FTMS-Steuerung für D100-kompatible Trainer mit ERG, Widerstand, Steigung,
+  Pause und Not-Stopp
 
 Einstellungen sind über das Zahnradsymbol erreichbar. Design: dunkel, orangefarbene Akzente. Der derzeitige Build ist nur ein Grundprototyp. Das verbindliche Ziel umfasst ein modernes Fahrt-Cockpit, Live-Navigation mit Radweg-/Straßenprofilen und einstellbaren Zoomstufen, OSM-Option, Apple Watch/HealthKit/Apple Fitness, mehrere gleichzeitige Fahrradsensoren, D100/FTMS, Click V2 und die dokumentierten Historien-/Analysefunktionen. Diese Punkte sind in [TODO.md](TODO.md) einzeln aufgeführt und überwiegend **noch nicht implementiert**.
 

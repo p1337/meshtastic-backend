@@ -15,6 +15,7 @@ struct SensorDeviceSnapshot: Identifiable, Equatable {
     var batteryPercent: Int?
     var manufacturer: String?
     var model: String?
+    var canControlFTMS: Bool
 
     var isConnected: Bool { connectionState == "Verbunden" }
 }
@@ -29,6 +30,19 @@ final class SensorHub: NSObject, ObservableObject, CBCentralManagerDelegate, CBP
     @Published private(set) var pedalBalancePercent: Double?
     @Published private(set) var resistanceLevel: Double?
     @Published private(set) var batteryPercent: Int?
+    @Published private(set) var trainerDeviceID: UUID?
+    @Published private(set) var trainerName: String?
+    @Published private(set) var trainerControlStatus = "Kein steuerbarer FTMS-Trainer gewählt"
+    @Published private(set) var trainerCapabilities = FTMSTargetCapabilities()
+    @Published private(set) var trainerResistanceRange: FTMSValueRange?
+    @Published private(set) var trainerInclinationRange: FTMSValueRange?
+    @Published private(set) var trainerPowerRange: FTMSValueRange?
+    @Published private(set) var trainerHasControl = false
+    @Published private(set) var trainerCommandInFlight = false
+    @Published private(set) var trainerIsRunning = false
+    @Published private(set) var trainerTargetResistance: Double?
+    @Published private(set) var trainerTargetPower: Int?
+    @Published private(set) var trainerTargetGrade: Double?
 
     var wheelCircumferenceMeters = 2.105
 
@@ -44,6 +58,13 @@ final class SensorHub: NSObject, ObservableObject, CBCentralManagerDelegate, CBP
     private var batterySource: UUID?
     private var balanceSource: UUID?
     private var resistanceSource: UUID?
+    private var ftmsControlPoints: [UUID: CBCharacteristic] = [:]
+    private var ftmsCapabilities: [UUID: FTMSTargetCapabilities] = [:]
+    private var ftmsResistanceRanges: [UUID: FTMSValueRange] = [:]
+    private var ftmsInclinationRanges: [UUID: FTMSValueRange] = [:]
+    private var ftmsPowerRanges: [UUID: FTMSValueRange] = [:]
+    private var trainerPendingCommand: FTMSControlCommand?
+    private var trainerCommandTimeout: DispatchWorkItem?
 
     private static let supportedServices: [CBUUID] = [
         CBUUID(string: "180D"), CBUUID(string: "1816"), CBUUID(string: "1818"),
@@ -114,6 +135,10 @@ final class SensorHub: NSObject, ObservableObject, CBCentralManagerDelegate, CBP
     func toggleConnection(_ id: UUID) {
         guard let peripheral = peripherals[id] else { return }
         if peripheral.state == .connected || peripheral.state == .connecting {
+            if trainerDeviceID == id, trainerIsRunning {
+                trainerControlStatus = "Zuerst den Trainer mit Not-Stopp anhalten"
+                return
+            }
             desiredConnections.remove(id)
             manager.cancelPeripheralConnection(peripheral)
         } else {
@@ -121,6 +146,49 @@ final class SensorHub: NSObject, ObservableObject, CBCentralManagerDelegate, CBP
             records[id]?.connectionState = "Verbindet"
             publishDevices()
             manager.connect(peripheral)
+        }
+    }
+
+    func selectTrainer(_ id: UUID) {
+        guard let peripheral = peripherals[id], peripheral.state == .connected,
+              records[id]?.canControlFTMS == true,
+              ftmsControlPoints[id] != nil else {
+            trainerControlStatus = "FTMS-Steuerung dieses Geräts ist noch nicht bereit"
+            return
+        }
+        guard !trainerCommandInFlight else {
+            trainerControlStatus = "Der laufende Trainerbefehl muss zuerst bestätigt werden"
+            return
+        }
+        guard !trainerIsRunning || trainerDeviceID == id else {
+            trainerControlStatus = "Den bisherigen Trainer zuerst mit Not-Stopp anhalten"
+            return
+        }
+        trainerCommandTimeout?.cancel()
+        trainerPendingCommand = nil
+        trainerDeviceID = id
+        trainerName = displayName(for: peripheral)
+        trainerHasControl = false
+        trainerIsRunning = false
+        trainerTargetResistance = nil
+        trainerTargetPower = nil
+        trainerTargetGrade = nil
+        publishTrainerMetadata(for: id)
+        trainerControlStatus = (trainerName ?? "Trainer") + " gewählt – Steuerung anfordern"
+    }
+
+    func requestTrainerControl() { sendTrainerCommand(.requestControl) }
+    func startTrainer() { sendTrainerCommand(.startOrResume) }
+    func pauseTrainer() { sendTrainerCommand(.pause) }
+    func emergencyStopTrainer() { sendTrainerCommand(.stop) }
+    func setTrainerResistance(_ value: Double) { sendTrainerCommand(.setResistance(value)) }
+    func setTrainerPower(_ watts: Int) { sendTrainerCommand(.setPower(watts)) }
+
+    func setTrainerGrade(_ percent: Double) {
+        if trainerCapabilities.indoorBikeSimulation {
+            sendTrainerCommand(.setSimulationGrade(percent))
+        } else {
+            sendTrainerCommand(.setInclination(percent))
         }
     }
 
@@ -164,6 +232,14 @@ final class SensorHub: NSObject, ObservableObject, CBCentralManagerDelegate, CBP
     ) {
         updateConnectionState(for: peripheral)
         clearLiveValues(from: peripheral.identifier)
+        clearTrainerSelection(deviceID: peripheral.identifier)
+        records[peripheral.identifier]?.canControlFTMS = false
+        ftmsControlPoints.removeValue(forKey: peripheral.identifier)
+        ftmsCapabilities.removeValue(forKey: peripheral.identifier)
+        ftmsResistanceRanges.removeValue(forKey: peripheral.identifier)
+        ftmsInclinationRanges.removeValue(forKey: peripheral.identifier)
+        ftmsPowerRanges.removeValue(forKey: peripheral.identifier)
+        publishDevices()
         if desiredConnections.contains(peripheral.identifier), central.state == .poweredOn {
             records[peripheral.identifier]?.connectionState = "Verbindet"
             publishDevices()
@@ -197,12 +273,38 @@ final class SensorHub: NSObject, ObservableObject, CBCentralManagerDelegate, CBP
             return
         }
         for characteristic in service.characteristics ?? [] {
+            if characteristic.uuid.uuidString.uppercased() == "2AD9",
+               characteristic.properties.contains(.write) {
+                ftmsControlPoints[peripheral.identifier] = characteristic
+            }
             if characteristic.properties.contains(.notify) || characteristic.properties.contains(.indicate) {
                 peripheral.setNotifyValue(true, for: characteristic)
             }
             if characteristic.properties.contains(.read) {
                 peripheral.readValue(for: characteristic)
             }
+        }
+    }
+
+    func peripheral(
+        _ peripheral: CBPeripheral,
+        didUpdateNotificationStateFor characteristic: CBCharacteristic,
+        error: Error?
+    ) {
+        guard characteristic.uuid.uuidString.uppercased() == "2AD9" else { return }
+        let id = peripheral.identifier
+        if let error {
+            records[id]?.canControlFTMS = false
+            publishDevices()
+            if trainerDeviceID == id {
+                trainerControlStatus = "FTMS-Bestätigungen nicht verfügbar: \(error.localizedDescription)"
+            }
+            return
+        }
+        records[id]?.canControlFTMS = characteristic.isNotifying
+        publishDevices()
+        if trainerDeviceID == id, !characteristic.isNotifying {
+            loseTrainerControl("FTMS-Bestätigungen wurden deaktiviert")
         }
     }
 
@@ -258,6 +360,22 @@ final class SensorHub: NSObject, ObservableObject, CBCentralManagerDelegate, CBP
                 batterySource = id
             case "2A29": records[id]?.manufacturer = decodedString(data)
             case "2A24": records[id]?.model = decodedString(data)
+            case "2ACC":
+                ftmsCapabilities[id] = try FTMSControlCodec.targetCapabilities(data)
+                if trainerDeviceID == id { publishTrainerMetadata(for: id) }
+            case "2AD5":
+                ftmsInclinationRanges[id] = try FTMSControlCodec.valueRange(data, resolution: 0.1)
+                if trainerDeviceID == id { publishTrainerMetadata(for: id) }
+            case "2AD6":
+                ftmsResistanceRanges[id] = try FTMSControlCodec.valueRange(data, resolution: 0.1)
+                if trainerDeviceID == id { publishTrainerMetadata(for: id) }
+            case "2AD8":
+                ftmsPowerRanges[id] = try FTMSControlCodec.valueRange(data, resolution: 1)
+                if trainerDeviceID == id { publishTrainerMetadata(for: id) }
+            case "2AD9":
+                handleTrainerResponse(try FTMSControlCodec.response(data), deviceID: id)
+            case "2ADA":
+                handleTrainerStatus(try FTMSControlCodec.machineStatus(data), deviceID: id)
             default: break
             }
             publishDevices()
@@ -266,6 +384,165 @@ final class SensorHub: NSObject, ObservableObject, CBCentralManagerDelegate, CBP
         } catch {
             status = "Sensordaten konnten nicht gelesen werden"
         }
+    }
+
+    func peripheral(
+        _ peripheral: CBPeripheral,
+        didWriteValueFor characteristic: CBCharacteristic,
+        error: Error?
+    ) {
+        guard characteristic.uuid.uuidString.uppercased() == "2AD9",
+              trainerDeviceID == peripheral.identifier,
+              trainerPendingCommand != nil else { return }
+        if let error {
+            failTrainerCommand("Trainerbefehl konnte nicht gesendet werden: \(error.localizedDescription)")
+        }
+    }
+
+    private func sendTrainerCommand(_ command: FTMSControlCommand) {
+        guard !trainerCommandInFlight else {
+            trainerControlStatus = "Der vorige Trainerbefehl wartet noch auf Bestätigung"
+            return
+        }
+        guard let id = trainerDeviceID,
+              let peripheral = peripherals[id], peripheral.state == .connected,
+              let controlPoint = ftmsControlPoints[id],
+              records[id]?.canControlFTMS == true else {
+            trainerControlStatus = "Kein steuerbarer FTMS-Trainer verbunden"
+            return
+        }
+        if command != .requestControl, !trainerHasControl {
+            trainerControlStatus = "Zuerst die Trainersteuerung anfordern"
+            return
+        }
+        do {
+            let payload = try FTMSControlCodec.encode(
+                command,
+                capabilities: ftmsCapabilities[id] ?? FTMSTargetCapabilities(),
+                resistanceRange: ftmsResistanceRanges[id],
+                inclinationRange: ftmsInclinationRanges[id],
+                powerRange: ftmsPowerRanges[id]
+            )
+            trainerPendingCommand = command
+            trainerCommandInFlight = true
+            trainerControlStatus = "\(command.title) …"
+            let timeout = DispatchWorkItem { [weak self] in
+                guard let self, self.trainerPendingCommand == command else { return }
+                self.failTrainerCommand("Keine Bestätigung vom Trainer – Befehl abgebrochen")
+            }
+            trainerCommandTimeout?.cancel()
+            trainerCommandTimeout = timeout
+            peripheral.writeValue(payload, for: controlPoint, type: .withResponse)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 5, execute: timeout)
+        } catch FTMSControlError.unsupported {
+            trainerControlStatus = "Diese Funktion meldet der Trainer nicht als unterstützt"
+        } catch FTMSControlError.rangeUnavailable {
+            trainerControlStatus = "Der Trainer hat seinen zulässigen Wertebereich noch nicht geliefert"
+        } catch FTMSControlError.outOfRange {
+            trainerControlStatus = "Der Zielwert liegt außerhalb des sicheren Trainerbereichs"
+        } catch {
+            trainerControlStatus = "Trainerbefehl konnte nicht vorbereitet werden"
+        }
+    }
+
+    private func handleTrainerResponse(_ response: FTMSControlResponse, deviceID: UUID) {
+        guard trainerDeviceID == deviceID, let command = trainerPendingCommand else { return }
+        guard response.requestOpcode == command.opcode else {
+            trainerControlStatus = "Unerwartete FTMS-Antwort – warte auf den laufenden Befehl"
+            return
+        }
+        trainerCommandTimeout?.cancel()
+        trainerCommandTimeout = nil
+        trainerPendingCommand = nil
+        trainerCommandInFlight = false
+        guard response.result == .success else {
+            if response.result == .controlNotPermitted { trainerHasControl = false }
+            trainerControlStatus = response.result.message
+            return
+        }
+        switch command {
+        case .requestControl:
+            trainerHasControl = true
+            trainerControlStatus = "Trainersteuerung übernommen"
+        case .startOrResume:
+            trainerIsRunning = true
+            trainerControlStatus = "Trainer läuft"
+        case .stop:
+            trainerIsRunning = false
+            trainerControlStatus = "Trainer gestoppt"
+        case .pause:
+            trainerIsRunning = false
+            trainerControlStatus = "Trainer pausiert"
+        case let .setResistance(value):
+            trainerTargetResistance = value
+            trainerControlStatus = String(format: "Widerstand %.1f bestätigt", value)
+        case let .setPower(watts):
+            trainerTargetPower = watts
+            trainerControlStatus = "ERG \(watts) W bestätigt"
+        case let .setInclination(percent), let .setSimulationGrade(percent):
+            trainerTargetGrade = percent
+            trainerControlStatus = String(format: "Steigung %.1f %% bestätigt", percent)
+        }
+    }
+
+    private func handleTrainerStatus(_ trainerStatus: FTMSMachineStatus, deviceID: UUID) {
+        guard trainerDeviceID == deviceID else { return }
+        switch trainerStatus {
+        case .reset:
+            trainerIsRunning = false
+            trainerControlStatus = "Trainer wurde zurückgesetzt"
+        case .stopped:
+            trainerIsRunning = false
+            trainerControlStatus = "Trainer wurde am Gerät gestoppt"
+        case .paused:
+            trainerIsRunning = false
+            trainerControlStatus = "Trainer wurde am Gerät pausiert"
+        case .safetyStop:
+            trainerIsRunning = false
+            trainerControlStatus = "Sicherheitsstopp am Trainer"
+        case .started:
+            trainerIsRunning = true
+            trainerControlStatus = "Trainer wurde am Gerät gestartet"
+        case .controlPermissionLost:
+            loseTrainerControl("Trainersteuerung wurde von einem anderen Gerät übernommen")
+        case .other:
+            break
+        }
+    }
+
+    private func publishTrainerMetadata(for id: UUID) {
+        trainerCapabilities = ftmsCapabilities[id] ?? FTMSTargetCapabilities()
+        trainerResistanceRange = ftmsResistanceRanges[id]
+        trainerInclinationRange = ftmsInclinationRanges[id]
+        trainerPowerRange = ftmsPowerRanges[id]
+    }
+
+    private func failTrainerCommand(_ message: String) {
+        trainerCommandTimeout?.cancel()
+        trainerCommandTimeout = nil
+        trainerPendingCommand = nil
+        trainerCommandInFlight = false
+        trainerControlStatus = message
+    }
+
+    private func loseTrainerControl(_ message: String) {
+        failTrainerCommand(message)
+        trainerHasControl = false
+        trainerIsRunning = false
+    }
+
+    private func clearTrainerSelection(deviceID: UUID) {
+        guard trainerDeviceID == deviceID else { return }
+        loseTrainerControl("Trainer getrennt – Steuerung und Ziele wurden verworfen")
+        trainerDeviceID = nil
+        trainerName = nil
+        trainerCapabilities = FTMSTargetCapabilities()
+        trainerResistanceRange = nil
+        trainerInclinationRange = nil
+        trainerPowerRange = nil
+        trainerTargetResistance = nil
+        trainerTargetPower = nil
+        trainerTargetGrade = nil
     }
 
     private func updateRevolutions(_ measurement: RevolutionMeasurement, deviceID: UUID) {
@@ -324,7 +601,8 @@ final class SensorHub: NSObject, ObservableObject, CBCentralManagerDelegate, CBP
                 speedKmh: nil,
                 batteryPercent: nil,
                 manufacturer: nil,
-                model: nil
+                model: nil,
+                canControlFTMS: false
             )
         } else {
             if let name, !name.isEmpty { records[id]?.name = name }

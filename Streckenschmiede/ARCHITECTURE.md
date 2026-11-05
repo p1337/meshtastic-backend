@@ -105,6 +105,21 @@ nicht später ungeprüft in Fahrtstrecke oder HealthKit doppelt einrechnen.
 
 Der D100 wird über FTMS durch `TrainerCore` gesteuert. Vor jedem Control-Point-Kommando werden Support, Bereich, Schreibart und aktuelle Steuerberechtigung geprüft. Timeout, Verlust der Kontrolle und Not-Stopp gehen in einen sicheren Zustand.
 
+Der erste vertikale Steuerpfad trennt das reine, referenzvektorgeprüfte
+`FTMSControl`-Codec vom Core-Bluetooth-Transport in `SensorHub`. Ein Nutzer
+wählt genau einen verbundenen FTMS-Trainer als Kommandobesitzer. Der Control
+Point `0x2AD9` wird erst nach aktivierten Indikationen freigegeben. Jeder Befehl
+wartet exklusiv auf die zugehörige `0x80`-Antwort; nach fünf Sekunden, einem
+Schreibfehler, Trennung oder Fitness-Machine-Status `0xFF` werden laufender
+Befehl und Steuerberechtigung verworfen. Widerstand (`0x04`), Ziel-Leistung
+(`0x05`) und Ziel-Inklination (`0x03`) benutzen die gelesenen Bereichsmerkmale.
+Indoor-Bike-Simulation (`0x11`) ist zusätzlich auf −10 bis +15 Prozent
+begrenzt. Start, Pause und Stopp werden niemals als erfolgreich angezeigt,
+bevor der Trainer sie bestätigt. Diese Stufe ist noch kein D100-Hardwarebeweis;
+automatische Neutralstellung und physische Fehlerfälle bleiben Teil der
+Geräteabnahme. Bei weiterem Ausbau wandert die Zustandsmaschine hinter die
+bereits definierte `TrainerCore`-Grenze; `SensorHub` bleibt BLE-Transport.
+
 Die vorhandene Arbeit aus `origin/codex/clickbridge-ios` ist die Ausgangsbasis für Click V2. Wiederzuverwenden sind insbesondere der strikte Wire-Decoder, zwei unabhängige Peripheral-Sitzungen, Zuordnung, Wiederherstellung, Diagnose und Tests. Fremdlizenzen und Quellenhinweise bleiben erhalten.
 
 Click-Tasten erzeugen ausschließlich `GearIntent`-Ereignisse. Das virtuelle Gangmodell berechnet daraus ein Verhältnis; nur `TrainerCore` übersetzt dieses Verhältnis in ein erlaubtes FTMS-Ziel. Dadurch konkurrieren Click und Trainingsprogramm nicht um die Trainerverbindung.
@@ -195,6 +210,7 @@ Deployment dieselbe neue Versions-/Buildkombination ausweisen.
 - Apple MapKit Cycling: <https://developer.apple.com/documentation/mapkit/mkdirectionstransporttype/cycling>
 - Valhalla Route API: <https://valhalla.github.io/valhalla/api/route/api-reference/>
 - Bluetooth Assigned Numbers: <https://www.bluetooth.com/specifications/assigned-numbers/>
+- Bluetooth Fitness Machine Service 1.0.1: <https://www.bluetooth.com/specifications/specs/fitness-machine-service-1-0-1/>
 - Bluetooth Heart Rate Service: <https://www.bluetooth.com/wp-content/uploads/Files/Specification/HTML/HRS_v1.0/out/en/index-en.html>
 - Bluetooth Cycling Speed and Cadence Service: <https://www.bluetooth.com/wp-content/uploads/Files/Specification/HTML/CSCS_v1.0/out/en/index-en.html>
 - Apple Core Bluetooth State Restoration: <https://developer.apple.com/documentation/corebluetooth/central-manager-state-restoration-options>
