@@ -51,6 +51,7 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 - [~] Kartensteuerung und Navigationsbanner erhalten getrennte vertikale Bereiche; die vier unteren Werkzeugflächen sind gleich groß und kompakter. Kleine iPhones, Dynamic Type und Handschuhe müssen real geprüft werden.
 - [~] „An geplante Straße kleben“ ist standardmäßig aus und verändert eingeschaltet nur den sichtbaren Kartenpfeil innerhalb 50 m der aktiven Routengeometrie; Roh-GPS, Aufzeichnung und Abweichungsprüfung bleiben unverändert. Allgemeines Street-Matching ohne aktive Route benötigt einen regelkonformen Routing-/Map-Matching-Provider und bleibt offen.
 - [ ] Bildschirm-Wachhalten optional, Helligkeits-/OLED-schonender Nachtmodus und Live Activity/Lock-Screen-Status.
+- [ ] Dunkle **Live Activity** mit eigener Streckenschmiede-Gestaltung für eine laufende Fahrt: Lock Screen, Dynamic Island kompakt/minimal/erweitert, Distanz, Fahrzeit, Tempo, Pause/Aufzeichnung und genau eine sichere Schnellaktion. Sie startet nur mit einer Fahrt, endet zuverlässig bei Stop/Relaunch und zeigt keine private Route auf dem frei einsehbaren Sperrbildschirm.
 
 ## P0 – Routenplaner und Zielnavigation
 
@@ -140,7 +141,7 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 
 ## P1 – optionale Musiksteuerung
 
-- [~] Musiksteuerung ist standardmäßig aus und ausschließlich in **Einstellungen > Musik** aktivierbar. Die erste Stufe steuert den Apple-System-Musikplayer mit Titel/Künstler sowie Zurück, Play/Pause und Weiter; Compiler- und echter Apple-Music-Gerätetest stehen aus.
+- [~] Musiksteuerung ist standardmäßig aus und ausschließlich in **Einstellungen > Musik** aktivierbar. Im Outdoor-Cockpit erscheint danach nur ein kleiner Doppelnotenknopf; der dunkle Player mit Titel/Künstler sowie Zurück, Play/Pause und Weiter klappt als Sheet auf und belegt geschlossen keinen Kartenplatz. Compiler- und echter Apple-Music-Gerätetest stehen aus.
 - [ ] Spotify App Remote als getrennten Adapter ergänzen. Voraussetzung sind eine registrierte Spotify-Developer-App, Client-ID, Redirect-URI, Spotify-App auf dem Gerät und ausdrückliche Autorisierung; keine Zugangsdaten im Repository.
 - [ ] Amazon Music erst integrieren, wenn Amazon den Zugriff auf die derzeit geschlossene Beta freigibt, die App zertifiziert ist und eine belastbare iOS-Schnittstelle bereitsteht; keine undokumentierte Fernsteuerung.
 - [ ] Eigenen lokalen Player für MP3/AAC/ALAC aus einem vom Nutzer gewählten Dateien-/iCloud-Drive-Ordner bauen: Security-Scoped Bookmark, Bibliotheksindex, Wiedergabeliste, Unterbrechungsbehandlung, Background Audio, Sperrbildschirm-/Headset-Steuerung und nachvollziehbarer Rechteentzug.
@@ -152,6 +153,9 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 - [ ] Verschlüsselte Live-Positionen mit Zeit, Genauigkeit und optional Akku/ETA; veraltete oder ungenaue Werte sichtbar kennzeichnen.
 - [ ] Automatische Löschung nach der Tour, Teilnehmer blockieren/entfernen und keine stille Standortfreigabe.
 - [ ] Keine Auslese privater Google-Maps- oder Apple-„Wo ist?“-Positionen; nur eigene, dokumentierte Freigabe verwenden.
+- [ ] Eigene Streckenschmiede-Gruppenfahrt als belastbaren Weg umsetzen: zeitlich begrenzte Einladung/QR oder Link, ausdrückliche Freigabe jedes Teilnehmers, verschlüsselte Übertragung, Ablaufzeit, Blockieren und sofortiges Beenden.
+- [ ] Google-Maps-Orte und Routen nur über offizielle Maps-URLs öffnen/übergeben. Die Google-Maps-Standortfreigabe bietet derzeit keinen dokumentierten Drittanbieter-Livestream für Freunde; Freigabelinks dürfen höchstens ausdrücklich im Browser/Google Maps geöffnet, nicht automatisiert ausgelesen oder gescrapt werden.
+- [ ] Apple „Wo ist?“ nicht als Personenquelle versprechen: Das öffentliche Find-My-Entwicklerprogramm dient MFi-Zubehör, nicht dem Auslesen der Standorte von Freunden/Familie. Eine spätere Apple-Integration nur nach einer ausdrücklich dokumentierten Personenfreigabe-API.
 
 ## P2 – Kamera und Medien
 

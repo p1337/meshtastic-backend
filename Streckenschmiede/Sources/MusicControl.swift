@@ -147,3 +147,53 @@ struct AppleMusicControlsView: View {
         .accessibilityLabel(label)
     }
 }
+
+struct AppleMusicSettingsView: View {
+    @ObservedObject private var music = AppleMusicController.shared
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "music.note")
+                .foregroundStyle(.orange)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Apple Music")
+                    .font(.subheadline.weight(.semibold))
+                Text(music.hasAccess ? "Verbunden" : "Noch nicht verbunden")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            if !music.hasAccess {
+                Button(music.accessButtonTitle) {
+                    music.requestAccess()
+                }
+                .font(.caption.weight(.semibold))
+            }
+        }
+        .onAppear { music.refresh() }
+    }
+}
+
+struct AppleMusicPlayerSheet: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(spacing: 14) {
+            HStack {
+                Label("Musik", systemImage: "music.note")
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(.orange)
+                Spacer()
+                Button("Schließen") { dismiss() }
+                    .font(.subheadline.weight(.semibold))
+            }
+            AppleMusicControlsView()
+        }
+        .padding(18)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .background(Color.black)
+        .preferredColorScheme(.dark)
+        .presentationDetents([.height(180), .medium])
+        .presentationDragIndicator(.visible)
+    }
+}
