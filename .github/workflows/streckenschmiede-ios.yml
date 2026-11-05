@@ -97,7 +97,7 @@ jobs:
           "$RUNNER_TEMP/ftms-control-tests"
       - name: Test camera sync payload integrity and privacy
         run: |
-          xcrun swiftc Streckenschmiede/Sources/CameraSyncPayload.swift Streckenschmiede/Tests/CameraSyncPayloadSelfTest.swift -o "$RUNNER_TEMP/camera-sync-payload-tests"
+          xcrun swiftc Streckenschmiede/Sources/CameraSyncPayload.swift Streckenschmiede/Sources/CameraSyncCaptureTimeline.swift Streckenschmiede/Tests/CameraSyncPayloadSelfTest.swift -o "$RUNNER_TEMP/camera-sync-payload-tests"
           "$RUNNER_TEMP/camera-sync-payload-tests"
       - name: Generate project
         working-directory: Streckenschmiede

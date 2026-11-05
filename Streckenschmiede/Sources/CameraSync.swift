@@ -22,10 +22,12 @@ struct CameraSyncView: View {
     @ObservedObject var ride: RideTracker
     @Environment(\.dismiss) private var dismiss
     @AppStorage("cameraSyncIncludeGPS") private var includeGPS = false
+    @AppStorage("cameraSyncBoostBrightness") private var boostBrightness = true
     @State private var event: CameraSyncEvent = .start
     @State private var sequence = 0
     @State private var payload: CameraSyncPayload?
     @State private var qrImage: UIImage?
+    @State private var showingFullscreenCode = false
 
     var body: some View {
         NavigationStack {
@@ -47,6 +49,7 @@ struct CameraSyncView: View {
                             .resizable()
                             .interpolation(.none)
                             .scaledToFit()
+                            .frame(maxHeight: 320)
                             .padding(14)
                             .background(.white, in: RoundedRectangle(cornerRadius: 20))
                             .accessibilityLabel("QR-Code zur Synchronisierung der Action 5 Pro")
@@ -77,6 +80,9 @@ struct CameraSyncView: View {
                     Toggle("Aktuelle GPS-Position in den QR-Code schreiben", isOn: $includeGPS)
                         .tint(.orange)
 
+                    Toggle("Für den Vollbild-Code maximale Helligkeit", isOn: $boostBrightness)
+                        .tint(.orange)
+
                     if includeGPS {
                         Label(
                             "Der gefilmte QR-Code enthält den genauen Standort und die Aufnahmezeit. Beim Teilen des Videos kann diese Information ausgelesen werden.",
@@ -96,8 +102,11 @@ struct CameraSyncView: View {
                     Button {
                         sequence += 1
                         refreshCode()
+                        if qrImage != nil {
+                            showingFullscreenCode = true
+                        }
                     } label: {
-                        Label("Neuen Sync-Code erzeugen", systemImage: "arrow.clockwise")
+                        Label("Vollbild-Code 5 Sekunden filmen", systemImage: "viewfinder")
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.borderedProminent)
@@ -126,6 +135,18 @@ struct CameraSyncView: View {
             }
             .onChange(of: event) { _, _ in refreshCode() }
             .onChange(of: includeGPS) { _, _ in refreshCode() }
+            .fullScreenCover(isPresented: $showingFullscreenCode) {
+                if let payload, let qrImage {
+                    CameraSyncFullscreenView(
+                        payload: payload,
+                        qrImage: qrImage,
+                        boostBrightness: boostBrightness
+                    )
+                } else {
+                    ContentUnavailableView("QR-Code nicht verfügbar", systemImage: "qrcode")
+                        .preferredColorScheme(.dark)
+                }
+            }
         }
     }
 
@@ -146,6 +167,165 @@ struct CameraSyncView: View {
             qrImage = CameraQRCodeGenerator.image(for: data)
         } else {
             qrImage = nil
+        }
+    }
+}
+
+private struct CameraSyncFullscreenView: View {
+    let payload: CameraSyncPayload
+    let qrImage: UIImage
+    let boostBrightness: Bool
+
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var elapsedSeconds = 0
+    @State private var runID = UUID()
+    @State private var originalBrightness: CGFloat?
+    @State private var originalIdleTimerDisabled: Bool?
+
+    private var stage: CameraSyncCaptureStage {
+        CameraSyncCaptureTimeline.stage(at: elapsedSeconds)
+    }
+
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack(alignment: .topTrailing) {
+                Color.black
+
+                VStack(spacing: 14) {
+                    Spacer(minLength: 24)
+
+                    switch stage {
+                    case let .preparing(secondsRemaining):
+                        Image(systemName: "viewfinder")
+                            .font(.system(size: 72, weight: .ultraLight))
+                            .foregroundStyle(.orange)
+                        Text("KAMERA AUSRICHTEN")
+                            .font(.headline.weight(.black))
+                            .foregroundStyle(.orange)
+                        Text("\(secondsRemaining)")
+                            .font(.system(size: 120, weight: .black, design: .rounded))
+                            .monospacedDigit()
+                            .contentTransition(.numericText())
+
+                    case let .exposing(secondsRemaining):
+                        qrPanel(maximumSize: min(geometry.size.width - 24, geometry.size.height * 0.66))
+                        Text("\(secondsRemaining) s RUHIG HALTEN")
+                            .font(.headline.weight(.black))
+                            .foregroundStyle(.orange)
+                            .monospacedDigit()
+                        ProgressView(
+                            value: Double(elapsedSeconds - CameraSyncCaptureTimeline.preparationSeconds),
+                            total: Double(CameraSyncCaptureTimeline.minimumExposureSeconds)
+                        )
+                        .tint(.orange)
+                        .padding(.horizontal, 32)
+
+                    case .complete:
+                        qrPanel(maximumSize: min(geometry.size.width - 24, geometry.size.height * 0.66))
+                        Label("Mindestens 5 Sekunden erfasst", systemImage: "checkmark.circle.fill")
+                            .font(.headline.weight(.bold))
+                            .foregroundStyle(.green)
+                        Button {
+                            runID = UUID()
+                        } label: {
+                            Label("Noch einmal filmen", systemImage: "arrow.clockwise")
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(.orange)
+                    }
+
+                    VStack(spacing: 4) {
+                        Text(payload.event.title.uppercased())
+                            .font(.headline.weight(.black))
+                            .foregroundStyle(.orange)
+                        Text("Fahrt \(payload.rideID.prefix(8)) · Code \(payload.sequence)")
+                            .font(.caption.monospaced())
+                        Text("\(payload.utc) · \(formatCameraDuration(payload.rideElapsedMilliseconds))")
+                            .font(.caption2.monospacedDigit())
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Spacer(minLength: 16)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(.horizontal, 12)
+
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.title3.weight(.bold))
+                        .frame(width: 52, height: 52)
+                        .background(.black.opacity(0.72), in: Circle())
+                }
+                .tint(.white)
+                .padding(12)
+                .accessibilityLabel("Vollbild-Code schließen")
+            }
+        }
+        .ignoresSafeArea()
+        .background(.black)
+        .preferredColorScheme(.dark)
+        .statusBarHidden(true)
+        .persistentSystemOverlays(.hidden)
+        .task(id: runID) {
+            elapsedSeconds = 0
+            for _ in 0..<CameraSyncCaptureTimeline.totalSeconds {
+                do {
+                    try await Task.sleep(nanoseconds: 1_000_000_000)
+                } catch {
+                    return
+                }
+                elapsedSeconds += 1
+            }
+        }
+        .onAppear(perform: applyDisplayOverrides)
+        .onDisappear(perform: restoreDisplayOverrides)
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active {
+                applyDisplayOverrides()
+                if elapsedSeconds > 0 {
+                    runID = UUID()
+                }
+            } else {
+                restoreDisplayOverrides()
+            }
+        }
+    }
+
+    private func qrPanel(maximumSize: CGFloat) -> some View {
+        Image(uiImage: qrImage)
+            .resizable()
+            .interpolation(.none)
+            .scaledToFit()
+            .frame(width: maximumSize, height: maximumSize)
+            .padding(12)
+            .background(.white)
+            .accessibilityLabel("QR-Code \(payload.event.title) für die Kamera")
+    }
+
+    private func applyDisplayOverrides() {
+        if originalIdleTimerDisabled == nil {
+            originalIdleTimerDisabled = UIApplication.shared.isIdleTimerDisabled
+        }
+        UIApplication.shared.isIdleTimerDisabled = true
+        if boostBrightness {
+            if originalBrightness == nil {
+                originalBrightness = UIScreen.main.brightness
+            }
+            UIScreen.main.brightness = 1
+        }
+    }
+
+    private func restoreDisplayOverrides() {
+        if let originalIdleTimerDisabled {
+            UIApplication.shared.isIdleTimerDisabled = originalIdleTimerDisabled
+            self.originalIdleTimerDisabled = nil
+        }
+        if let originalBrightness {
+            UIScreen.main.brightness = originalBrightness
+            self.originalBrightness = nil
         }
     }
 }

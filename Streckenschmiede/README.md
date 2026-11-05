@@ -42,7 +42,12 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
   Fahrt-ID, UTC, Fahrtzeit, Prüfsumme und optionaler GPS-Position. Das
   zugrunde liegende Protokoll v1 besitzt eine kanonische Bytefolge, einen
   stabilen SHA-256-Testvektor, validiert empfangene Codes strikt und lässt im
-  Datenschutzmodus weder Koordinaten noch Genauigkeit in den QR-Code einfließen
+  Datenschutzmodus weder Koordinaten noch Genauigkeit in den QR-Code
+  einfließen. Der eigentliche Aufnahmebildschirm blendet Systemleisten aus,
+  zählt drei Sekunden zum Ausrichten vor, zeigt den hochkontrastigen Code
+  mindestens fünf Sekunden, verhindert dabei das Sperren und kann die
+  Displayhelligkeit vorübergehend erhöhen; beim Schließen oder App-Wechsel
+  werden Helligkeit und Sperrverhalten wiederhergestellt
 - GPX-Import aus Dateien sowie Empfang über „Öffnen mit“/Teilen aus WhatsApp, Komoot und anderen Apps
 - Live-Karte mit geplanter GPX-Linie, Fahrtrichtung/Vorausblick, eindeutigem
   Fadenkreuz-Zentrieren-Knopf und 84-Punkte-Handschuhsteuerung unten: Minus

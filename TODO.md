@@ -283,7 +283,14 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
   manipulierte Prüfsummen, unbekannte Versionen, unvollständige oder ungültige
   Koordinaten ab. Der Datenschutzmodus lässt Koordinaten und Genauigkeit
   vollständig weg; der Referenztest läuft vor jedem signierten Build.
-- [~] Vollbild-QR-Generator mit Fahrt-ID, UTC, monotoner Fahrtzeit, SHA-256-Prüfsumme und optionaler GPS-Position implementiert; Simulator-, echte Kamera- und Vision-Wiedererkennungstests stehen aus.
+- [~] Vollbild-QR-Generator mit Fahrt-ID, UTC, monotoner Fahrtzeit,
+  SHA-256-Prüfsumme und optionaler GPS-Position implementiert. Der
+  Aufnahmebildschirm blendet Systemleisten aus, zählt drei Sekunden vor,
+  garantiert per getestetem Zeitmodell mindestens fünf Sekunden QR-Belichtung,
+  hält das Display wach und erhöht die Helligkeit nur nach aktivierter Option;
+  ursprüngliche Helligkeit und Sperrverhalten werden bei Schließen/App-Wechsel
+  wiederhergestellt. Simulator-, echte Action-5-Pro- und Vision-
+  Wiedererkennungstests stehen aus.
 - [ ] QR zu Beginn und Ende filmen; ab zwei Ankern Offset und Kameradrift robust berechnen.
 - [ ] Action-5-Pro-Video aus Fotos/Dateien/OTG importieren und Metadaten, Aufnahmedatum, Bildrate sowie Timecode-Track mit AVFoundation prüfen.
 - [ ] QR-Codes mit Apple Vision aus Videoframes erkennen; fehlende/mehrdeutige Codes nachvollziehbar behandeln.
@@ -308,7 +315,7 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 
 ## Qualität, Datenschutz und Veröffentlichung
 
-- [~] CI-Selbsttests decken Sitzungszustände, getrennte Zeiten, GPS-Sprungfilter, atomare Relaunch-Wiederherstellung, dauerhafte Vordergrund-Liveposition versus Hintergrund-Aufzeichnung, Auto-Pause einschließlich manuellem Vorrang, Fahrradprofil-Roundtrip/Radumfang, Fahrtenhistorie einschließlich sicherem GPX-Löschen, Routenfortschritt/Restwerte/Manöver/Querabstand, atomaren Roundtrip und Validierung der aktiven Route, ausschließlich sichere vollständig aufgelöste HTTPS-Kachel-URLs, BLE-/FTMS-Paketparser sowie das kanonische Kamera-Sync-Nutzdatenformat einschließlich Manipulations- und Datenschutzfällen ab; weitere Dateiformate und Routingprofile fehlen.
+- [~] CI-Selbsttests decken Sitzungszustände, getrennte Zeiten, GPS-Sprungfilter, atomare Relaunch-Wiederherstellung, dauerhafte Vordergrund-Liveposition versus Hintergrund-Aufzeichnung, Auto-Pause einschließlich manuellem Vorrang, Fahrradprofil-Roundtrip/Radumfang, Fahrtenhistorie einschließlich sicherem GPX-Löschen, Routenfortschritt/Restwerte/Manöver/Querabstand, atomaren Roundtrip und Validierung der aktiven Route, ausschließlich sichere vollständig aufgelöste HTTPS-Kachel-URLs, BLE-/FTMS-Paketparser sowie Kamera-Sync-Nutzdaten einschließlich Manipulations-/Datenschutzfällen und die garantierte QR-Vorlauf-/Belichtungsdauer ab; weitere Dateiformate und Routingprofile fehlen.
 - [~] Der Apple-Build startet den Outdoor-Hauptreiter auf einem iPhone-Simulator mit gesetzter Testposition, erzeugt einen echten Screenshot und veröffentlicht ihn als Build-Artefakt sowie `ui-outdoor.png` zur visuellen Prüfung. Automatisierte Screenshots für Indoor, Einstellungen, Routenplaner, Navigation und Wiederherstellung fehlen.
 - [ ] Reale iPhone-Testfahrten: mindestens 30 und 120 Minuten, Display an/aus, Hintergrund, Telefonat, Bluetooth-Abbruch, GPS-Lücke und Akkumessung.
 - [ ] Reale Watch-Testfahrt mit gespiegelter Session und anschließendem Health-/Fitness-Nachweis.

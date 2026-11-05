@@ -409,6 +409,17 @@ Standortfelder weg; er schreibt keine Platzhalterkoordinate. Dieser Kern ist
 separat von Core Image und SwiftUI referenzvektorgeprüft, damit die spätere
 Vision-Erkennung exakt denselben Validator wiederverwendet.
 
+Die optische Aufnahmeansicht ist eine isolierte Vollbildstufe: drei Sekunden
+Ausrichtungszeit, danach mindestens fünf vollständige Sekunden unveränderter
+QR-Belichtung. `CameraSyncCaptureTimeline` definiert diese Zeiten als reines,
+getestetes Modell; SwiftUI erfindet keine zweite Zeitlogik. Während der Stufe
+bleibt das Display wach. Eine ausdrücklich aktivierte Helligkeitsanhebung
+merkt den vorherigen Wert und stellt ihn ebenso wie den vorherigen Idle-Timer-
+Zustand beim Schließen oder Verlassen der aktiven App wieder her. Nach fünf
+Sekunden bleibt der Code sichtbar, bis der Nutzer schließt oder denselben Code
+erneut mit Vorlauf zeigt; so vernichtet ein verspäteter Kamerastart keinen
+Anker.
+
 Der optionale `CameraAdapter` darf weder Fahrt- noch Trainer-Session besitzen. Eine direkte Kamerasteuerung wird erst aktiviert, wenn eine offiziell dokumentierte oder anderweitig rechtlich nutzbare Schnittstelle und echte Hardwaretests vorliegen. Bis dahin ist der DJI GPS Bluetooth Remote Controller der offizielle Start-/Stop-/GNSS-Weg. Kameraereignisse verwenden immer monotone Fahrtzeit; Systemzeitänderungen dürfen die Zuordnung nicht zerstören.
 
 Eine spätere rückwärts gerichtete Cockpit-Vorschau ist ein eigener

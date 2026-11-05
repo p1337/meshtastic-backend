@@ -128,6 +128,27 @@ enum CameraSyncPayloadSelfTest {
             try unsupportedVersion.validate()
         }, "future payload version must fail closed")
 
+        cameraSyncExpect(
+            CameraSyncCaptureTimeline.stage(at: -1) == .preparing(secondsRemaining: 3),
+            "negative timeline input is clamped"
+        )
+        cameraSyncExpect(
+            CameraSyncCaptureTimeline.stage(at: 2) == .preparing(secondsRemaining: 1),
+            "three-second preparation countdown"
+        )
+        cameraSyncExpect(
+            CameraSyncCaptureTimeline.stage(at: 3) == .exposing(secondsRemaining: 5),
+            "QR exposure starts with five full seconds"
+        )
+        cameraSyncExpect(
+            CameraSyncCaptureTimeline.stage(at: 7) == .exposing(secondsRemaining: 1),
+            "QR remains exposed through the fifth second"
+        )
+        cameraSyncExpect(
+            CameraSyncCaptureTimeline.stage(at: 8) == .complete,
+            "timeline completes only after minimum exposure"
+        )
+
         print("Camera sync payload self-test passed")
     }
 }

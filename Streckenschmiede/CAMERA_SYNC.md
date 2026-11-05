@@ -31,6 +31,15 @@ Diese Angaben müssen mit der tatsächlich verwendeten Firmware und Beispielclip
 
 Der Code wird mindestens vier Sekunden groß und kontrastreich im Vollbild gezeigt. Zusätzlich erscheinen UTC-Zeit, Fahrtzeit und eine kurze Fahrtkennung als lesbarer Text. Ein kurzer visueller Countdown hilft beim Ausrichten der Kamera.
 
+Die implementierte Aufnahmeansicht verwendet drei Sekunden Vorlauf und danach
+fünf vollständige Sekunden garantierte QR-Belichtung. Sie bleibt anschließend
+offen, damit ein verspäteter Kamerastart den Anker nicht verliert. Systemleisten
+werden ausgeblendet und das automatische Sperren wird nur für diese Ansicht
+verhindert. Die optionale Maximalhelligkeit speichert den vorherigen Wert;
+Helligkeit und Idle-Timer werden beim Schließen oder bei inaktiver App sofort
+wiederhergestellt. „Noch einmal filmen“ wiederholt Vorlauf und Belichtung mit
+demselben Nutzdatenanker.
+
 Logischer Inhalt:
 
 ```text
@@ -89,7 +98,9 @@ Qualitätsstufen:
 
 1. ✅ `CameraSyncPayload` mit kanonischer Kodierung, Prüfsumme, strikter
    Validierung, Datenschutzfällen und festem Referenzvektor.
-2. Vollbild-QR-Generator mit Start/Checkpoint/Ende, Countdown, Helligkeitsoption und Datenschutzschalter für GPS im Code.
+2. 🟡 Vollbild-QR-Generator mit Start/Checkpoint/Ende, getestetem Countdown,
+   fünf Sekunden Mindestbelichtung, Helligkeitsoption und Datenschutzschalter;
+   Simulator-/Vision-Test sowie reale Action-5-Pro-Aufnahme stehen aus.
 3. FIT-Export mit Fahrtzeit, Position, Höhe, Geschwindigkeit, Puls, Kadenz und Leistung, soweit vorhanden.
 4. Videoimport und AVFoundation-Metadaten-/Timecode-Inspektion.
 5. Vision-QR-Erkennung auf zeitlich begrenzten Videoframes.

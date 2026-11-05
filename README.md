@@ -43,7 +43,9 @@ Verbindlicher Gesamtumfang und Abnahmestatus: [TODO.md](TODO.md) · Technische Z
   Datenfelder verfügbar;
   das optische DJI-Sync-Protokoll validiert Fahrt-ID, monotone Fahrtzeit,
   optionale GPS-Koordinaten und die gekürzte SHA-256-Prüfsumme vor einer
-  späteren Videozuordnung;
+  späteren Videozuordnung; ein bildschirmfüllender Kameramodus zählt drei
+  Sekunden vor und hält den QR-Code danach nachweislich mindestens fünf
+  Sekunden mit optionaler Maximalhelligkeit sichtbar;
   atomare Notfall-Wiederherstellung, Distanz und Tages-GPX-Export; Planung,
   Import, Teilen und Kamera-Sync liegen außerhalb der störungsfreien Fahrkarte
 - **Indoor:** gleichzeitige BLE-Sensorverbindungen mit Puls, Tempo,
