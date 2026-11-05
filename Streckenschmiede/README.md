@@ -31,6 +31,10 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
   Apple Satellit, Apple Hybrid, interaktives OpenStreetMap und die offene
   Fahrradkarte CyclOSM sind aktiv; OpenCycleMap ist zusätzlich sichtbar,
   benötigt aber einen gültigen Thunderforest-Key
+- Erster Zielplaner innerhalb des Aufzeichnungsbereichs: Adresse oder POI
+  suchen, Apple-Fahrradrouten ab aktueller GPS-Position einschließlich
+  verfügbarer Alternativen vergleichen und ausgewählte Linie auf die
+  Fahrtkarte übernehmen
 - Eigenes orange/schwarzes Corporate-Zeichen mit mittigem Rennrad-Vorderrad,
   steiler Gabel und angeschnittenem Rennlenker; separates Routenmotiv als Hero-Asset
 - Mehrere gleichzeitige BLE-Verbindungen mit State Restoration sowie Live-Parsern

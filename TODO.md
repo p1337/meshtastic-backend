@@ -50,15 +50,15 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 
 ## P0 – Routenplaner und Zielnavigation
 
-- [ ] Zielwahl über Adresse/POI-Suche, Favoriten, Kartenpunkt, aktuelle Position und Kontakte nur nach ausdrücklicher Freigabe.
+- [~] Zielwahl über Apple-Adress-/POI-Suche ab aktueller GPS-Position ist implementiert; Favoriten, Kartenpunkt, Zwischenziele und Kontakte nach ausdrücklicher Freigabe fehlen.
 - [ ] Zwischenziele hinzufügen, sortieren und entfernen.
 - [ ] Profile: **Radwege bevorzugt**, **Ausgewogen**, **Straße/schnell**.
 - [ ] Fahrradtypen: Rennrad, Gravel/Cross, City/Trekking, Mountainbike und E-Bike.
 - [ ] Regler für Straßenanteil, Hügel, schlechte Oberflächen, Hauptstraßen, Fähren, Treppen und unbefestigte Wege.
-- [ ] Apple-MapKit-Fahrradrouting ab der unterstützten Betriebssystemversion hinter einer Verfügbarkeitsprüfung nutzen.
+- [~] Apple-MapKit-Fahrradrouting nutzt `.cycling`, Distanz, erwartete Zeit, Hinweise und verfügbare Alternativen; Regionsverfügbarkeit, echte Route und Fehlerfälle auf dem iPhone bleiben zu testen.
 - [ ] OSM-basiertes Valhalla-Routing als austauschbaren Provider anbinden, damit Radweg-/Straßenanteil, Fahrradtyp, Untergrund und Hügel tatsächlich steuerbar sind.
 - [ ] Keine Produktionsabhängigkeit von einem ungarantierten öffentlichen Test-Endpunkt; Server/Provider austauschbar konfigurieren.
-- [ ] Mindestens zwei Alternativrouten mit Distanz, Fahrzeit, Auf-/Abstieg und Untergrundhinweisen vergleichen.
+- [~] Von Apple gelieferte Alternativrouten werden mit Distanz, Fahrzeit und Hinweisen verglichen; mindestens zwei sind providerabhängig, Auf-/Abstieg und Untergrundhinweise fehlen.
 - [ ] Turn-by-turn-Manöver, Restdistanz, Restzeit, nächste Abbiegung und Höhenprofil anzeigen.
 - [ ] Abweichung erkennen, akustisch/haptisch warnen und kontrolliert neu berechnen; ursprüngliche Route auf Wunsch behalten.
 - [ ] Sprachansagen und Apple-Watch-Haptik mit getrennten Lautstärke-/Hinweisoptionen.

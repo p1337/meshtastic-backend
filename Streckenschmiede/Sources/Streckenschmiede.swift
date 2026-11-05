@@ -382,7 +382,11 @@ struct MainView: View {
                     sensors: sensors,
                     importing: $importing,
                     route: route,
-                    routeMessage: routeMessage
+                    routeMessage: routeMessage,
+                    selectPlannedRoute: { coordinates, message in
+                        route = coordinates
+                        routeMessage = message
+                    }
                 )
                 .fileImporter(isPresented: $importing, allowedContentTypes: [.gpx, .xml]) { result in
                     do {
@@ -472,7 +476,9 @@ private struct RideDashboard: View {
     @Binding var importing: Bool
     let route: [CLLocationCoordinate2D]
     let routeMessage: String
+    let selectPlannedRoute: ([CLLocationCoordinate2D], String) -> Void
     @State private var showingCameraSync = false
+    @State private var showingRoutePlanner = false
 
     private let columns = [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())]
 
@@ -504,6 +510,12 @@ private struct RideDashboard: View {
         .background(Color.black)
         .sheet(isPresented: $showingCameraSync) {
             CameraSyncView(ride: ride)
+        }
+        .sheet(isPresented: $showingRoutePlanner) {
+            RoutePlannerView(
+                origin: ride.currentCoordinate,
+                onSelectRoute: selectPlannedRoute
+            )
         }
         .onAppear { ride.activateLiveLocation() }
     }
@@ -595,6 +607,15 @@ private struct RideDashboard: View {
             }
 
             HStack(spacing: 14) {
+                Button { showingRoutePlanner = true } label: {
+                    Image(systemName: "map.fill")
+                        .font(.title2.weight(.bold))
+                        .frame(width: 54, height: 54)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.black.opacity(0.82))
+                .accessibilityLabel("Zielroute planen")
+
                 Button { importing = true } label: {
                     Image(systemName: "square.and.arrow.down")
                         .font(.title2.weight(.bold))

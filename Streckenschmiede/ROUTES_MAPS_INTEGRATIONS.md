@@ -55,6 +55,19 @@ Kostenentscheidung:
   Kacheln, identifizierter Client, HTTP-Cache, Attribution und kein Prefetch.
 - Jeder Download zeigt Gebiet, Zoomspanne, geschätzte Größe, Stand, Attribution und Löschen-Schaltfläche. Begonnene Navigation speichert Route und Manöver unabhängig von der Kartenoptik lokal.
 
+## Erste Apple-Fahrradplanung
+
+- Zielsuche verwendet `MKLocalSearch` mit aktueller GPS-Region als Hinweis und
+  zeigt Adressen sowie POIs zur ausdrücklichen Auswahl.
+- `MKDirections` berechnet mit Transporttyp `.cycling` und angeforderten
+  Alternativen. Distanz und Zeit stammen aus dem jeweiligen `MKRoute`-Objekt;
+  die App erfindet keine Höhen- oder Untergrunddaten.
+- Die gewählte Apple-Polyline wird in das providerneutrale Kartenmodell
+  übernommen und kann deshalb auf Apple-, OSM- und CyclOSM-Basiskarten liegen.
+- Apple stellt keine Feinregler für Radweganteil, Gravel, Untergrund oder
+  Hügel bereit. Diese Profile folgen ausschließlich über den getrennten
+  Valhalla-Provider.
+
 ## Position anderer Personen
 
 Streckenschmiede liest keine fremden Standorte aus Google Maps oder Apples „Wo ist?“ aus:
