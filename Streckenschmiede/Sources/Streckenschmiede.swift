@@ -530,7 +530,7 @@ struct MainView: View {
 
                 statusBarBackdrop
                 modeToolbar
-                    .padding(.top, -8)
+                    .padding(.top, -18)
                     .padding(.trailing, 10)
             }
             .toolbar(.hidden, for: .navigationBar)
@@ -566,7 +566,7 @@ struct MainView: View {
     private var statusBarBackdrop: some View {
         Rectangle()
             .fill(.ultraThinMaterial)
-            .overlay(Color.black.opacity(0.76))
+            .overlay(Color.black.opacity(0.34))
             .frame(maxWidth: .infinity)
             .frame(height: 26)
             .ignoresSafeArea(edges: .top)
@@ -763,8 +763,8 @@ private struct RideDashboard: View {
                             .transition(.move(edge: .trailing).combined(with: .opacity))
                     }
                 }
-                    .padding(.top, musicOverlayTopPadding)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                    .offset(x: 1)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .trailing)
             }
         }
         .background(Color.black)
@@ -801,20 +801,6 @@ private struct RideDashboard: View {
         .overlay(Circle().stroke(.white.opacity(0.45), lineWidth: 1.5))
         .shadow(color: .black.opacity(0.6), radius: 7, y: 3)
         .accessibilityLabel("Musiksteuerung öffnen")
-    }
-
-    private var musicOverlayTopPadding: CGFloat {
-        let columns = cockpitColumns.count
-        let rows = Int(ceil(Double(visibleFieldCount) / Double(max(1, columns))))
-        let cellHeight: CGFloat
-        switch cockpitTextSize {
-        case .compact: cellHeight = 36
-        case .medium: cellHeight = 50
-        case .large: cellHeight = 72
-        }
-        let gridHeight = CGFloat(rows) * cellHeight + CGFloat(max(0, rows - 1)) * 3
-        let cockpitHeight: CGFloat = 27 + gridHeight
-        return 34 + cockpitHeight + 10
     }
 
     private var cockpitOverlay: some View {

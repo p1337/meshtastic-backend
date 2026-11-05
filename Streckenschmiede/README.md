@@ -28,6 +28,11 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
   transparenten Messwert-Overlays, gefahrenem Track, Geschwindigkeit, Zeit,
   Höhe, Auf-/Abstieg und gespeichertem Karten-Zoom; die laufende Position liegt
   beim Folgen horizontal mittig ungefähr ein Drittel über dem unteren Rand
+- Die Karte reicht unverändert hinter Uhr, Dynamic Island und Statussymbolen
+  bis an die Oberkante. Dort liegt ausschließlich ein durchscheinender
+  Material-Blur; er reserviert keinen Platz und verschiebt die Karte nicht.
+  Kompass links sowie Outdoor/Indoor/Einstellungen rechts sitzen höher in der
+  freien Zeile direkt unter dem Statusbereich
 - Erster DJI-Action-5-Pro-Sync-Bildschirm mit Start-/Checkpoint-/End-QR, Fahrt-ID, UTC, Fahrtzeit, Prüfsumme und optionaler GPS-Position
 - GPX-Import aus Dateien sowie Empfang über „Öffnen mit“/Teilen aus WhatsApp, Komoot und anderen Apps
 - Live-Karte mit geplanter GPX-Linie, Fahrtrichtung/Vorausblick, eindeutigem
@@ -58,8 +63,8 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
   Einstellungen aktiviert werden; im Outdoor-Cockpit bleibt danach nur ein
   kleiner Doppelnotenknopf, dessen Position aus der tatsächlichen Feldanzahl
   und Schriftgröße berechnet wird und deshalb niemals ein Datenfeld überdeckt.
-  Er öffnet direkt am rechten Bildschirmrand unterhalb des Cockpits einen
-  vertikalen, nur etwa 15 Prozent breiten Symbol-Mini-Player; Quelle und
+  Er öffnet direkt am rechten Bildschirmrand einen vertikal zentrierten,
+  nur etwa 15 Prozent breiten Symbol-Mini-Player; Quelle und
   Playlists erscheinen als wegwischbares Blatt von unten. Apple-Music-Playlists werden nach
   ausdrücklicher Freigabe direkt gelesen und gestartet;
   Spotify, Amazon Music und eigener iCloud-/Dateien-Player sind als getrennte
