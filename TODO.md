@@ -130,8 +130,8 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 - [ ] Aufzeichnung bei gesperrtem Display und App im Hintergrund testen.
 - [~] Laufende Fahrt wird spätestens alle fünf Sekunden sowie bei Zustands-/App-Wechsel atomar zwischengespeichert; Wiederaufnahme oder GPX-Abschluss werden nach Relaunch angeboten. Echter Abbruch-/Telefonneustart-Test bleibt offen.
 - [~] Alte, ungenaue, nicht monotone und über 126 km/h implizierende GPS-Punkte sowie Sprünge ab 300 m werden verworfen; Tunnel-/Empfangslücken und reale Grenzfälle bleiben zu testen.
-- [ ] Auto-Pause mit einstellbarer Geschwindigkeit und Zeit; manuelle Pause hat Vorrang.
-- [~] Gesamtzeit, Fahrzeit und manuelle Pausenzeit werden getrennt geführt und im Cockpit angezeigt; Auto-Pause und echte Fahrtabnahme fehlen.
+- [~] GPS-Auto-Pause mit einstellbarer Geschwindigkeit und Verzögerung, Wiederanfahr-Hysterese sowie verbindlichem Vorrang der manuellen Pause ist implementiert und durch Zustandsmaschinentests belegt; echte Stop-and-go-, Hintergrund- und Tunnelabnahme fehlt.
+- [~] Gesamtzeit, Fahrzeit sowie manuelle und automatische Pausenzeit werden getrennt geführt und im Cockpit angezeigt; echte Fahrtabnahme fehlt.
 - [~] Erste GPS-Live-Werte: aktuelle, durchschnittliche und maximale Geschwindigkeit, Distanz, Zeit, Höhe sowie Auf-/Abstieg. Steigung, Kalorien, Herzfrequenz, Trittfrequenz, Leistung, Balance und Sensor-/Akkudaten bleiben offen.
 - [ ] Datenherkunft je Wert sichtbar und testbar machen: Sensor, Apple Watch, GPS oder Schätzung.
 - [ ] Einheiten km/mi, kg/lb, °C/°F und konfigurierbarer Radumfang.
@@ -270,7 +270,7 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 
 ## Qualität, Datenschutz und Veröffentlichung
 
-- [~] CI-Selbsttests decken Sitzungszustände, getrennte Zeiten, GPS-Sprungfilter, atomare Relaunch-Wiederherstellung, dauerhafte Vordergrund-Liveposition versus Hintergrund-Aufzeichnung, ausschließlich sichere vollständig aufgelöste HTTPS-Kachel-URLs sowie BLE-/FTMS-Paketparser ab; Auto-Pause, Dateiformate und Routingprofile fehlen.
+- [~] CI-Selbsttests decken Sitzungszustände, getrennte Zeiten, GPS-Sprungfilter, atomare Relaunch-Wiederherstellung, dauerhafte Vordergrund-Liveposition versus Hintergrund-Aufzeichnung, Auto-Pause einschließlich manuellem Vorrang, ausschließlich sichere vollständig aufgelöste HTTPS-Kachel-URLs sowie BLE-/FTMS-Paketparser ab; Dateiformate und Routingprofile fehlen.
 - [ ] UI-/Simulator-Smoke-Test für beide Hauptreiter, Einstellungen, Historie, Routenplaner und Wiederherstellung.
 - [ ] Reale iPhone-Testfahrten: mindestens 30 und 120 Minuten, Display an/aus, Hintergrund, Telefonat, Bluetooth-Abbruch, GPS-Lücke und Akkumessung.
 - [ ] Reale Watch-Testfahrt mit gespiegelter Session und anschließendem Health-/Fitness-Nachweis.
