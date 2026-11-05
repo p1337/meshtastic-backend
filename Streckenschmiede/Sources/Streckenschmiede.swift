@@ -753,8 +753,8 @@ private struct RideDashboard: View {
             .padding(.horizontal, 10)
             .padding(.top, 34)
 
-            if rideMusicControlsEnabled {
-                Group {
+            VStack(spacing: 8) {
+                if rideMusicControlsEnabled {
                     if showingMusicControls {
                         AppleMusicRideFlyout(
                             openLibrary: { showingMusicLibrary = true },
@@ -768,9 +768,11 @@ private struct RideDashboard: View {
                             .transition(.move(edge: .trailing).combined(with: .opacity))
                     }
                 }
-                    .offset(x: 1)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .trailing)
+
+                ridePauseButton
             }
+            .offset(x: 1)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .trailing)
         }
         .background(Color.black)
         .sheet(isPresented: $showingMusicLibrary) {
@@ -806,6 +808,49 @@ private struct RideDashboard: View {
         .overlay(Circle().stroke(.white.opacity(0.45), lineWidth: 1.5))
         .shadow(color: .black.opacity(0.6), radius: 7, y: 3)
         .accessibilityLabel("Musiksteuerung öffnen")
+    }
+
+    private var ridePauseButton: some View {
+        Button(action: toggleRidePause) {
+            Image(systemName: ride.isRecording ? "pause.fill" : "play.fill")
+                .font(.system(size: 19, weight: .black))
+                .frame(width: 50, height: 50)
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.orange)
+        .background(.black.opacity(0.86), in: Circle())
+        .overlay(
+            Circle().stroke(
+                ride.isPaused || ride.recoveryAvailable
+                    ? Color.orange.opacity(0.9)
+                    : Color.white.opacity(0.45),
+                lineWidth: 1.5
+            )
+        )
+        .shadow(color: .black.opacity(0.6), radius: 7, y: 3)
+        .accessibilityLabel(ride.isRecording ? "Fahrt pausieren" : "Fahrt fortsetzen")
+        .accessibilityValue(ridePauseAccessibilityValue)
+    }
+
+    private var ridePauseAccessibilityValue: String {
+        if ride.isAutoPaused { return "Automatisch pausiert" }
+        if ride.isPaused { return "Manuell pausiert" }
+        if ride.recoveryAvailable { return "Unterbrochene Fahrt gefunden" }
+        if ride.isRecording { return "Tagesaufzeichnung läuft" }
+        return "Tagesaufzeichnung wird automatisch aktiviert"
+    }
+
+    private func toggleRidePause() {
+        if ride.isRecording {
+            ride.pause()
+        } else if ride.isPaused {
+            ride.resume()
+        } else if ride.recoveryAvailable {
+            ride.resumeRecoveredRide()
+        } else {
+            ride.activateDailyTracking()
+        }
     }
 
     private var cockpitOverlay: some View {

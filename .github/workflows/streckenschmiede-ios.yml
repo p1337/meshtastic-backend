@@ -17,7 +17,7 @@ concurrency:
 jobs:
   build-signed-ipa:
     runs-on: macos-15-intel
-    timeout-minutes: 30
+    timeout-minutes: 45
     environment: apple-signing
     steps:
       - name: Require existing Apple signing credentials
