@@ -163,7 +163,9 @@ Kartenwähler. Apple Standard, Satellit und Hybrid bleiben native MapKit-Stile.
 OpenStreetMap Carto wird ausschließlich für die gerade sichtbare interaktive
 Ansicht über einen identifizierten, HTTP-Cache-Regeln respektierenden Client
 geladen, zeigt die Attribution dauerhaft und bietet keinerlei Prefetch oder
-Offline-Download. OpenCycleMap ist technisch als Thunderforest-Ebene
+Offline-Download. CyclOSM nutzt denselben begrenzten Client als offene,
+fahrradorientierte Online-Ebene und bleibt technisch sowie namentlich von
+OpenCycleMap getrennt. OpenCycleMap ist als Thunderforest-Ebene
 vorbereitet, aber ohne einen 32-stelligen gültigen Provider-Key deaktiviert.
 Ein Schlüssel wird nie in Git eingecheckt; Kosten- und Kontowahl bleiben eine
 explizite Produktentscheidung.
