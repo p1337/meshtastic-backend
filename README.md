@@ -32,7 +32,8 @@ Verbindlicher Gesamtumfang und Abnahmestatus: [TODO.md](TODO.md) · Technische Z
   Bildschirmrand. Er öffnet dort eine nur ungefähr 15 Prozent breite,
   vertikal ausgerichtete und bündig sitzende Symbolleiste mit
   Zurück, Play/Pause, Weiter und Mediathek; das Blatt von unten bietet
-  Apple-Music-Playlists;
+  Apple-Music-Playlists; direkt darunter pausiert beziehungsweise setzt ein
+  gleich großer kompakter Fahrtknopf die automatische Tagesaufzeichnung fort;
   Pedalbalance und BLE-Umgebungstemperatur sind zusätzlich als frei wählbare
   Datenfelder verfügbar;
   atomare Notfall-Wiederherstellung, Distanz und Tages-GPX-Export; Planung,
@@ -56,6 +57,11 @@ Jeder Push auf `streckenschmiede-ios` mit App-/Workflow-Änderungen startet den 
 3. Importiert dieselbe Apple-Distribution-Identität in einen temporären Keychain, archiviert und exportiert eine signierte IPA.
 4. Validiert Bundle-ID, Profil, Ablaufdatum und die tatsächliche Apple-Code-Signatur mit [package_release.py](Streckenschmiede/scripts/package_release.py).
 5. Generiert `index.html`, `Streckenschmiede.ipa`, `manifest.plist`, `release.json`; veröffentlicht das Paket mit GitHub Pages **nur nach erfolgreicher Signaturprüfung**.
+
+Der macOS-Build darf bis zu 45 Minuten laufen. Simulator, Geräte-Compile und
+signiertes Archiv schwanken auf den bereitgestellten Intel-Runnern; das frühere
+30-Minuten-Limit konnte einen ansonsten fehlerfreien Build erst während des
+Archivs abbrechen.
 
 Der Store soll unter [p1337.github.io/meshtastic-backend](https://p1337.github.io/meshtastic-backend/) erreichbar sein. Die Datei `index.html` im Branch allein veröffentlicht **keine** App.
 

@@ -69,6 +69,10 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
   ausdrücklicher Freigabe direkt gelesen und gestartet;
   Spotify, Amazon Music und eigener iCloud-/Dateien-Player sind als getrennte
   Adapter dokumentiert
+- Ein gleich großer, kompakter Fahrtknopf sitzt am rechten Rand direkt unter
+  der optionalen Musiksteuerung. Er pausiert die automatisch laufende
+  Tagesfahrt manuell oder setzt sie fort; ein großer Startbalken kehrt nicht
+  zurück und die aktuelle Route bleibt beim Pausieren vollständig erhalten
 - Erster Zielplaner innerhalb des Aufzeichnungsbereichs: Adresse oder POI
   suchen, Apple-Fahrradrouten ab aktueller GPS-Position einschließlich
   verfügbarer Alternativen gemeinsam auf der Karte vergleichen, über große

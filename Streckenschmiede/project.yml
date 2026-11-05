@@ -40,7 +40,7 @@ targets:
                 - application/gpx+xml
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: de.p1337.Streckenschmiede
-      MARKETING_VERSION: "2.8.3"
+      MARKETING_VERSION: "2.8.4"
       CURRENT_PROJECT_VERSION: "1"
       SWIFT_VERSION: "5.0"
       TARGETED_DEVICE_FAMILY: "1"
