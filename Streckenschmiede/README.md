@@ -20,6 +20,10 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
 - Mehrere gleichzeitige BLE-Verbindungen mit State Restoration sowie Live-Parsern
   für Heart Rate, Cycling Speed/Cadence, Cycling Power, FTMS Indoor Bike,
   Battery und Device Information; echte Sensorabnahme steht noch aus
+- Erste FTMS-Trainersteuerung mit expliziter Gerätewahl, Control-Point-
+  Berechtigung, bestätigten Einzelbefehlen, Wertebereichsprüfung, fünf Sekunden
+  Timeout, ERG, Widerstand, Steigung/Simulation, Pause und sichtbarem Not-Stopp;
+  die reale Abnahme mit dem Van Rysel D100 steht noch aus
 - Dunkles Design mit orangefarbenem Akzent
 
 ## Noch nicht implementiert
@@ -31,7 +35,8 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
 - Apple-Watch-Begleit-App, HealthKit-Workout/-Route und Übergabe an Apple Fitness
 - Vollständige Hardwareabnahme, dauerhafte Fahrradzuordnung und Quellenpriorität
   für standardisierte BLE-Sensoren
-- FTMS-Steuerung für Widerstand, Steigung und ERG; FTMS-Livewerte sind vorhanden
+- Reale D100-Abnahme, Neutralstellung nach Fehlerfällen und Langzeittest der
+  FTMS-Steuerung; der standardkonforme erste Steuerpfad ist vorhanden
 - Zwift Click V2 Tastenprotokoll und virtuelle Schaltung
 - DJI Osmo Action 5 Pro Videoimport, QR-/Timecode-/FIT-Synchronisierung und optionale Kamerasteuerung; das technische Konzept ist dokumentiert
 - Offline-Vektorkarten/OSM-Fahrradstil, Komoot-Kontosync und freiwillige Gruppenpositionen; Grenzen und Providerentscheidung sind dokumentiert

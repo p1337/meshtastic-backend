@@ -189,7 +189,7 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 - [~] Heart Rate Service (`0x180D`): Puls, RR-Intervalle und Sensor-Kontaktstatus werden defensiv dekodiert; reale Brustgurt-/Watch-Abnahme fehlt.
 - [~] Cycling Speed and Cadence Service (`0x1816`): Rad-/Kurbelumdrehungen, Geschwindigkeit und Trittfrequenz einschließlich Zeitüberlauf sind implementiert; Radumfang-Einstellung, Distanzquelle und Hardwaretest fehlen.
 - [~] Cycling Power Service (`0x1818`): Leistung, Balance und optionale Rad-/Kurbelwerte werden dekodiert; Drehmoment-/Extremkraftfelder, Quellenwahl und Hardwaretest fehlen.
-- [~] Fitness Machine Service (`0x1826`): Indoor-Bike-Livewerte für Tempo, Kadenz, Widerstand, Leistung und Puls sind implementiert; Features, Bereiche, Status und Control Point fehlen.
+- [~] Fitness Machine Service (`0x1826`): Indoor-Bike-Livewerte, Target-Features, unterstützte Widerstands-/Steigungs-/Leistungsbereiche, Status und Control Point sind implementiert; zusätzliche FTMS-Messfelder und echte Hardwareabnahme fehlen.
 - [~] Battery Service (`0x180F`) und Device Information Service (`0x180A`) werden gelesen und pro Gerät angezeigt; echte Geräteabnahme fehlt.
 - [ ] Environmental Sensing (`0x181A`) für Temperatur und weitere für die Fahrt sinnvolle standardisierte Werte, falls vorhanden.
 - [ ] Location and Navigation Service (`0x1819`) nur nach Capability-Prüfung; keine Doppelzählung gegenüber GPS/Route.
@@ -198,19 +198,19 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 - [ ] Apple-Watch-Sensoren und direkt mit der Watch gekoppelte Fahrrad-Leistungs-/Kadenz-/Geschwindigkeitssensoren über die Workout-Session übernehmen.
 - [ ] Reine ANT+-Geräte ehrlich als nicht nativ iPhone-kompatibel kennzeichnen; Unterstützung nur über BLE-Dualmodus oder einen konkret getesteten externen ANT+-BLE-Bridge-Adapter.
 - [ ] Proprietäre Radar-, Licht-, Reifendruck-, E-Bike- und elektronische-Schaltsysteme über getrennte Adapter ergänzen, sobald öffentlich dokumentierte oder rechtlich nutzbare Protokolle und Testhardware vorliegen.
-- [~] CI-Referenzvektoren prüfen Puls, RR, CSC, Leistung, Balance, FTMS und Batterie einschließlich gekürzter Pakete; physische Testmatrix fehlt.
+- [~] CI-Referenzvektoren prüfen Puls, RR, CSC, Leistung, Balance, FTMS-Livewerte, FTMS-Control-Point-Kommandos/-Antworten, Sicherheitsgrenzen und Batterie einschließlich gekürzter Pakete; physische Testmatrix fehlt.
 
 ## P0 – D100, Click V2 und Indoor-Training
 
-- [ ] Van Rysel D100 als FTMS-Trainer verbinden, Features und Werte auslesen.
-- [ ] Exklusive FTMS-Steuerberechtigung sauber anfordern, verlieren und wiedererlangen.
-- [ ] Widerstand, Ziel-Leistung/ERG und simulierte Steigung innerhalb der vom Trainer gemeldeten Grenzen steuern.
-- [ ] Sicherheitsgrenzen, Timeout, Neutralstellung und sichtbaren Not-Stopp implementieren.
+- [~] Van Rysel D100 als FTMS-Trainer verbinden, Features und Werte auslesen; generischer FTMS-Pfad und explizite Trainerwahl sind implementiert, reale D100-Abnahme fehlt.
+- [~] Exklusive FTMS-Steuerberechtigung wird angefordert, pro App nur einem gewählten Trainer zugeordnet und bei Status `0xFF`, fehlender Bestätigung oder Trennung verworfen; Wiedererlangen mit echter Hardware bleibt zu testen.
+- [~] Widerstand, Ziel-Leistung/ERG und Steigung über Ziel-Inklination oder Indoor-Bike-Simulation werden nur bei gemeldeter Fähigkeit und innerhalb des Gerätebereichs gesendet; reale D100-Wirkung und Grenzwerte sind nicht abgenommen.
+- [~] Ein Befehl gleichzeitig, fünf Sekunden Timeout, sichere Simulationsgrenze von −10 bis +15 Prozent und sichtbarer Not-Stopp sind implementiert; automatische Neutralstellung und reale Fehler-/Verbindungstests fehlen.
 - [ ] ClickBridge-Core und -BLE aus `origin/codex/clickbridge-ios` mit Lizenzhinweisen in Streckenschmiede übernehmen, statt das Protokoll neu zu erfinden.
 - [ ] Zwei Click V2 gleichzeitig, feste Links-/Rechts-Zuordnung, Batteriestand, Entprellen, lange Tastendrücke und Reconnect.
 - [ ] Virtuelle Gänge mit konfigurierbarer Gangzahl/Übersetzung; Click verändert nur das Gangmodell, der Trainer-Controller bleibt alleiniger Eigentümer der D100-Kommandos.
 - [ ] Linken Click über mindestens 60 Minuten auf den historisch dokumentierten firmwareabhängigen Ausfall testen.
-- [ ] Indoor-Cockpit mit Leistung, Kadenz, Herzfrequenz, Gang, Widerstand, Zeit, Energie und Intervallen.
+- [~] Indoor-Cockpit zeigt Leistung, Kadenz, Herzfrequenz und FTMS-Steuerung für Widerstand/ERG/Steigung; Gang, Indoor-Zeit/Energie, Intervalle und anpassbare Felder fehlen.
 - [ ] Strukturierte Workouts mit Warm-up, Intervallen, ERG, frei fahren und Cool-down.
 
 ## P1 – Strecken, Historie, Statistik und Rekorde
@@ -288,4 +288,5 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 - Apple MapKit Fahrradrouting: <https://developer.apple.com/documentation/mapkit/mkdirectionstransporttype/cycling>
 - Valhalla-Routingprofile: <https://valhalla.github.io/valhalla/api/route/api-reference/>
 - Bluetooth-SIG Assigned Numbers: <https://www.bluetooth.com/specifications/assigned-numbers/>
+- Bluetooth Fitness Machine Service 1.0.1: <https://www.bluetooth.com/specifications/specs/fitness-machine-service-1-0-1/>
 - OSM-Kachelrichtlinie: <https://operations.osmfoundation.org/policies/tiles/>
