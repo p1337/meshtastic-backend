@@ -62,6 +62,11 @@ Kostenentscheidung:
 - `MKDirections` berechnet mit Transporttyp `.cycling` und angeforderten
   Alternativen. Distanz und Zeit stammen aus dem jeweiligen `MKRoute`-Objekt;
   die App erfindet keine Höhen- oder Untergrunddaten.
+- Apples Swift-Schreibweise `.cycling` steht erst im Xcode-26-SDK, obwohl der
+  zugehörige `MKDirectionsTransportType` laut Apple ab iOS 14 verfügbar ist.
+  Solange die bewährte Signierpipeline Xcode 16 nutzt, setzt die App deshalb
+  denselben dokumentierten Option-Set-Wert `1 << 3` direkt. Das ist keine
+  eigene Routinglogik, sondern nur eine Quellcode-Kompatibilitätsschicht.
 - Die gewählte Apple-Polyline wird in das providerneutrale Kartenmodell
   übernommen und kann deshalb auf Apple-, OSM- und CyclOSM-Basiskarten liegen.
 - Apple stellt keine Feinregler für Radweganteil, Gravel, Untergrund oder

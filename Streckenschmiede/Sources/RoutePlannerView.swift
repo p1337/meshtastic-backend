@@ -201,7 +201,11 @@ struct RoutePlannerView: View {
             let request = MKDirections.Request()
             request.source = MKMapItem(placemark: MKPlacemark(coordinate: origin))
             request.destination = item
-            request.transportType = .cycling
+            // Apple added the Swift `.cycling` spelling to the Xcode 26 SDK,
+            // while the option itself is available from iOS 14. Keep the
+            // release pipeline on its proven Xcode 16 signing image and use
+            // the documented option bit so the same request works there.
+            request.transportType = MKDirectionsTransportType(rawValue: 1 << 3)
             request.requestsAlternateRoutes = true
             request.departureDate = Date()
             let response = try await MKDirections(request: request).calculate()
