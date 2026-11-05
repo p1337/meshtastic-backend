@@ -144,6 +144,18 @@ struct LiveRideMap: View {
                 cameraRevision: cameraRevision,
                 followsPosition: $followsPosition
             )
+        case .cycleOSM:
+            RasterRideMap(
+                providerID: selectedMapLayer.rawValue,
+                tileTemplate: "https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png",
+                coordinates: coordinates,
+                plannedRoute: plannedRoute,
+                currentCoordinate: currentCoordinate,
+                courseDegrees: courseDegrees,
+                cameraTarget: rasterCameraTarget,
+                cameraRevision: cameraRevision,
+                followsPosition: $followsPosition
+            )
         case .openCycleMap:
             if let openCycleMapKey {
                 RasterRideMap(
@@ -229,6 +241,7 @@ struct LiveRideMap: View {
             }
             Section("OpenStreetMap") {
                 mapLayerButton(.openStreetMap)
+                mapLayerButton(.cycleOSM)
                 mapLayerButton(.openCycleMap, disabled: openCycleMapKey == nil)
                 if openCycleMapKey == nil {
                     Text("OpenCycleMap benötigt einen Thunderforest-Schlüssel")
@@ -391,6 +404,7 @@ private enum RideMapLayer: String, CaseIterable, Identifiable {
     case appleSatellite
     case appleHybrid
     case openStreetMap
+    case cycleOSM
     case openCycleMap
 
     var id: String { rawValue }
@@ -401,6 +415,7 @@ private enum RideMapLayer: String, CaseIterable, Identifiable {
         case .appleSatellite: "Apple Satellit"
         case .appleHybrid: "Apple Hybrid"
         case .openStreetMap: "OpenStreetMap"
+        case .cycleOSM: "OSM Fahrrad · CyclOSM"
         case .openCycleMap: "OpenCycleMap"
         }
     }
@@ -411,17 +426,18 @@ private enum RideMapLayer: String, CaseIterable, Identifiable {
         case .appleSatellite: "globe.americas.fill"
         case .appleHybrid: "square.2.layers.3d"
         case .openStreetMap: "signpost.right.and.left"
-        case .openCycleMap: "bicycle"
+        case .cycleOSM, .openCycleMap: "bicycle"
         }
     }
 
     var usesOSMData: Bool {
-        self == .openStreetMap || self == .openCycleMap
+        self == .openStreetMap || self == .cycleOSM || self == .openCycleMap
     }
 
     var attribution: String {
         switch self {
         case .openStreetMap: "© OpenStreetMap contributors"
+        case .cycleOSM: "CyclOSM · © OpenStreetMap contributors"
         case .openCycleMap: "Maps © Thunderforest · Data © OpenStreetMap contributors"
         default: ""
         }
@@ -429,6 +445,7 @@ private enum RideMapLayer: String, CaseIterable, Identifiable {
 
     var attributionURL: String {
         switch self {
+        case .cycleOSM: "https://www.cyclosm.org/"
         case .openCycleMap: "https://www.thunderforest.com/terms/"
         default: "https://www.openstreetmap.org/copyright"
         }

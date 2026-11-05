@@ -48,6 +48,11 @@ Kostenentscheidung:
   Thunderforest-Key aktiv. Thunderforest nennt aktuell einen kostenlosen
   Hobby-Tarif mit begrenztem Monatskontingent und kostenpflichtige Folgetarife;
   Konto, Schlüssel und Kostenlimit sind vor Aktivierung zu entscheiden.
+- Als sofort nutzbare offene Fahrradkarte wird CyclOSM separat angeboten. Die
+  Projektbetreiber veröffentlichen Stil und Kacheladresse und erlauben die
+  Wiederverwendung unter der allgemeinen OSM-Tile-Policy. Streckenschmiede
+  behandelt diese Ebene daher wie OSM Carto: nur sichtbare interaktive
+  Kacheln, identifizierter Client, HTTP-Cache, Attribution und kein Prefetch.
 - Jeder Download zeigt Gebiet, Zoomspanne, geschätzte Größe, Stand, Attribution und Löschen-Schaltfläche. Begonnene Navigation speichert Route und Manöver unabhängig von der Kartenoptik lokal.
 
 ## Position anderer Personen

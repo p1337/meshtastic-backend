@@ -237,11 +237,12 @@ private final class PolicyTileOverlay: MKTileOverlay {
         at path: MKTileOverlayPath,
         result: @escaping (Data?, (any Error)?) -> Void
     ) {
-        let value = template
-            .replacingOccurrences(of: "{z}", with: String(path.z))
-            .replacingOccurrences(of: "{x}", with: String(path.x))
-            .replacingOccurrences(of: "{y}", with: String(path.y))
-        guard let url = URL(string: value) else {
+        guard let url = TileURLTemplate.url(
+            template: template,
+            x: path.x,
+            y: path.y,
+            z: path.z
+        ) else {
             result(nil, URLError(.badURL))
             return
         }
