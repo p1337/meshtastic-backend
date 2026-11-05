@@ -47,6 +47,16 @@ payloadChecksum: gekürztes SHA-256 der kanonischen Nutzdaten
 
 Der QR-Code verwendet hohe Fehlerkorrektur. Die präzise Position ist standardmäßig nicht erforderlich: `rideID`, UTC und Fahrtzeit verknüpfen das Video mit der lokal gespeicherten GPS-Spur. Eine Einstellung kann die aktuelle Position zusätzlich einbetten, wenn der Nutzer einen auch außerhalb der App interpretierbaren Anker möchte. In exportierten oder veröffentlichten Videos kann ein lesbarer QR-Code Standort und Zeit verraten; darauf weist die Oberfläche hin.
 
+Die kanonische Prüfsummenfolge ist UTF-8 über die obigen neun Felder ohne
+`payloadChecksum`, in genau dieser Reihenfolge und mit `|` getrennt. Fehlende
+optionale Standortfelder sind leere Felder. Die Prüfsumme besteht aus den
+ersten acht Byte des SHA-256-Digests als 16 kleingeschriebene Hex-Zeichen.
+Version 1 verlangt eine kanonische kleingeschriebene UUID, UTC mit
+Millisekunden, nichtnegative Sequenz/Fahrtzeit und entweder beide E7-
+Koordinaten oder keine. Genauigkeit darf nur zusammen mit Koordinaten stehen.
+Der feste CI-Testvektor und Manipulationstests verhindern unbemerkte
+Formatänderungen; die spätere Vision-Pipeline muss denselben Decoder verwenden.
+
 ## Zuordnungsalgorithmus
 
 1. Video aus Fotos, Dateien oder per OTG auswählen, ohne das Original ungefragt zu duplizieren.
@@ -77,7 +87,8 @@ Qualitätsstufen:
 
 ## Umzusetzende Einheiten
 
-1. `CameraSyncPayload` mit kanonischer Kodierung, Prüfsumme und Tests.
+1. ✅ `CameraSyncPayload` mit kanonischer Kodierung, Prüfsumme, strikter
+   Validierung, Datenschutzfällen und festem Referenzvektor.
 2. Vollbild-QR-Generator mit Start/Checkpoint/Ende, Countdown, Helligkeitsoption und Datenschutzschalter für GPS im Code.
 3. FIT-Export mit Fahrtzeit, Position, Höhe, Geschwindigkeit, Puls, Kadenz und Leistung, soweit vorhanden.
 4. Videoimport und AVFoundation-Metadaten-/Timecode-Inspektion.

@@ -1,90 +1,9 @@
 import CoreImage
 import CoreImage.CIFilterBuiltins
 import CoreLocation
-import CryptoKit
 import Foundation
 import SwiftUI
 import UIKit
-
-enum CameraSyncEvent: String, Codable, CaseIterable, Identifiable {
-    case start
-    case checkpoint
-    case end
-
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .start: return "Start"
-        case .checkpoint: return "Checkpoint"
-        case .end: return "Ende"
-        }
-    }
-}
-
-struct CameraSyncPayload: Codable, Equatable {
-    let version: Int
-    let rideID: String
-    let event: CameraSyncEvent
-    let sequence: Int
-    let utc: String
-    let rideElapsedMilliseconds: Int64
-    let latitudeE7: Int?
-    let longitudeE7: Int?
-    let horizontalAccuracyCentimeters: Int?
-    let payloadChecksum: String
-
-    static func make(
-        rideID: UUID,
-        event: CameraSyncEvent,
-        sequence: Int,
-        date: Date,
-        rideElapsedMilliseconds: Int64,
-        coordinate: CLLocationCoordinate2D?,
-        horizontalAccuracy: Double?,
-        includeGPS: Bool
-    ) -> CameraSyncPayload {
-        let utc = cameraSyncDateFormatter.string(from: date)
-        let latitudeE7 = includeGPS ? coordinate.map { Int(($0.latitude * 10_000_000).rounded()) } : nil
-        let longitudeE7 = includeGPS ? coordinate.map { Int(($0.longitude * 10_000_000).rounded()) } : nil
-        let accuracy = includeGPS ? horizontalAccuracy.flatMap { $0 >= 0 ? Int(($0 * 100).rounded()) : nil } : nil
-        let rideIDText = rideID.uuidString.lowercased()
-        let latitudeText = latitudeE7.map { String($0) } ?? ""
-        let longitudeText = longitudeE7.map { String($0) } ?? ""
-        let accuracyText = accuracy.map { String($0) } ?? ""
-        let fields: [String] = [
-            "1", rideIDText, event.rawValue, String(sequence), utc,
-            String(rideElapsedMilliseconds), latitudeText, longitudeText, accuracyText
-        ]
-        let canonical = fields.joined(separator: "|")
-        let digest = SHA256.hash(data: Data(canonical.utf8))
-        let checksum = digest.prefix(8).map { String(format: "%02x", $0) }.joined()
-        return CameraSyncPayload(
-            version: 1,
-            rideID: rideIDText,
-            event: event,
-            sequence: sequence,
-            utc: utc,
-            rideElapsedMilliseconds: rideElapsedMilliseconds,
-            latitudeE7: latitudeE7,
-            longitudeE7: longitudeE7,
-            horizontalAccuracyCentimeters: accuracy,
-            payloadChecksum: checksum
-        )
-    }
-
-    func encodedData() throws -> Data {
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
-        return try encoder.encode(self)
-    }
-}
-
-private let cameraSyncDateFormatter: ISO8601DateFormatter = {
-    let formatter = ISO8601DateFormatter()
-    formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-    return formatter
-}()
 
 private enum CameraQRCodeGenerator {
     static let context = CIContext(options: [.useSoftwareRenderer: false])
@@ -217,7 +136,8 @@ struct CameraSyncView: View {
             sequence: sequence,
             date: Date(),
             rideElapsedMilliseconds: ride.elapsedMilliseconds,
-            coordinate: ride.currentCoordinate,
+            latitude: ride.currentCoordinate?.latitude,
+            longitude: ride.currentCoordinate?.longitude,
             horizontalAccuracy: ride.currentHorizontalAccuracy,
             includeGPS: includeGPS
         )

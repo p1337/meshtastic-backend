@@ -41,6 +41,9 @@ Verbindlicher Gesamtumfang und Abnahmestatus: [TODO.md](TODO.md) · Technische Z
   Radumfang wird direkt für BLE-Geschwindigkeitssensoren verwendet;
   Pedalbalance und BLE-Umgebungstemperatur sind zusätzlich als frei wählbare
   Datenfelder verfügbar;
+  das optische DJI-Sync-Protokoll validiert Fahrt-ID, monotone Fahrtzeit,
+  optionale GPS-Koordinaten und die gekürzte SHA-256-Prüfsumme vor einer
+  späteren Videozuordnung;
   atomare Notfall-Wiederherstellung, Distanz und Tages-GPX-Export; Planung,
   Import, Teilen und Kamera-Sync liegen außerhalb der störungsfreien Fahrkarte
 - **Indoor:** gleichzeitige BLE-Sensorverbindungen mit Puls, Tempo,

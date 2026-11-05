@@ -397,6 +397,18 @@ Verbindliches erstes Modell ist die **DJI Osmo Action 5 Pro**. Die detaillierte 
 
 Primär wird das Video nach der Fahrt mit der unabhängig aufgezeichneten Streckenschmiede-Spur verbunden. Ein gefilmter Start-QR liefert den Zeitversatz; ein Endcode oder weitere Checkpoints ermöglichen eine lineare Driftkorrektur. AVFoundation-Timecode und Aufnahmemetadaten sind zusätzliche Anker. FIT-Export ermöglicht den von DJI dokumentierten Import in Mimo.
 
+`CameraSyncPayload` ist der reine, UI-unabhängige Protokollkern. Version 1
+bildet Version, kanonische kleingeschriebene Fahrt-UUID, Ereignis, Sequenz,
+UTC mit Millisekunden, monotone Fahrtzeit sowie optionale E7-Koordinaten und
+Zentimeter-Genauigkeit in genau dieser Reihenfolge mit `|` zu einer
+kanonischen UTF-8-Folge. Die ersten acht Byte des SHA-256-Digests werden als
+16 kleingeschriebene Hex-Zeichen mitgeführt. Decoder akzeptieren nur bekannte
+Versionen, vollständige Koordinatenpaare, plausible Bereiche, kanonische Zeit
+und UUID sowie eine passende Prüfsumme. Der Datenschutzmodus lässt alle drei
+Standortfelder weg; er schreibt keine Platzhalterkoordinate. Dieser Kern ist
+separat von Core Image und SwiftUI referenzvektorgeprüft, damit die spätere
+Vision-Erkennung exakt denselben Validator wiederverwendet.
+
 Der optionale `CameraAdapter` darf weder Fahrt- noch Trainer-Session besitzen. Eine direkte Kamerasteuerung wird erst aktiviert, wenn eine offiziell dokumentierte oder anderweitig rechtlich nutzbare Schnittstelle und echte Hardwaretests vorliegen. Bis dahin ist der DJI GPS Bluetooth Remote Controller der offizielle Start-/Stop-/GNSS-Weg. Kameraereignisse verwenden immer monotone Fahrtzeit; Systemzeitänderungen dürfen die Zuordnung nicht zerstören.
 
 Eine spätere rückwärts gerichtete Cockpit-Vorschau ist ein eigener

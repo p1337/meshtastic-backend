@@ -38,7 +38,11 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
   Material-Blur; er reserviert keinen Platz und verschiebt die Karte nicht.
   Kompass links sowie Outdoor/Indoor/Einstellungen rechts sitzen höher in der
   freien Zeile direkt unter dem Statusbereich
-- Erster DJI-Action-5-Pro-Sync-Bildschirm mit Start-/Checkpoint-/End-QR, Fahrt-ID, UTC, Fahrtzeit, Prüfsumme und optionaler GPS-Position
+- Erster DJI-Action-5-Pro-Sync-Bildschirm mit Start-/Checkpoint-/End-QR,
+  Fahrt-ID, UTC, Fahrtzeit, Prüfsumme und optionaler GPS-Position. Das
+  zugrunde liegende Protokoll v1 besitzt eine kanonische Bytefolge, einen
+  stabilen SHA-256-Testvektor, validiert empfangene Codes strikt und lässt im
+  Datenschutzmodus weder Koordinaten noch Genauigkeit in den QR-Code einfließen
 - GPX-Import aus Dateien sowie Empfang über „Öffnen mit“/Teilen aus WhatsApp, Komoot und anderen Apps
 - Live-Karte mit geplanter GPX-Linie, Fahrtrichtung/Vorausblick, eindeutigem
   Fadenkreuz-Zentrieren-Knopf und 84-Punkte-Handschuhsteuerung unten: Minus
@@ -128,7 +132,9 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
 - Reale D100-Abnahme, Neutralstellung nach Fehlerfällen und Langzeittest der
   FTMS-Steuerung; der standardkonforme erste Steuerpfad ist vorhanden
 - Zwift Click V2 Tastenprotokoll und virtuelle Schaltung
-- DJI Osmo Action 5 Pro Videoimport, QR-/Timecode-/FIT-Synchronisierung und optionale Kamerasteuerung; das technische Konzept ist dokumentiert
+- DJI Osmo Action 5 Pro Videoimport, QR-/Timecode-/FIT-Synchronisierung und
+  optionale Kamerasteuerung; das QR-Nutzdatenformat ist getestet, Videoimport,
+  Vision-Erkennung, Driftkorrektur und FIT fehlen noch
 - Offline-Vektorkarten/OSM-Fahrradstil, Komoot-Kontosync und freiwillige Gruppenpositionen; Grenzen und Providerentscheidung sind dokumentiert
 - Trainingsplan-Bibliothek, Geistfahrt gegen eine eigene gespeicherte Fahrt,
   Apple-TV-App und Apple Look Around
