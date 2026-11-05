@@ -53,7 +53,7 @@ Kostenentscheidung:
   Wiederverwendung unter der allgemeinen OSM-Tile-Policy. Streckenschmiede
   behandelt diese Ebene daher wie OSM Carto: nur sichtbare interaktive
   Kacheln, identifizierter Client, HTTP-Cache, Attribution und kein Prefetch.
-- Jeder Download zeigt Gebiet, Zoomspanne, geschätzte Größe, Stand, Attribution und Löschen-Schaltfläche. Begonnene Navigation speichert Route und Manöver unabhängig von der Kartenoptik lokal.
+- Jeder Download zeigt Gebiet, Zoomspanne, geschätzte Größe, Stand, Attribution und Löschen-Schaltfläche. Die ausgewählte Apple- oder importierte GPX-Route wird einschließlich Manövern unabhängig von der Kartenoptik atomar lokal gespeichert, nach einem App-Neustart wiederhergestellt und erst über „Navigation beenden“ entfernt. Das ist noch keine benannte Routenbibliothek.
 
 ## Erste Apple-Fahrradplanung
 

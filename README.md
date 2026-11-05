@@ -16,7 +16,8 @@ Verbindlicher Gesamtumfang und Abnahmestatus: [TODO.md](TODO.md) · Technische Z
   die offene Fahrradkarte CyclOSM;
   erster Zielplaner mit Adress-/POI-Suche, Apple-Fahrradrouten und Alternativen;
   kompakte Live-Führung mit nächstem Apple-Manöver, Entfernung, Reststrecke,
-  Restzeit und sichtbarer Routenabweichung;
+  Restzeit und sichtbarer Routenabweichung; die aktive Apple- oder GPX-Route
+  bleibt über einen App-Neustart erhalten und kann ausdrücklich beendet werden;
   einstellbare GPS-Auto-Pause mit Verzögerung, Hysterese und sicherem Vorrang
   der manuellen Pause;
   GPS-Fahrt mit Pause/Fortsetzen, atomarer Notfall-Wiederherstellung, Distanz

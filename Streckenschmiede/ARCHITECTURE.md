@@ -79,6 +79,13 @@ Persistente Hauptobjekte:
 
 SwiftData ist für Indizes und Metadaten vorgesehen. Große zeitliche Reihen werden kompakt und atomar dateibasiert gespeichert, damit eine lange Fahrt nicht durch tausende UI-Datenbankänderungen belastet wird. Ein migrationsfähiges Format und Roundtrip-Tests sind Pflicht, bevor produktive Daten entstehen.
 
+Die erste aktive Navigation verwendet `RoutePlanStore`: Apple- und GPX-Pläne
+werden als versionierter, größen- und punktbegrenzter JSON-Umschlag atomar in
+`Application Support/Streckenschmiede/active-route-v1.json` geschrieben. Beim
+App-Start wird ausschließlich ein validierter Plan wiederhergestellt. Das
+sichtbare X beendet die Navigation und entfernt diese Sicherung; sie ist noch
+keine benannte Routenbibliothek und ersetzt nicht die spätere SwiftData-Struktur.
+
 ## Metrik- und Quellenpriorität
 
 Jede Messgröße besitzt eine eigene Priorität, keine pauschale „bestes Gerät“-Regel. Voreinstellung:

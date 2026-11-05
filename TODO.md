@@ -63,7 +63,7 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 - [~] Querabstand zur Route wird laufend berechnet und ab 60 Metern sichtbar gewarnt; zeitliche Entprellung, akustische/haptische Warnung und kontrollierte Neuberechnung mit Erhalt der ursprünglichen Route fehlen.
 - [ ] Sprachansagen und Apple-Watch-Haptik mit getrennten Lautstärke-/Hinweisoptionen.
 - [ ] GPX-Route kann als Navigationsroute ohne Neuberechnung verfolgt oder auf das Wegenetz angepasst werden.
-- [ ] Routen und erforderliche Manöverdaten für eine begonnene Fahrt lokal speichern.
+- [~] Die aktive Apple- oder GPX-Route samt Manövern wird versioniert, begrenzt und atomar lokal gespeichert, nach App-Neustart wiederhergestellt und kann ausdrücklich beendet werden; eine benannte Routenbibliothek und der echte Relaunch-/Navigationstest auf dem iPhone fehlen.
 - [ ] Für Offline-Karten nur einen Provider oder eigene Vektorkacheln verwenden, der Offline-/Prefetch ausdrücklich erlaubt; `tile.openstreetmap.org` nicht vorladen.
 - [ ] MapLibre-Native-Prototyp mit explizit offline erlaubten PMTiles/MBTiles; Gebiet, Zoomspanne, Größe, Fortschritt, Stand, Attribution und Löschen anzeigen.
 - [ ] Umschaltbaren OSM-Fahrradstil erst nach eindeutiger Provider-, Lizenz-, Offline- und Kostenentscheidung integrieren; „OpenBikeMap“ ist als Anbieterbezeichnung zu präzisieren.
@@ -167,7 +167,7 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 
 ## Qualität, Datenschutz und Veröffentlichung
 
-- [~] CI-Selbsttests decken Sitzungszustände, getrennte Zeiten, GPS-Sprungfilter, atomare Relaunch-Wiederherstellung, dauerhafte Vordergrund-Liveposition versus Hintergrund-Aufzeichnung, Auto-Pause einschließlich manuellem Vorrang, Routenfortschritt/Restwerte/Manöver/Querabstand, ausschließlich sichere vollständig aufgelöste HTTPS-Kachel-URLs sowie BLE-/FTMS-Paketparser ab; Dateiformate und Routingprofile fehlen.
+- [~] CI-Selbsttests decken Sitzungszustände, getrennte Zeiten, GPS-Sprungfilter, atomare Relaunch-Wiederherstellung, dauerhafte Vordergrund-Liveposition versus Hintergrund-Aufzeichnung, Auto-Pause einschließlich manuellem Vorrang, Routenfortschritt/Restwerte/Manöver/Querabstand, atomaren Roundtrip und Validierung der aktiven Route, ausschließlich sichere vollständig aufgelöste HTTPS-Kachel-URLs sowie BLE-/FTMS-Paketparser ab; Dateiformate und Routingprofile fehlen.
 - [ ] UI-/Simulator-Smoke-Test für beide Hauptreiter, Einstellungen, Historie, Routenplaner und Wiederherstellung.
 - [ ] Reale iPhone-Testfahrten: mindestens 30 und 120 Minuten, Display an/aus, Hintergrund, Telefonat, Bluetooth-Abbruch, GPS-Lücke und Akkumessung.
 - [ ] Reale Watch-Testfahrt mit gespiegelter Session und anschließendem Health-/Fitness-Nachweis.
