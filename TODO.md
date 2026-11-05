@@ -139,6 +139,7 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 ## P0 – modernes Fahrt-Cockpit und Karten
 
 - [~] Bildschirmfüllende schwarze/orange Karten-Cockpitansicht beginnt oben und legt Live-Werte kompakt über die Karte; Anpassbarkeit, vollständige Dynamic-Type- und Geräteabnahme bleiben offen.
+- [~] Eine breite, mindestens 64 Punkte hohe orange Haupttaste startet die Aufzeichnung ausdrücklich; GPS-Liveposition und Hilfswerkzeuge bleiben davon getrennt. Reale Handschuh- und Geräteabnahme steht aus.
 - [ ] Anpassbare Datenfelder und mindestens drei speicherbare Cockpit-Layouts.
 - [~] Live-Karte mit aktueller Position, gefahrenem Track und geplanter GPX-Linie im Fahrtbild; Abweichung und echte Navigation fehlen noch.
 - [ ] Kartenmodi: Standard, Satellit, Hybrid und OSM-basierte Darstellung mit sichtbarer Quellenangabe.

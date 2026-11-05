@@ -12,6 +12,8 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
 - Dauerhafte Live-Position und Live-Kurs im geöffneten Kartenbild bereits vor
   dem Aufzeichnungsstart und während manueller Pause; Trackpunkte werden davon
   getrennt ausschließlich im Zustand „Aufzeichnung läuft“ gespeichert
+- Breite orange Haupttaste „Aufzeichnung starten“ getrennt von Import-, Kamera-
+  und Teilen-Werkzeugen; Pause/Fortsetzen und Stopp bleiben große Fahrtaktionen
 - Hintergrund-Ortung ist für eine laufende Fahrt konfiguriert; die echte
   Sperrbildschirm- und Langzeittestfahrt steht noch aus
 - Bildschirmfüllendes, oben beginnendes Karten-Cockpit mit kompakten

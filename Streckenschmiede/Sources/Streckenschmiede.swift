@@ -580,19 +580,23 @@ private struct RideDashboard: View {
             .background(.black.opacity(0.82), in: RoundedRectangle(cornerRadius: 16))
             .overlay(RoundedRectangle(cornerRadius: 16).stroke(.white.opacity(0.15)))
 
-            HStack(spacing: 9) {
-                primaryRideButton
-                if ride.active {
+            if ride.active {
+                HStack(spacing: 10) {
+                    primaryRideButton
                     Button { ride.stop() } label: {
                         Image(systemName: "stop.fill")
                             .font(.title2.weight(.bold))
-                            .frame(width: 54, height: 54)
+                            .frame(width: 60, height: 60)
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.red)
                     .accessibilityLabel("Fahrt beenden")
                 }
+            } else {
+                primaryRideButton
+            }
 
+            HStack(spacing: 14) {
                 Button { importing = true } label: {
                     Image(systemName: "square.and.arrow.down")
                         .font(.title2.weight(.bold))
@@ -623,6 +627,7 @@ private struct RideDashboard: View {
                     .accessibilityLabel("Aufgezeichnete GPX teilen")
                 }
             }
+            .frame(maxWidth: .infinity)
         }
     }
 
@@ -633,22 +638,23 @@ private struct RideDashboard: View {
                 if ride.isPaused { ride.resume() } else { ride.pause() }
             } label: {
                 Label(
-                    ride.isPaused ? "Fortsetzen" : "Pause",
+                    ride.isPaused ? "Aufzeichnung fortsetzen" : "Aufzeichnung pausieren",
                     systemImage: ride.isPaused ? "play.fill" : "pause.fill"
                 )
                 .font(.headline)
-                .frame(maxWidth: .infinity, minHeight: 54)
+                .frame(maxWidth: .infinity, minHeight: 60)
             }
             .buttonStyle(.borderedProminent)
             .tint(.orange)
         } else if !ride.recoveryAvailable {
             Button { ride.start() } label: {
-                Label("Start", systemImage: "play.fill")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity, minHeight: 54)
+                Label("Aufzeichnung starten", systemImage: "play.fill")
+                    .font(.title3.weight(.bold))
+                    .frame(maxWidth: .infinity, minHeight: 64)
             }
             .buttonStyle(.borderedProminent)
             .tint(.orange)
+            .accessibilityHint("Beginnt das Speichern der GPS-Spur und Fahrtdaten")
         }
     }
 
