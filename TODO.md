@@ -119,7 +119,7 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 - [ ] Virtuelle Gänge mit konfigurierbarer Gangzahl/Übersetzung; Click verändert nur das Gangmodell, der Trainer-Controller bleibt alleiniger Eigentümer der D100-Kommandos.
 - [ ] Linken Click über mindestens 60 Minuten auf den historisch dokumentierten firmwareabhängigen Ausfall testen.
 - [~] Indoor-Cockpit zeigt Leistung, Kadenz, Herzfrequenz und FTMS-Steuerung für Widerstand/ERG/Steigung; Gang, Indoor-Zeit/Energie, Intervalle und anpassbare Felder fehlen.
-- [ ] Im Indoor-Bereich alle gespeicherten gefahrenen Strecken als Bibliothek zeigen: je Fahrt eine Karten-Vorschau mit der gefahrenen Linie, Datum/Name, Distanz, Zeiten, Tempo, Auf-/Abstieg und verfügbare Sensordaten. Jeder Eintrag muss nach ausdrücklicher Bestätigung einschließlich Historieneintrag und zugehöriger lokaler GPX-Datei sicher löschbar sein.
+- [~] Der Indoor-Bereich verlinkt eine lazy geladene Bibliothek aller lokal gespeicherten Tagesfahrten. Jede Karte zeigt die defensiv gelesene und auf höchstens 2.000 Vorschaupunkte reduzierte GPX-Linie, Datum, Distanz, Fahrt-/Pausenzeit, Ø/Maximum, Auf-/Abstieg und Punktzahl. Abgeschlossene Einträge werden erst nach Bestätigung transaktional aus Historie und GPX gelöscht; bei einem Fehler wird zurückgerollt, die laufende Tagesfahrt bleibt geschützt. Benannte Teilstrecken, persistierte Sensorzusammenfassungen, Simulatorbild und echte Löschabnahme fehlen.
 - [ ] Strukturierte Workouts mit Warm-up, Intervallen, ERG, frei fahren und Cool-down.
 - [ ] Trainingsplan-Bibliothek mit Vorlagen, selbst erstellbaren Einheiten, Kalender/Planfortschritt, Zielbereichen für Leistung, Puls und Kadenz sowie sicherer Pause/Fortsetzung.
 - [ ] Indoor-„Geistfahrt“ gegen eine eigene gespeicherte Referenzfahrt: Fortschritt entlang derselben Distanz/Route, Zeitabstand, bisherige und aktuelle Leistung/Kadenz/Puls, persönliche Bestzeit und Datenschutz vollständig lokal; Trainerziele laufen weiterhin ausschließlich über `TrainerCore` und seine Sicherheitsgrenzen.
@@ -127,7 +127,7 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 ## P1 – Strecken, Historie, Statistik und Rekorde
 
 - [ ] Persistente Streckenbibliothek mit Karten-Vorschau, Name, Distanz, erwarteter Zeit, Auf-/Abstieg und Auswahlstatus.
-- [~] Erste versionierte, atomare und lokale Tagesfahrten-Historie mit Datum, Distanz, Gesamt-/Fahrt-/Pausenzeit, Durchschnitt, Maximum, Auf-/Abstieg, Punktzahl und einzeln teilbarer GPX. Karten-Vorschau/eigenes Foto, Höhenwert und Sensorzusammenfassung fehlen noch.
+- [~] Erste versionierte, atomare und lokale Tagesfahrten-Historie mit Datum, Distanz, Gesamt-/Fahrt-/Pausenzeit, Durchschnitt, Maximum, Auf-/Abstieg, Punktzahl und einzeln teilbarer GPX. Die Indoor-Bibliothek erzeugt Karten-Vorschauen aus derselben GPX ohne zweite Historie und besitzt getestetes transaktionales Löschen; eigenes Foto, Höhenwert, Sensorzusammenfassung und echte Geräteabnahme fehlen noch.
 - [ ] Detailansicht mit Karte, Höhenprofil und Diagrammen über Zeit/Distanz für Geschwindigkeit, Herzfrequenz, Trittfrequenz und Leistung.
 - [ ] Statistik nach Woche, Monat, Jahr und frei gewähltem Zeitraum.
 - [ ] Rekorde und Gesamtsummen; Indoor/Outdoor, Fahrrad und Sensorquelle filterbar.
@@ -200,7 +200,7 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 
 ## Qualität, Datenschutz und Veröffentlichung
 
-- [~] CI-Selbsttests decken Sitzungszustände, getrennte Zeiten, GPS-Sprungfilter, atomare Relaunch-Wiederherstellung, dauerhafte Vordergrund-Liveposition versus Hintergrund-Aufzeichnung, Auto-Pause einschließlich manuellem Vorrang, Routenfortschritt/Restwerte/Manöver/Querabstand, atomaren Roundtrip und Validierung der aktiven Route, ausschließlich sichere vollständig aufgelöste HTTPS-Kachel-URLs sowie BLE-/FTMS-Paketparser ab; Dateiformate und Routingprofile fehlen.
+- [~] CI-Selbsttests decken Sitzungszustände, getrennte Zeiten, GPS-Sprungfilter, atomare Relaunch-Wiederherstellung, dauerhafte Vordergrund-Liveposition versus Hintergrund-Aufzeichnung, Auto-Pause einschließlich manuellem Vorrang, Fahrradprofil-Roundtrip/Radumfang, Fahrtenhistorie einschließlich sicherem GPX-Löschen, Routenfortschritt/Restwerte/Manöver/Querabstand, atomaren Roundtrip und Validierung der aktiven Route, ausschließlich sichere vollständig aufgelöste HTTPS-Kachel-URLs sowie BLE-/FTMS-Paketparser ab; Dateiformate und Routingprofile fehlen.
 - [~] Der Apple-Build startet den Outdoor-Hauptreiter auf einem iPhone-Simulator mit gesetzter Testposition, erzeugt einen echten Screenshot und veröffentlicht ihn als Build-Artefakt sowie `ui-outdoor.png` zur visuellen Prüfung. Automatisierte Screenshots für Indoor, Einstellungen, Routenplaner, Navigation und Wiederherstellung fehlen.
 - [ ] Reale iPhone-Testfahrten: mindestens 30 und 120 Minuten, Display an/aus, Hintergrund, Telefonat, Bluetooth-Abbruch, GPS-Lücke und Akkumessung.
 - [ ] Reale Watch-Testfahrt mit gespiegelter Session und anschließendem Health-/Fitness-Nachweis.

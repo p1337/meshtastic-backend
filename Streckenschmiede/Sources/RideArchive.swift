@@ -81,6 +81,64 @@ enum RideArchiveStore {
         if entries.count > maximumEntries {
             entries.removeLast(entries.count - maximumEntries)
         }
+        try persist(entries, to: url)
+        return entries
+    }
+
+    @discardableResult
+    static func delete(
+        _ entry: RideArchiveEntry,
+        storeURL: URL? = nil,
+        documentsURL: URL? = nil
+    ) throws -> [RideArchiveEntry] {
+        guard entry.isValid else { throw archiveError("Ungültiger Historieneintrag") }
+        let archiveURL = storeURL ?? defaultStoreURL()
+        let originalEntries = try load(storeURL: archiveURL)
+        guard originalEntries.contains(where: { $0.id == entry.id }) else {
+            throw archiveError("Fahrt wurde nicht gefunden")
+        }
+        guard let gpxURL = gpxURL(for: entry, documentsURL: documentsURL) else {
+            throw archiveError("Ungültiger GPX-Dateipfad")
+        }
+        let fileManager = FileManager.default
+        let backupURL = gpxURL.deletingLastPathComponent().appendingPathComponent(
+            ".streckenschmiede-delete-\(UUID().uuidString).gpx",
+            isDirectory: false
+        )
+        var movedGPX = false
+        if fileManager.fileExists(atPath: gpxURL.path) {
+            try fileManager.moveItem(at: gpxURL, to: backupURL)
+            movedGPX = true
+        }
+
+        var remaining = originalEntries
+        remaining.removeAll { $0.id == entry.id }
+        do {
+            try persist(remaining, to: archiveURL)
+            if movedGPX {
+                do {
+                    try fileManager.removeItem(at: backupURL)
+                } catch {
+                    try? persist(originalEntries, to: archiveURL)
+                    try? fileManager.moveItem(at: backupURL, to: gpxURL)
+                    throw archiveError("GPX-Datei konnte nicht sicher gelöscht werden")
+                }
+            }
+            return remaining
+        } catch {
+            if movedGPX, fileManager.fileExists(atPath: backupURL.path) {
+                try? fileManager.moveItem(at: backupURL, to: gpxURL)
+            }
+            throw error
+        }
+    }
+
+    private static func persist(_ entries: [RideArchiveEntry], to url: URL) throws {
+        guard entries.count <= maximumEntries,
+              entries.allSatisfy(\.isValid),
+              Set(entries.map(\.dayIdentifier)).count == entries.count else {
+            throw archiveError("Ungültige Fahrtenhistorie")
+        }
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .millisecondsSince1970
         encoder.outputFormatting = [.sortedKeys]
@@ -91,7 +149,6 @@ enum RideArchiveStore {
         try encoder.encode(
             RideArchiveEnvelope(schemaVersion: 1, entries: entries)
         ).write(to: url, options: .atomic)
-        return entries
     }
 
     static func gpxURL(

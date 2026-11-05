@@ -18,7 +18,11 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
   Fahrtkarte in die Einstellungen verschoben
 - Erste lokale Tagesfahrten-Historie unter Einstellungen: Datum, Distanz,
   Fahrtzeit, Durchschnitt, Maximum, Auf-/Abstieg und GPS-Punktzahl werden
-  versioniert und atomar gesichert; jede Tages-GPX ist einzeln teilbar
+  versioniert und atomar gesichert; jede Tages-GPX ist einzeln teilbar. Im
+  Indoor-Bereich zeigt eine eigene Bibliothek jede gespeicherte Fahrt als
+  Karten-Vorschau mit orangefarbener GPX-Linie und Datenkarte. Abgeschlossene
+  Einträge lassen sich nach Bestätigung transaktional samt GPX löschen; eine
+  gerade laufende Tagesfahrt bleibt geschützt
 - Einstellbare GPS-Auto-Pause: Geschwindigkeit und Verzögerung sind wählbar,
   Wiederanfahren setzt automatisch fort, und eine manuelle Pause kann durch
   Bewegung niemals aufgehoben werden; reale Stop-and-go-Testfahrt steht aus
@@ -112,8 +116,8 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
 - Reale Abnahme der GPS-Aufzeichnung bei gesperrtem Display und nach einem
   erzwungenen App-/Telefonneustart
 - Persistente Fahrtenbibliothek
-- Indoor-Streckenbibliothek aller Fahrten mit Karten-Vorschau, Daten und
-  bestätigtem Löschen von Eintrag und zugehöriger GPX-Datei
+- Benannte, segmentierte Strecken statt der derzeitigen Tagesfahrten sowie
+  persistierte Sensorzusammenfassungen für die Indoor-Streckenbibliothek
 - Apple-Watch-Begleit-App, HealthKit-Workout/-Route und Übergabe an Apple Fitness
 - Vollständige Hardwareabnahme, dauerhafte Fahrradzuordnung und Quellenpriorität
   für standardisierte BLE-Sensoren

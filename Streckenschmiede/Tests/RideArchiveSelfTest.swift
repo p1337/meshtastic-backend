@@ -32,6 +32,22 @@ enum RideArchiveSelfTest {
         let gpxURL = RideArchiveStore.gpxURL(for: corrected, documentsURL: documentsURL)
         archiveExpect(gpxURL?.lastPathComponent == "Tagesfahrt-2026-11-04.gpx", "GPX URL must remain inside Documents")
 
+        let firstGPX = RideArchiveStore.gpxURL(for: corrected, documentsURL: documentsURL)!
+        let secondGPX = RideArchiveStore.gpxURL(for: second, documentsURL: documentsURL)!
+        try Data("first".utf8).write(to: firstGPX, options: .atomic)
+        try Data("second".utf8).write(to: secondGPX, options: .atomic)
+        let afterDelete = try RideArchiveStore.delete(
+            corrected,
+            storeURL: storeURL,
+            documentsURL: documentsURL
+        )
+        archiveExpect(afterDelete.map(\.dayIdentifier) == ["2026-11-05"], "delete must remove only selected day")
+        archiveExpect(!FileManager.default.fileExists(atPath: firstGPX.path), "selected GPX must be removed")
+        archiveExpect(FileManager.default.fileExists(atPath: secondGPX.path), "other GPX must remain")
+        let restoredAfterDelete = try RideArchiveStore.load(storeURL: storeURL)
+        archiveExpect(restoredAfterDelete == afterDelete,
+                      "deleted archive must persist atomically")
+
         try Data("not-json".utf8).write(to: storeURL, options: .atomic)
         do {
             _ = try RideArchiveStore.load(storeURL: storeURL)

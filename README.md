@@ -45,7 +45,9 @@ Verbindlicher Gesamtumfang und Abnahmestatus: [TODO.md](TODO.md) · Technische Z
   Kadenz, Leistung, Pedalbalance, Umgebungstemperatur, FTMS-Livewerten und Akku
   sowie erste begrenzte
   FTMS-Steuerung für D100-kompatible Trainer mit ERG, Widerstand, Steigung,
-  Pause und Not-Stopp
+  Pause und Not-Stopp; eine Bibliothek zeigt jede gespeicherte Tagesfahrt mit
+  GPX-Kartenlinie und Fahrdaten und löscht ausgewählte abgeschlossene Fahrten
+  samt GPX erst nach Bestätigung
 
 Die Profiltypen decken Rennrad, Gravel, Cyclocross, Triathlon, Bahn/Fixie,
 MTB-Varianten, Trekking, City, Reise, Hybrid, Lastenrad, Falt-/Kinder-/BMX-,
