@@ -69,6 +69,13 @@ Kostenentscheidung:
   eigene Routinglogik, sondern nur eine Quellcode-Kompatibilitätsschicht.
 - Die gewählte Apple-Polyline wird in das providerneutrale Kartenmodell
   übernommen und kann deshalb auf Apple-, OSM- und CyclOSM-Basiskarten liegen.
+- Die Apple-Schritte werden beim Übernehmen in providerneutrale Manöver
+  umgewandelt. Ein lokaler Geometriepfad berechnet daraus während der Fahrt
+  nächste Anweisung, Entfernung, Reststrecke, anteilige Restzeit und
+  Querabstand; GPX ohne Manöver erhält weiterhin Fortschritt und Reststrecke.
+- Die derzeitige sichtbare 60-Meter-Abweichung ist eine erste Warnstufe, keine
+  behauptete Neuberechnung. Zeitliche Entprellung, Haptik, Sprache und
+  kontrolliertes Rerouting folgen getrennt.
 - Apple stellt keine Feinregler für Radweganteil, Gravel, Untergrund oder
   Hügel bereit. Diese Profile folgen ausschließlich über den getrennten
   Valhalla-Provider.

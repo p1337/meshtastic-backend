@@ -172,6 +172,16 @@ Apple-, OSM- und CyclOSM-Ebenen. Apple bietet keine Streckenschmiede-Regler für
 Gravel, Untergrund oder Straßenanteil; diese bleiben der getrennten Valhalla-
 Stufe vorbehalten und werden nicht simuliert.
 
+Die ausgewählte Route wird als providerneutrales `RideRoutePlan` aus Punkten,
+Distanz, Zeit und geordneten `RouteManeuver`-Anweisungen gehalten. Der reine,
+getestete `NavigationProgressEngine` projiziert die Live-Position auf das
+nächste Routensegment und liefert Fortschritt, Restdistanz, anteilige Restzeit,
+nächstes Manöver und Querabstand. Die erste Oberfläche warnt ab 60 Metern
+sichtbar. Dieser Einzelpositions-MVP ersetzt noch keine zeitlich entprellte
+Abweichungslogik: Haptik, Sprache und Neuberechnung dürfen erst auf einem
+zustandsbehafteten Fortschrittszeiger aufbauen, der Kreuzungen und Rücksprünge
+bei GPS-Rauschen sicher behandelt.
+
 Die Provider-URL ist konfigurierbar und nicht fest an einen öffentlichen Demo-Dienst gekoppelt. Produktionsbetrieb benötigt einen verlässlich betriebenen oder beauftragten Valhalla-Dienst.
 
 GPX ist zugleich die erste Interoperabilitätsschicht zu WhatsApp, Dateien und Komoot. Die App registriert einen GPX-Dokumenttyp und verarbeitet externe Dokument-URLs über denselben Parser wie den Dateiauswahldialog. Eine Kontosynchronisation mit Komoot wird nicht aus undokumentierten Web-Endpunkten gebaut; bis zu einer offiziellen Partnervereinbarung bleibt es beim lokalen Dateiaustausch.

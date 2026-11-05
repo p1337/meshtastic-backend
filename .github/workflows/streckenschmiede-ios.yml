@@ -59,6 +59,10 @@ jobs:
         run: |
           xcrun swiftc Streckenschmiede/Sources/TileURLTemplate.swift Streckenschmiede/Tests/TileURLTemplateSelfTest.swift -o "$RUNNER_TEMP/tile-url-tests"
           "$RUNNER_TEMP/tile-url-tests"
+      - name: Test route progress and maneuver guidance
+        run: |
+          xcrun swiftc Streckenschmiede/Sources/NavigationCore.swift Streckenschmiede/Tests/NavigationCoreSelfTest.swift -o "$RUNNER_TEMP/navigation-tests"
+          "$RUNNER_TEMP/navigation-tests"
       - name: Test Bluetooth sensor packet parsers
         run: |
           xcrun swiftc Streckenschmiede/Sources/SensorParsing.swift Streckenschmiede/Tests/SensorParsingSelfTest.swift -o "$RUNNER_TEMP/sensor-parser-tests"

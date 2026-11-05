@@ -418,7 +418,7 @@ struct MainView: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var selectedTab: AppTab = .recording
     @State private var importing = false
-    @State private var route: [CLLocationCoordinate2D] = []
+    @State private var routePlan: RideRoutePlan?
     @State private var routeMessage = "Noch keine GPX-Strecke importiert"
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -427,11 +427,11 @@ struct MainView: View {
                     ride: ride,
                     sensors: sensors,
                     importing: $importing,
-                    route: route,
+                    routePlan: routePlan,
                     routeMessage: routeMessage,
-                    selectPlannedRoute: { coordinates, message in
-                        route = coordinates
-                        routeMessage = message
+                    selectPlannedRoute: { plan in
+                        routePlan = plan
+                        routeMessage = plan.summary
                     }
                 )
                 .fileImporter(isPresented: $importing, allowedContentTypes: [.gpx, .xml]) { result in
@@ -506,10 +506,22 @@ struct MainView: View {
 
     private func importGPX(from url: URL, source: String) {
         do {
-            route = try GPXParser.load(url)
+            let coordinates = try GPXParser.load(url)
             selectedTab = .recording
             let name = url.deletingPathExtension().lastPathComponent
-            routeMessage = "\(name) · \(route.count) Punkte · \(source)"
+            let points = coordinates.map {
+                RoutePoint(latitude: $0.latitude, longitude: $0.longitude)
+            }
+            routeMessage = "\(name) · \(coordinates.count) Punkte · \(source)"
+            routePlan = RideRoutePlan(
+                destinationName: name,
+                providerName: "GPX",
+                summary: routeMessage,
+                distanceMeters: NavigationProgressEngine.routeLengthMeters(points),
+                expectedTravelTime: 0,
+                points: points,
+                maneuvers: []
+            )
         } catch {
             routeMessage = "Import fehlgeschlagen: \(error.localizedDescription)"
         }
@@ -520,9 +532,9 @@ private struct RideDashboard: View {
     @ObservedObject var ride: RideTracker
     @ObservedObject var sensors: SensorHub
     @Binding var importing: Bool
-    let route: [CLLocationCoordinate2D]
+    let routePlan: RideRoutePlan?
     let routeMessage: String
-    let selectPlannedRoute: ([CLLocationCoordinate2D], String) -> Void
+    let selectPlannedRoute: (RideRoutePlan) -> Void
     @State private var showingCameraSync = false
     @State private var showingRoutePlanner = false
 
@@ -533,7 +545,7 @@ private struct RideDashboard: View {
             ZStack {
                 LiveRideMap(
                     coordinates: ride.trackCoordinates,
-                    plannedRoute: route,
+                    plannedRoute: routeCoordinates,
                     currentCoordinate: ride.currentCoordinate,
                     speedKmh: ride.speedKmh,
                     courseDegrees: ride.courseDegrees
@@ -627,7 +639,9 @@ private struct RideDashboard: View {
 
     private var bottomOverlay: some View {
         VStack(spacing: 8) {
-            if !route.isEmpty {
+            if let navigationProgress {
+                navigationBanner(navigationProgress)
+            } else if routePlan != nil {
                 Text(routeMessage)
                     .font(.caption.weight(.semibold))
                     .lineLimit(1)
@@ -694,6 +708,76 @@ private struct RideDashboard: View {
             }
             .frame(maxWidth: .infinity)
         }
+    }
+
+    private var routeCoordinates: [CLLocationCoordinate2D] {
+        routePlan?.points.map {
+            CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude)
+        } ?? []
+    }
+
+    private var navigationProgress: NavigationProgress? {
+        guard let routePlan, let coordinate = ride.currentCoordinate else { return nil }
+        return NavigationProgressEngine.progress(
+            position: RoutePoint(
+                latitude: coordinate.latitude,
+                longitude: coordinate.longitude
+            ),
+            plan: routePlan
+        )
+    }
+
+    private func navigationBanner(_ progress: NavigationProgress) -> some View {
+        let isOffRoute = progress.distanceFromRouteMeters >= 60
+        let instruction = isOffRoute
+            ? "Route verlassen · \(formatRouteDistance(progress.distanceFromRouteMeters)) entfernt"
+            : (progress.nextManeuver?.instruction ?? "Route bis zum Ziel folgen")
+        let maneuverDistance = progress.distanceToNextManeuverMeters.map(formatRouteDistance)
+        let remainingTime = progress.remainingTravelTime.map(formatRouteDuration)
+        return HStack(spacing: 10) {
+            Image(systemName: isOffRoute
+                  ? "exclamationmark.triangle.fill"
+                  : "arrow.triangle.turn.up.right.diamond.fill")
+                .font(.title2.weight(.bold))
+                .foregroundStyle(isOffRoute ? .red : .orange)
+                .frame(width: 34)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(instruction)
+                    .font(.subheadline.weight(.bold))
+                    .lineLimit(2)
+                HStack(spacing: 7) {
+                    if let maneuverDistance, progress.nextManeuver != nil, !isOffRoute {
+                        Text("in \(maneuverDistance)")
+                    }
+                    Text("Rest \(formatRouteDistance(progress.remainingDistanceMeters))")
+                    if let remainingTime { Text(remainingTime) }
+                }
+                .font(.caption.monospacedDigit())
+                .foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 9)
+        .background(.black.opacity(0.86), in: RoundedRectangle(cornerRadius: 14))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(isOffRoute ? Color.red.opacity(0.8) : Color.orange.opacity(0.55))
+        )
+        .accessibilityElement(children: .combine)
+    }
+
+    private func formatRouteDistance(_ meters: Double) -> String {
+        meters >= 1_000
+            ? String(format: "%.1f km", meters / 1_000)
+            : String(format: "%.0f m", meters)
+    }
+
+    private func formatRouteDuration(_ seconds: TimeInterval) -> String {
+        let minutes = max(1, Int((seconds / 60).rounded()))
+        return minutes >= 60
+            ? "\(minutes / 60):\(String(format: "%02d", minutes % 60)) Std"
+            : "\(minutes) Min"
     }
 
     @ViewBuilder

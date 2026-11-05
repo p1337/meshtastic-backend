@@ -4,7 +4,7 @@ import SwiftUI
 
 struct RoutePlannerView: View {
     let origin: CLLocationCoordinate2D?
-    let onSelectRoute: ([CLLocationCoordinate2D], String) -> Void
+    let onSelectRoute: (RideRoutePlan) -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var query = ""
@@ -226,12 +226,42 @@ struct RoutePlannerView: View {
         }
         let destinationName = destination?.name ?? "Ziel"
         let summary = "\(destinationName) · Apple Fahrrad · \(formatDistance(route.distance)) · \(formatDuration(route.expectedTravelTime))"
-        onSelectRoute(routeCoordinates, summary)
+        let points = routeCoordinates.map {
+            RoutePoint(latitude: $0.latitude, longitude: $0.longitude)
+        }
+        var fallbackDistance = 0.0
+        let maneuvers = route.steps.compactMap { step -> RouteManeuver? in
+            defer { fallbackDistance += step.distance }
+            let instruction = step.instructions.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !instruction.isEmpty else { return nil }
+            let stepStart = coordinates(of: step.polyline).first.map {
+                RoutePoint(latitude: $0.latitude, longitude: $0.longitude)
+            }
+            let distanceAlong = stepStart.flatMap {
+                NavigationProgressEngine.distanceAlongRoute(to: $0, route: points)
+            } ?? fallbackDistance
+            return RouteManeuver(
+                instruction: instruction,
+                distanceAlongRouteMeters: distanceAlong
+            )
+        }
+        onSelectRoute(RideRoutePlan(
+            destinationName: destinationName,
+            providerName: "Apple Fahrrad",
+            summary: summary,
+            distanceMeters: route.distance,
+            expectedTravelTime: route.expectedTravelTime,
+            points: points,
+            maneuvers: maneuvers
+        ))
         dismiss()
     }
 
     private func coordinates(of route: MKRoute) -> [CLLocationCoordinate2D] {
-        let polyline = route.polyline
+        coordinates(of: route.polyline)
+    }
+
+    private func coordinates(of polyline: MKPolyline) -> [CLLocationCoordinate2D] {
         guard polyline.pointCount > 0 else { return [] }
         var values = Array(
             repeating: CLLocationCoordinate2D(),
