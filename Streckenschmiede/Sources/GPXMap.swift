@@ -31,8 +31,8 @@ struct LiveRideMap: View {
     private let mapControlHitSize: CGFloat = 84
     private let mapControlVisualSize: CGFloat = 58
 
-    private let mapControlsBottomPadding: CGFloat = 2
-    private let attributionBottomPadding: CGFloat = 88
+    private let mapControlsBottomPadding: CGFloat = 34
+    private let attributionBottomPadding: CGFloat = 116
 
     private var effectiveZoomMeters: Double {
         guard rideMapAutoZoom else { return rideMapZoomMeters }
