@@ -6,15 +6,16 @@ Verbindlicher Gesamtumfang und Status: [../TODO.md](../TODO.md) · Zielarchitekt
 Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Training, ohne laufendes Abonnement.
 
 ## Aktueller iOS-Grundprototyp
-- Zwei Hauptreiter: Outdoor und Indoor mit eigenen, originalen Symbolen für
-  Strecke/Baum beziehungsweise Fahrrad am Hometrainer
-- GPS-Aufzeichnung mit Distanz, GPX-Export, manueller Pause/Fortsetzung,
-  getrennter Gesamt-/Fahrt-/Pausenzeit und atomarem Wiederherstellungsstand
-- Dauerhafte Live-Position und Live-Kurs im geöffneten Kartenbild bereits vor
-  dem Aufzeichnungsstart und während manueller Pause; Trackpunkte werden davon
-  getrennt ausschließlich im Zustand „Aufzeichnung läuft“ gespeichert
-- Breite orange Haupttaste „Aufzeichnung starten“ getrennt von Import-, Kamera-
-  und Teilen-Werkzeugen; Pause/Fortsetzen und Stopp bleiben große Fahrtaktionen
+- Zwei Hauptmodi in einem kompakten Umschalter rechts oben: Outdoor und Indoor
+  mit eigenen, originalen Symbolen für Strecke/Baum beziehungsweise Fahrrad am
+  Hometrainer; die frühere platzraubende untere Tab-Leiste entfällt
+- Automatische GPS-Tagesaufzeichnung ohne Startknopf: Bei Standortfreigabe
+  beginnt beziehungsweise rekonstruiert die App die Route des lokalen
+  Kalendertags. Auto-Pause trennt Stillstand, Wiederanfahren setzt fort und ein
+  Tageswechsel schließt die alte GPX-Datei vor dem neuen Tag ab
+- GPX-Tagesexport, getrennte Gesamt-/Fahrt-/Pausenzeit und atomarer
+  Wiederherstellungsstand; Planung, Import, Teilen und DJI-Sync wurden aus der
+  Fahrtkarte in die Einstellungen verschoben
 - Einstellbare GPS-Auto-Pause: Geschwindigkeit und Verzögerung sind wählbar,
   Wiederanfahren setzt automatisch fort, und eine manuelle Pause kann durch
   Bewegung niemals aufgehoben werden; reale Stop-and-go-Testfahrt steht aus
@@ -28,17 +29,14 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
 - GPX-Import aus Dateien sowie Empfang über „Öffnen mit“/Teilen aus WhatsApp, Komoot und anderen Apps
 - Live-Karte mit geplanter GPX-Linie, Fahrtrichtung/Vorausblick, eindeutigem
   Fadenkreuz-Zentrieren-Knopf und 84-Punkte-Handschuhsteuerung unten: Minus
-  links, Zentrieren mittig, Plus rechts; separate „Bereit“- und GPS-Punkt-
-  Zeilen sowie die untere Sensorleiste wurden zugunsten der Karte entfernt
+  ganz links, Zentrieren mittig, Plus ganz rechts; separate Aktions- und
+  Tab-Leisten, „Bereit“- und GPS-Punkt-Zeilen sowie die untere Sensorleiste
+  wurden zugunsten der Karte entfernt
 - Zentrieren stellt den sicheren Vorausblick statt einer Bildschirmmitte wieder
-  her; dessen begrenzter 2D-/3D-Kameraversatz hält den Fahrer über den tiefer
-  liegenden Kartenknöpfen sichtbar. Die geneigte 3D-Ansicht wirkt auch im
-  Stand und ist separat abschaltbar. Bei aktiver Navigation
-  rücken die drei Kartenknöpfe nach oben, damit die Führung sie nicht verdeckt
-- Die untere Leiste zeigt nur passende Aktionen: vor der Fahrt Route, Import,
-  optional Teilen und einen kompakten Start; während der Fahrt Route, Kamera-
-  Sync, Pause/Fortsetzen und Stop. Import und Teilen verschwinden während der
-  Fahrt vollständig
+  her; dessen begrenzter 2D-/3D-Kameraversatz hält den Fahrer über den tiefen
+  Kartenknöpfen sichtbar. Die Position wird auch ohne verfügbaren Fahrkurs aus
+  der Bildschirmmitte in den unteren Kartenbereich gesetzt. Die geneigte
+  3D-Ansicht wirkt auch im Stand und ist separat abschaltbar
 - Puls, Kadenz, Leistung und Sensorakku stehen im oberen Daten-Cockpit
 - Dauerhaft gespeicherte Kartenwahl ausschließlich unter Einstellungen:
   Apple Karte, Apple Satellit, Apple Hybrid, interaktives OpenStreetMap und

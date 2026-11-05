@@ -11,7 +11,7 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 
 ## Bereits nachgewiesen
 
-- [x] Native iOS-Grund-App mit genau zwei Hauptreitern: **Outdoor** und **Indoor**.
+- [x] Native iOS-Grund-App mit genau zwei Hauptmodi: **Outdoor** und **Indoor**.
 - [x] Einfacher GPS-Track, Distanzberechnung und GPX-Export im Vordergrund.
 - [x] GPX-Import und Darstellung einer importierten Strecke mit Start/Ziel in Apple MapKit.
 - [x] Allgemeine BLE-Gerätesuche ohne Sensor-Dekodierung oder Trainersteuerung.
@@ -21,11 +21,11 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 
 ## P0 – verlässliche Fahrtaufzeichnung
 
-- [~] `RideSessionEngine` ist als einzige Quelle für Start, Pause, Fortsetzen, Stop, Zeiten, Metriken und Wiederherstellung eingeführt; Compiler- und echter Relaunch-Test stehen noch aus.
-- [~] Background-Location-Modus und fortlaufende GPS-Updates während einer gestarteten Fahrt sind konfiguriert; Freigabestufe „Immer“, energieangepasste Genauigkeit und echte Sperrbildschirm-Abnahme bleiben offen.
-- [~] Core Location hält bei geöffneter App Live-Position, Tempo und Kurs dauerhaft aktuell, verarbeitet Autorisierungswechsel und Fehler-Callback und trennt die Live-Position von aufgezeichneten Trackpunkten; echter Relaunch-Test mit erteilter, verweigerter und ausgeschalteter Standortfreigabe bleibt offen.
+- [~] `RideSessionEngine` ist als einzige Quelle für Tagesbeginn, Auto-Pause, Fortsetzen, Tagesabschluss, Zeiten, Metriken und Wiederherstellung eingeführt; Compiler- und echter Relaunch-Test stehen noch aus.
+- [~] Background-Location-Modus und fortlaufende GPS-Updates während einer automatischen Tagesfahrt sind konfiguriert; Freigabestufe „Immer“, energieangepasste Genauigkeit und echte Sperrbildschirm-Abnahme bleiben offen.
+- [~] Core Location hält Live-Position, Tempo und Kurs dauerhaft aktuell, verarbeitet Autorisierungswechsel und Fehler-Callback und speist nach Freigabe die automatische Tagesfahrt; echter Relaunch-Test mit erteilter, verweigerter und ausgeschalteter Standortfreigabe bleibt offen.
 - [ ] Aufzeichnung bei gesperrtem Display und App im Hintergrund testen.
-- [~] Laufende Fahrt wird spätestens alle fünf Sekunden sowie bei Zustands-/App-Wechsel atomar zwischengespeichert; Wiederaufnahme oder GPX-Abschluss werden nach Relaunch angeboten. Echter Abbruch-/Telefonneustart-Test bleibt offen.
+- [~] Laufende Tagesfahrt wird spätestens alle fünf Sekunden sowie bei Zustands-/App-Wechsel atomar zwischengespeichert; derselbe Kalendertag wird nach Relaunch automatisch fortgesetzt, ein älterer abgeschlossen. Echter Abbruch-/Telefonneustart-Test bleibt offen.
 - [~] Alte, ungenaue, nicht monotone und über 126 km/h implizierende GPS-Punkte sowie Sprünge ab 300 m werden verworfen; Tunnel-/Empfangslücken und reale Grenzfälle bleiben zu testen.
 - [~] GPS-Auto-Pause mit einstellbarer Geschwindigkeit und Verzögerung, Wiederanfahr-Hysterese sowie verbindlichem Vorrang der manuellen Pause ist implementiert und durch Zustandsmaschinentests belegt; echte Stop-and-go-, Hintergrund- und Tunnelabnahme fehlt.
 - [~] Gesamtzeit, Fahrzeit sowie manuelle und automatische Pausenzeit werden getrennt geführt und im Cockpit angezeigt; echte Fahrtabnahme fehlt.
@@ -35,10 +35,10 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 
 ## P0 – modernes Fahrt-Cockpit und Karten
 
-- [~] Die beiden Hauptreiter heißen **Outdoor** und **Indoor** und verwenden eigene Template-Vektoren: Baum mit perspektivischer Strecke sowie Fahrrad-Vorderteil am dreieckigen Hometrainer-Ständer. Asset-Compiler- und echte Tabbar-Abnahme fehlen.
+- [~] Die beiden Hauptmodi heißen **Outdoor** und **Indoor** und verwenden eigene Template-Vektoren: Baum mit perspektivischer Strecke sowie Fahrrad-Vorderteil am dreieckigen Hometrainer-Ständer. Asset-Compiler- und echte Umschalter-Abnahme fehlen.
 - [~] Bildschirmfüllende schwarze/orange Karten-Cockpitansicht beginnt oben und legt Live-Werte kompakt über die Karte; Anpassbarkeit, vollständige Dynamic-Type- und Geräteabnahme bleiben offen.
 - [~] Das Kartenbild läuft hinter Status-/Top-Bereich weiter; Cockpit, Ebenenknopf und Pflichtaktionen müssen auf allen unterstützten Displaygrößen innerhalb sicherer, überlappungsfreier Bedienbereiche bleiben. Kleine-iPhone-Abnahme fehlt.
-- [~] Eine breite, mindestens 64 Punkte hohe orange Haupttaste startet die Aufzeichnung ausdrücklich; GPS-Liveposition und Hilfswerkzeuge bleiben davon getrennt. Reale Handschuh- und Geräteabnahme steht aus.
+- [~] Automatische Tagesaufzeichnung ersetzt den manuellen Startknopf: Bei Standortfreigabe wird dieselbe lokale Tagesfahrt begonnen oder atomar fortgesetzt, Auto-Pause trennt Stillstand und ein Tageswechsel rollt in eine neue GPX-Datei. Hintergrund-, Tageswechsel- und reale Stop-and-go-Abnahme fehlen.
 - [ ] Anpassbare Datenfelder und mindestens drei speicherbare Cockpit-Layouts.
 - [~] Live-Karte mit aktueller Position, gefahrenem Track und geplanter GPX-Linie im Fahrtbild; Abweichung und echte Navigation fehlen noch.
 - [~] Gespeicherte Kartenwahl liegt ausschließlich in **Einstellungen > Fahrtkarte**, damit kein Ebenenknopf die Fahrkarte verdeckt: Apple Standard, Satellit und Hybrid sowie interaktives Online-OpenStreetMap und CyclOSM mit sichtbarer Attribution sind implementiert. OpenCycleMap ist als getrennte Thunderforest-Option vorhanden, bleibt ohne gültigen Provider-Key ausgeblendet; reale Geräte-, Last- und Sperrtestfahrt fehlen.
@@ -47,8 +47,9 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 - [~] Live-Karten-Zoom per Gesten und auf 84 Punkte beziehungsweise Faktor 1,5 vergrößerten Tasten: Minus unten links, Zentrieren unten mittig, Plus unten rechts; Standardbereich 250 m bis 10 km und Presets Nah/Fahrt/Voraus/Übersicht sind implementiert, reale Handschuhabnahme fehlt.
 - [~] Puls, Kadenz, Leistung und Sensorakku stehen im oberen Daten-Cockpit; die untere Sensorleiste entfällt für mehr freie Kartenfläche. Reale Geräte- und Dynamic-Type-Abnahme fehlt.
 - [~] Dauerhaft gespeicherter Live-Karten-Zoom und optionaler geschwindigkeitsabhängiger Auto-Zoom; manöverabhängiger Zoom fehlt.
-- [~] Fahrtrichtung/Vorausblick setzt den orangefarbenen Positionspfeil durch einen weiter vorausliegenden Kartenmittelpunkt horizontal mittig in den unteren Kartenbereich; Kurs fällt auf Track- oder GPX-Richtung zurück. Der Vorausblick ist in 2D und besonders in 3D auf eine kleine, getestete Kameradistanz begrenzt, damit der Fahrer nicht hinter der Bedienleiste oder außerhalb des Bildschirms landet. Die 3D-Neigung wirkt auch im Stand ohne gültigen Fahrkurs. Glättung, Stillstandstest und echte Fahrabnahme fehlen.
-- [~] Kartensteuerung und Navigationsbanner erhalten getrennte vertikale Bereiche. Minus, Zentrieren und Plus besitzen weiterhin 84-Punkte-Trefferflächen, erscheinen aber als ruhigere 58-Punkte-Kreise weiter unten. Die kontextabhängige untere Leiste zeigt während einer Fahrt keinen Teilen- oder Importknopf und integriert Start/Pause/Stop kompakt. Kleine iPhones, Dynamic Type und Handschuhe müssen real geprüft werden.
+- [~] Fahrtrichtung/Vorausblick setzt den orangefarbenen Positionspfeil durch einen weiter vorausliegenden Kartenmittelpunkt horizontal mittig in den unteren Kartenbereich; ohne Kurs wird die Bildschirmoberkante als sichere Richtung verwendet. Getestete Versatzgrenzen sind 22 % in 2D und 14 % in 3D. Die 3D-Neigung wirkt auch im Stand. Simulatorbild, Glättung, Stillstandstest und echte Fahrabnahme fehlen.
+- [~] Minus, Zentrieren und Plus besitzen 84-Punkte-Trefferflächen, erscheinen als ruhige 58-Punkte-Kreise direkt unten links, mittig und rechts. Die dauerhafte Aktionsleiste und untere Tabbar entfallen; Route, Import, Export, Teilen und Kamera liegen in Einstellungen. Nur ein aktives Manöver darf oberhalb der Kartenknöpfe erscheinen. Kleine iPhones, Dynamic Type und Handschuhe müssen real geprüft werden.
+- [~] Outdoor/Indoor und Einstellungen liegen in einem kompakten Umschalter rechts oben über der Karte. Symbol-, Simulator- und reale Geräteabnahme fehlen.
 - [~] „An geplante Straße kleben“ ist standardmäßig aus und verändert eingeschaltet nur den sichtbaren Kartenpfeil innerhalb 50 m der aktiven Routengeometrie; Roh-GPS, Aufzeichnung und Abweichungsprüfung bleiben unverändert. Allgemeines Street-Matching ohne aktive Route benötigt einen regelkonformen Routing-/Map-Matching-Provider und bleibt offen.
 - [ ] Bildschirm-Wachhalten optional, Helligkeits-/OLED-schonender Nachtmodus und Live Activity/Lock-Screen-Status.
 - [ ] Dunkle **Live Activity** mit eigener Streckenschmiede-Gestaltung für eine laufende Fahrt: Lock Screen, Dynamic Island kompakt/minimal/erweitert, Distanz, Fahrzeit, Tempo, Pause/Aufzeichnung und genau eine sichere Schnellaktion. Sie startet nur mit einer Fahrt, endet zuverlässig bei Stop/Relaunch und zeigt keine private Route auf dem frei einsehbaren Sperrbildschirm.

@@ -4,8 +4,10 @@ Stand: 4. November 2026. Dieses Dokument beschreibt die geplante Architektur. De
 
 ## Produktgrenzen
 
-- Genau zwei Hauptreiter bleiben erhalten: **Outdoor** und **Indoor**.
-- Routen, Historie, Statistiken, Sensoren und Einstellungen sind innerhalb dieser beiden Bereiche erreichbar und keine zusätzlichen Hauptreiter.
+- Genau zwei Hauptmodi bleiben erhalten: **Outdoor** und **Indoor**. Sie teilen
+  sich einen kompakten Umschalter statt einer dauerhaften unteren Tab-Leiste.
+- Routen, Historie, Statistiken, Sensoren und Einstellungen sind innerhalb
+  dieser beiden Bereiche erreichbar und keine zusätzlichen Hauptmodi.
 - Fitmeter Bike ist eine Funktions-Mindestlinie, keine Design- oder Codevorlage. Es werden weder fremder Code noch Texte, Grafiken oder Markenauftritt kopiert.
 - Offline nutzbare Kernfunktionen, lokale Datenhaltung, kein Abo, kein Zwangskonto.
 - „Fertig“ bedeutet nicht „kompiliert“, sondern angemessen auf echten Geräten, mit den betroffenen Sensoren und als signiertes OTA-Paket geprüft.
@@ -34,14 +36,12 @@ Der Core-Location-Pfad verarbeitet immer beide Delegate-Ausgänge:
 beenden den passenden Modus ausdrücklich; verweigerte oder ausgeschaltete
 Ortung darf weder abstürzen noch eine Fahrt vortäuschen.
 
-Die Kartenposition ist kein Nebenprodukt einer laufenden Fahrt. Mit erteilter
-Freigabe verwendet die aktive App kontinuierliche Vordergrund-Updates, damit
-Position, Kurs und Vorausblick schon vor „Start“ und während manueller Pause
-aktuell bleiben. Nur `RideSessionPhase.recording` schreibt Trackpunkte. Während
-einer automatischen Pause bleibt die Ortung auch im Hintergrund aktiv, damit
-echte Bewegung die Fahrt wieder starten kann; eine manuelle Pause tut dies nie.
-Eine inaktive App ohne laufende oder automatisch pausierte Aufzeichnung beendet
-Updates, damit „Live-GPS“ nicht unbemerkt dauerhaft Akku verbraucht.
+Die Kartenposition ist kein Nebenprodukt einer manuellen Fahrtaktion. Mit
+erteilter Freigabe startet oder rekonstruiert die App automatisch die lokale
+Tagesfahrt. Position, Kurs und Vorausblick bleiben in Vorder- und Hintergrund
+aktuell. Während einer automatischen Pause bleibt die Ortung aktiv, damit echte
+Bewegung die Tagesfahrt fortsetzen kann. Eine inaktive App ohne autorisierte
+Tagesfahrt beendet die Updates.
 Diese drei Modi (`foregroundLive`, `recordingBackground`, `off`) werden als
 reine Policy mit Referenztests abgesichert.
 
@@ -54,8 +54,9 @@ berechnet Gesamt-, Fahrt- und Pausenzeit. Er schreibt `active-ride-v1.json`
 atomar in den Application-Support-Bereich: sofort bei jedem Zustandswechsel,
 beim Wechsel der App in den Hintergrund und während der Fahrt spätestens alle
 fünf Sekunden. Eine beim Start gefundene offene oder noch nicht exportierte
-Sitzung wird `recoveryRequired`; die Oberfläche bietet Fortsetzen oder einen
-sauberen GPX-Abschluss an. Die aktuelle JSON-Gesamtsicherung ist ein
+Sitzung wird `recoveryRequired` und bei gleichem lokalen Kalendertag automatisch
+fortgesetzt; ein älterer Tag wird zuerst als Tages-GPX abgeschlossen. Die
+aktuelle JSON-Gesamtsicherung ist ein
 migrationsfähiger MVP. Vor sehr langen produktiven Aufzeichnungen wird die
 Punktreihe in das vorgesehene append-orientierte kompakte Format getrennt.
 
@@ -219,10 +220,10 @@ Zoom wird als sichtbare Breite/Höhe in Metern statt als anbieterspezifische Kac
 - Auto-Zoom darf Geschwindigkeit, Distanz zum nächsten Manöver und Routenkrümmung verwenden, bleibt abschaltbar.
 - Fahrtrichtung oben nutzt geglätteten Kurs; bei Stillstand wird nicht unruhig gedreht.
 - Die Fahrtkarte füllt die verfügbare Aufzeichnungsfläche bis an den oberen Bildschirmrand. Messwerte und Fahrtaktionen liegen als kompakte kontrastreiche Overlays darauf; es gibt keine separate dauerhaft sichtbare „Bereit“- oder GPS-Punkt-Zeile.
-- Live-GPS und Aufzeichnung sind auch in der Bedienung getrennt: Eine breite orange Haupttaste „Aufzeichnung starten“ beginnt erst die Speicherung. Import, Kamera und Teilen stehen in einer eigenen Werkzeugzeile und dürfen die Starttaste nicht zusammendrücken.
-- Im Vorausblick wird der Kartenmittelpunkt nur so weit in Fahrtrichtung verschoben, dass der Positionspfeil horizontal mittig im unteren Kartenbereich sichtbar bleibt, ohne die tatsächliche GPS-Position zu verändern. Weil `MKMapCamera.distance` nicht der sichtbaren Kartenhöhe entspricht, begrenzt `MapCameraPolicy` den Versatz auf 12 % in 2D und 8 % in der geneigten 3D-Ansicht; größere frühere Werte konnten den Fahrer hinter die Bedienknöpfe oder aus dem Bildschirm schieben. Fehlt ein aktueller Kurs, dienen zuletzt gefahrene Spur oder nächste GPX-Richtung als Fallback. Die gespeicherte 3D-Option setzt die Neigung auch im Stand; ein Fahrkurs ist nur für Ausrichtung und Vorausblick nötig.
-- Die untere Kartensteuerung ist symmetrisch und handschuhtauglich: Minus unten links, das optisch vom Positionspfeil getrennte Fadenkreuz-Zentrieren mittig und Plus unten rechts. Alle drei Kartenknöpfe behalten eine unsichtbare 84 × 84 Punkte große Trefferfläche, werden visuell aber als deutlich ruhigere 58-Punkte-Kreise dargestellt und näher an die kontextabhängige Aktionsleiste geschoben.
-- Bei aktiver Navigation rückt die Kartensteuerung nur um die Höhe des Manöverbanners nach oben. Die untere Aktionsleiste ist kontextabhängig: vor der Fahrt Route, Import, optional Teilen nach abgeschlossenem Export und Start; während der Fahrt Route, Kamera-Sync, Pause/Fortsetzen und Stop. Teilen und Import erscheinen niemals während einer laufenden Fahrt.
+- Die Aufzeichnung ist eine automatische lokale Tagesfahrt. Nach Standortfreigabe wird die atomar gesicherte Sitzung desselben Kalendertags fortgesetzt oder neu begonnen. Auto-Pause trennt Stillstand; ein Tageswechsel exportiert den alten Tag und eröffnet den neuen. Ein manueller Startknopf oder eine dauerhafte Fahrt-Aktionsleiste existiert nicht. Planung, Import, Tagesexport/Teilen und Kamera-Sync liegen in Einstellungen.
+- Im Vorausblick wird der Kartenmittelpunkt so verschoben, dass der Positionspfeil horizontal mittig im unteren Kartenbereich sichtbar bleibt, ohne die tatsächliche GPS-Position zu verändern. `MapCameraPolicy` begrenzt den Versatz auf 22 % in 2D und 14 % in der geneigten 3D-Ansicht. Fehlt ein Fahrkurs, wird die Bildschirmoberkante als stabile Bezugsrichtung verwendet; dadurch fällt der Pfeil niemals allein wegen eines fehlenden Kurses in die Displaymitte. Die 3D-Neigung wirkt auch im Stand.
+- Die untere Kartensteuerung ist symmetrisch und handschuhtauglich: Minus direkt unten links, Fadenkreuz-Zentrieren unten mittig und Plus direkt unten rechts. Alle drei Knöpfe besitzen eine unsichtbare 84 × 84 Punkte große Trefferfläche bei einem ruhigen 58-Punkte-Kreis. Nur ein aktives Manöverbanner liegt mit eigenem Abstand darüber.
+- Outdoor, Indoor und Einstellungen teilen sich rechts oben einen kompakten Modus-Umschalter. Die untere Tab-Leiste entfällt vollständig, damit die Karte bis an den unteren Bildschirmrand reicht.
 - „An geplante Straße kleben“ ist eine reine Darstellungshilfe und standardmäßig aus. In der ersten Stufe darf sie nur den sichtbaren Positionspfeil innerhalb einer engen Schwelle auf die aktive Routengeometrie projizieren. Roh-GPS, gespeicherte Spur und Abweichungslogik verwenden immer die unveränderte Messung. Allgemeines Street-Matching gehört in einen austauschbaren Provider und darf niemals still aktiviert werden.
 - Puls, Kadenz, Leistung und Sensorakku werden kompakt in das obere Daten-Cockpit integriert. Eine zusätzliche untere Sensorleiste darf die freie Kartenfläche und die Fahrtaktionen nicht verkleinern.
 

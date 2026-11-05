@@ -80,31 +80,7 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
         }
     }
 
-    func activateLiveLocation() {
-        guard CLLocationManager.locationServicesEnabled() else {
-            status = "Ortungsdienste am iPhone einschalten"
-            return
-        }
-        if location.authorizationStatus == .notDetermined {
-            status = "Standortfreigabe wird angefordert"
-            location.requestWhenInUseAuthorization()
-            return
-        }
-        guard location.authorizationStatus == .authorizedWhenInUse
-                || location.authorizationStatus == .authorizedAlways else {
-            status = "Standortzugriff in Einstellungen erlauben"
-            return
-        }
-        updateLocationMode()
-    }
-
-    func setApplicationActive(_ isActive: Bool) {
-        applicationIsActive = isActive
-        updateLocationMode()
-    }
-
-    func start() {
-        guard !active else { return }
+    func activateDailyTracking() {
         guard CLLocationManager.locationServicesEnabled() else {
             status = "Ortungsdienste am iPhone einschalten"
             return
@@ -115,16 +91,31 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
             location.requestWhenInUseAuthorization()
             return
         }
-        guard location.authorizationStatus == .authorizedWhenInUse || location.authorizationStatus == .authorizedAlways else {
+        guard location.authorizationStatus == .authorizedWhenInUse
+                || location.authorizationStatus == .authorizedAlways else {
             status = "Standortzugriff in Einstellungen erlauben"
             return
         }
-        beginRecording()
+        ensureAutomaticDailyRide(now: Date())
+        updateLocationMode()
     }
 
-    private func beginRecording() {
+    func setApplicationActive(_ isActive: Bool) {
+        applicationIsActive = isActive
+        if isActive {
+            activateDailyTracking()
+        } else {
+            updateLocationMode()
+        }
+    }
+
+    func start() {
+        activateDailyTracking()
+    }
+
+    private func beginRecording(now: Date = Date()) {
         autoPause.reset()
-        sessionEngine.start(now: Date())
+        sessionEngine.start(now: now)
         trackCoordinates = []
         distance = 0
         points = 0
@@ -137,13 +128,12 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
         elapsedSeconds = 0
         ridingSeconds = 0
         pausedSeconds = 0
-        exportURL = nil
-        syncFromSession(now: Date())
+        syncFromSession(now: now)
         startElapsedTimer()
         startLocationUpdates()
         status = sessionEngine.lastPersistenceError == nil
-            ? "Aufzeichnung läuft"
-            : "Aufzeichnung läuft · Sicherung fehlgeschlagen"
+            ? "Tagesaufzeichnung aktiv"
+            : "Tagesaufzeichnung aktiv · Sicherung fehlgeschlagen"
     }
 
     func pause() {
@@ -189,13 +179,13 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
         beginRecoveredRecording()
     }
 
-    private func beginRecoveredRecording() {
+    private func beginRecoveredRecording(now: Date = Date()) {
         autoPause.reset()
-        sessionEngine.resume(now: Date())
-        syncFromSession(now: Date())
+        sessionEngine.resume(now: now)
+        syncFromSession(now: now)
         startElapsedTimer()
         startLocationUpdates()
-        status = "Fahrt wiederhergestellt"
+        status = "Tagesaufzeichnung fortgesetzt"
     }
 
     func finishRecoveredRide() {
@@ -249,14 +239,13 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
             if manager.authorizationStatus == .notDetermined { return }
             self.pendingActionAfterAuthorization = nil
             if allowed {
-                switch pendingActionAfterAuthorization {
-                case .newRide: beginRecording()
-                case .recoveredRide: beginRecoveredRecording()
-                }
+                _ = pendingActionAfterAuthorization
+                ensureAutomaticDailyRide(now: Date())
             } else {
                 status = "Standortzugriff verweigert"
             }
         } else if allowed {
+            ensureAutomaticDailyRide(now: Date())
             updateLocationMode()
         } else if manager.authorizationStatus != .notDetermined {
             manager.stopUpdatingLocation()
@@ -268,12 +257,12 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
         finishSession()
     }
 
-    private func finishSession() {
+    private func finishSession(now: Date = Date()) {
         autoPause.reset()
-        _ = sessionEngine.finish(now: Date())
+        _ = sessionEngine.finish(now: now)
         elapsedTimer?.invalidate()
         elapsedTimer = nil
-        syncFromSession(now: Date())
+        syncFromSession(now: now)
         updateLocationMode()
         guard !sessionEngine.samples.isEmpty else {
             sessionEngine.clearPersistedSession()
@@ -281,23 +270,26 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
             status = "Keine GPS-Daten"
             return
         }
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withInternetDateTime]
-        var gpx = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><gpx version=\"1.1\" creator=\"Streckenschmiede\" xmlns=\"http://www.topografix.com/GPX/1/1\"><trk><name>Fahrt</name><trkseg>"
-        for sample in sessionEngine.samples {
-            gpx += "<trkpt lat=\"\(sample.latitude)\" lon=\"\(sample.longitude)\"><ele>\(sample.altitude)</ele><time>\(f.string(from:sample.timestamp))</time></trkpt>"
-        }
-        gpx += "</trkseg></trk></gpx>"
-        let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first ?? FileManager.default.temporaryDirectory
-        let url = documents.appendingPathComponent("Fahrt-\(Int(Date().timeIntervalSince1970)).gpx")
         do {
-            try gpx.write(to: url, atomically: true, encoding: .utf8)
-            exportURL = url
+            exportURL = try writeDailyGPX(now: now)
             sessionEngine.clearPersistedSession()
             sessionPhase = .finished
-            status = "GPX bereit"
+            status = "Tagesfahrt gesichert"
         }
         catch { status = error.localizedDescription }
+    }
+
+    func prepareDailyExport() {
+        guard !sessionEngine.samples.isEmpty else {
+            status = "Noch keine Fahrpunkte für den Export"
+            return
+        }
+        do {
+            exportURL = try writeDailyGPX(now: Date())
+            status = "Tages-GPX bereit"
+        } catch {
+            status = error.localizedDescription
+        }
     }
 
     func persistNow() {
@@ -319,6 +311,7 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
         speedKmh = point.speed >= 0 ? point.speed * 3.6 : 0
         if point.course >= 0, point.speed >= 0.8 { courseDegrees = point.course }
 
+        ensureAutomaticDailyRide(now: point.timestamp)
         guard active else { return }
         let autoPauseAction = autoPause.evaluate(
             speedKmh: point.speed >= 0 ? point.speed * 3.6 : nil,
@@ -406,18 +399,56 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
             ? distance / Double(ridingSeconds) * 3.6
             : 0
     }
-}
-struct MainView: View {
-    private enum AppTab: Hashable {
-        case recording
-        case indoor
+
+    private func ensureAutomaticDailyRide(now: Date) {
+        if DailyRidePolicy.requiresRollover(startedAt: startedAt, now: now),
+           active || recoveryAvailable {
+            finishSession(now: now)
+        }
+        if recoveryAvailable {
+            beginRecoveredRecording(now: now)
+        } else if !active {
+            beginRecording(now: now)
+        }
     }
+
+    private func writeDailyGPX(now: Date) throws -> URL {
+        let timestampFormatter = ISO8601DateFormatter()
+        timestampFormatter.formatOptions = [.withInternetDateTime]
+        var gpx = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><gpx version=\"1.1\" creator=\"Streckenschmiede\" xmlns=\"http://www.topografix.com/GPX/1/1\"><trk><name>Tagesfahrt</name><trkseg>"
+        for sample in sessionEngine.samples {
+            gpx += "<trkpt lat=\"\(sample.latitude)\" lon=\"\(sample.longitude)\"><ele>\(sample.altitude)</ele><time>\(timestampFormatter.string(from:sample.timestamp))</time></trkpt>"
+        }
+        gpx += "</trkseg></trk></gpx>"
+        let dateFormatter = DateFormatter()
+        dateFormatter.locale = Locale(identifier: "en_US_POSIX")
+        dateFormatter.calendar = .autoupdatingCurrent
+        dateFormatter.timeZone = .autoupdatingCurrent
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        let day = dateFormatter.string(from: startedAt ?? now)
+        let documents = FileManager.default.urls(
+            for: .documentDirectory,
+            in: .userDomainMask
+        ).first ?? FileManager.default.temporaryDirectory
+        let url = documents.appendingPathComponent("Tagesfahrt-\(day).gpx")
+        try gpx.write(to: url, atomically: true, encoding: .utf8)
+        return url
+    }
+}
+private enum AppMode: Hashable {
+    case outdoor
+    case indoor
+}
+
+struct MainView: View {
 
     @StateObject private var ride = RideTracker()
     @StateObject private var sensors = SensorHub()
     @Environment(\.scenePhase) private var scenePhase
-    @State private var selectedTab: AppTab = .recording
+    @State private var selectedMode: AppMode = .outdoor
     @State private var importing = false
+    @State private var showingRoutePlanner = false
+    @State private var showingCameraSync = false
     @State private var routePlan: RideRoutePlan?
     @State private var routeMessage: String
 
@@ -438,91 +469,43 @@ struct MainView: View {
     }
 
     var body: some View {
-        TabView(selection: $selectedTab) {
-            NavigationStack {
+        NavigationStack {
+            ZStack(alignment: .topTrailing) {
+                if selectedMode == .outdoor {
                 RideDashboard(
                     ride: ride,
                     sensors: sensors,
-                    importing: $importing,
                     routePlan: routePlan,
-                    routeMessage: routeMessage,
-                    selectPlannedRoute: { plan in
-                        activateRoute(plan)
-                    },
                     clearRoute: clearRoute
                 )
-                .fileImporter(isPresented: $importing, allowedContentTypes: [.gpx, .xml]) { result in
-                    do {
-                        let url = try result.get()
-                        importGPX(from: url, source: "Dateien")
-                    } catch {
-                        routeMessage = "Import fehlgeschlagen: \(error.localizedDescription)"
-                    }
+                } else {
+                    indoorView
                 }
-                .toolbar(.hidden, for: .navigationBar)
+
+                modeToolbar
+                    .padding(.top, 6)
+                    .padding(.trailing, 10)
             }
-            .tabItem {
-                Label {
-                    Text("Outdoor")
-                } icon: {
-                    Image("OutdoorTab")
-                }
+            .toolbar(.hidden, for: .navigationBar)
+        }
+        .fileImporter(isPresented: $importing, allowedContentTypes: [.gpx, .xml]) { result in
+            do {
+                let url = try result.get()
+                importGPX(from: url, source: "Dateien")
+            } catch {
+                routeMessage = "Import fehlgeschlagen: \(error.localizedDescription)"
             }
-            .tag(AppTab.recording)
-            NavigationStack {
-                Form {
-                    Section("Live-Sensordaten") {
-                        HStack {
-                            SensorValue(title: "Puls", value: sensors.heartRateBpm.map { "\($0) bpm" } ?? "–")
-                            SensorValue(title: "Kadenz", value: sensors.cadenceRpm.map { String(format: "%.0f rpm", $0) } ?? "–")
-                            SensorValue(title: "Leistung", value: sensors.powerWatts.map { "\($0) W" } ?? "–")
-                        }
-                    }
-                    TrainerControlPanel(sensors: sensors)
-                    Section("Fahrradsensoren und Trainer") {
-                        Text(sensors.status)
-                            .foregroundStyle(.secondary)
-                        Button {
-                            sensors.scan()
-                        } label: {
-                            Label("Sensoren, D100 und Clicks suchen", systemImage: "dot.radiowaves.left.and.right")
-                        }
-                        ForEach(sensors.devices) { device in
-                            SensorDeviceRow(
-                                device: device,
-                                isSelectedTrainer: sensors.trainerDeviceID == device.id,
-                                toggleConnection: { sensors.toggleConnection(device.id) },
-                                selectTrainer: { sensors.selectTrainer(device.id) }
-                            )
-                        }
-                    }
-                    Section("Trainingsprogramme") {
-                        Text("ERG, Intervalle und RLV werden vorbereitet")
-                    }
-                }
-                .navigationTitle("Indoor")
-                .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        NavigationLink {
-                            SettingsView()
-                        } label: {
-                            Image(systemName: "gearshape")
-                        }
-                    }
-                }
-            }
-            .tabItem {
-                Label {
-                    Text("Indoor")
-                } icon: {
-                    Image("IndoorTab")
-                }
-            }
-            .tag(AppTab.indoor)
+        }
+        .sheet(isPresented: $showingRoutePlanner) {
+            RoutePlannerView(origin: ride.currentCoordinate, onSelectRoute: activateRoute)
+        }
+        .sheet(isPresented: $showingCameraSync) {
+            CameraSyncView(ride: ride)
         }
         .onOpenURL { url in
             importGPX(from: url, source: "Geteilt")
         }
+        .onAppear { ride.activateDailyTracking() }
         .onChange(of: scenePhase) { _, phase in
             ride.setApplicationActive(phase == .active)
             if phase == .background || phase == .inactive {
@@ -533,10 +516,99 @@ struct MainView: View {
         .preferredColorScheme(.dark)
     }
 
+    private var modeToolbar: some View {
+        HStack(spacing: 2) {
+            modeButton(.outdoor, image: "OutdoorTab", label: "Outdoor")
+            modeButton(.indoor, image: "IndoorTab", label: "Indoor")
+            NavigationLink {
+                SettingsView(
+                    ride: ride,
+                    hasActiveRoute: routePlan != nil,
+                    planRoute: { showingRoutePlanner = true },
+                    importRoute: { importing = true },
+                    clearRoute: clearRoute,
+                    openCameraSync: { showingCameraSync = true }
+                )
+            } label: {
+                Image(systemName: "gearshape.fill")
+                    .font(.system(size: 17, weight: .semibold))
+                    .frame(width: 42, height: 42)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.orange)
+            .accessibilityLabel("Einstellungen")
+        }
+        .padding(3)
+        .background(.black.opacity(0.82), in: Capsule())
+        .overlay(Capsule().stroke(.white.opacity(0.20), lineWidth: 1))
+        .shadow(color: .black.opacity(0.5), radius: 7, y: 3)
+    }
+
+    private func modeButton(_ mode: AppMode, image: String, label: String) -> some View {
+        Button { selectedMode = mode } label: {
+            Image(image)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 28, height: 28)
+                .frame(width: 42, height: 42)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(selectedMode == mode ? .orange : .white.opacity(0.62))
+        .background(selectedMode == mode ? Color.white.opacity(0.11) : .clear, in: Circle())
+        .accessibilityLabel(label)
+        .accessibilityAddTraits(selectedMode == mode ? .isSelected : [])
+    }
+
+    private var indoorView: some View {
+        Form {
+            Section("Live-Sensordaten") {
+                HStack {
+                    SensorValue(title: "Puls", value: sensors.heartRateBpm.map { "\($0) bpm" } ?? "–")
+                    SensorValue(title: "Kadenz", value: sensors.cadenceRpm.map { String(format: "%.0f rpm", $0) } ?? "–")
+                    SensorValue(title: "Leistung", value: sensors.powerWatts.map { "\($0) W" } ?? "–")
+                }
+            }
+            TrainerControlPanel(sensors: sensors)
+            Section("Fahrradsensoren und Trainer") {
+                Text(sensors.status)
+                    .foregroundStyle(.secondary)
+                Button {
+                    sensors.scan()
+                } label: {
+                    Label("Sensoren, D100 und Clicks suchen", systemImage: "dot.radiowaves.left.and.right")
+                }
+                ForEach(sensors.devices) { device in
+                    SensorDeviceRow(
+                        device: device,
+                        isSelectedTrainer: sensors.trainerDeviceID == device.id,
+                        toggleConnection: { sensors.toggleConnection(device.id) },
+                        selectTrainer: { sensors.selectTrainer(device.id) }
+                    )
+                }
+            }
+            Section("Trainingsprogramme") {
+                Text("ERG, Intervalle, Geistfahrt und RLV werden vorbereitet")
+            }
+        }
+        .safeAreaInset(edge: .top) {
+            HStack {
+                Text("Indoor")
+                    .font(.largeTitle.bold())
+                Spacer()
+            }
+            .padding(.horizontal)
+            .padding(.top, 8)
+            .padding(.bottom, 4)
+            .background(.black)
+        }
+    }
+
     private func importGPX(from url: URL, source: String) {
         do {
             let coordinates = try GPXParser.load(url)
-            selectedTab = .recording
+            selectedMode = .outdoor
             let name = url.deletingPathExtension().lastPathComponent
             let points = coordinates.map {
                 RoutePoint(latitude: $0.latitude, longitude: $0.longitude)
@@ -580,13 +652,8 @@ struct MainView: View {
 private struct RideDashboard: View {
     @ObservedObject var ride: RideTracker
     @ObservedObject var sensors: SensorHub
-    @Binding var importing: Bool
     let routePlan: RideRoutePlan?
-    let routeMessage: String
-    let selectPlannedRoute: (RideRoutePlan) -> Void
     let clearRoute: () -> Void
-    @State private var showingCameraSync = false
-    @State private var showingRoutePlanner = false
     @State private var showingMusicControls = false
     @AppStorage("rideMusicControlsEnabled") private var rideMusicControlsEnabled = false
 
@@ -607,14 +674,14 @@ private struct RideDashboard: View {
 
                 VStack(spacing: 0) {
                     cockpitOverlay
-                    Spacer(minLength: 170)
-                    bottomOverlay
+                    Spacer(minLength: 0)
+                    if let navigationProgress {
+                        navigationBanner(navigationProgress)
+                            .padding(.bottom, 92)
+                    }
                 }
                 .padding(.horizontal, 10)
-                .padding(.top, 8)
-                .padding(.bottom, 12)
-
-                if ride.recoveryAvailable { recoveryOverlay }
+                .padding(.top, 56)
 
                 if rideMusicControlsEnabled {
                     musicLauncher
@@ -625,19 +692,10 @@ private struct RideDashboard: View {
             }
         }
         .background(Color.black)
-        .sheet(isPresented: $showingCameraSync) {
-            CameraSyncView(ride: ride)
-        }
-        .sheet(isPresented: $showingRoutePlanner) {
-            RoutePlannerView(
-                origin: ride.currentCoordinate,
-                onSelectRoute: selectPlannedRoute
-            )
-        }
         .sheet(isPresented: $showingMusicControls) {
             AppleMusicPlayerSheet()
         }
-        .onAppear { ride.activateLiveLocation() }
+        .onAppear { ride.activateDailyTracking() }
     }
 
     private var musicLauncher: some View {
@@ -695,18 +753,6 @@ private struct RideDashboard: View {
                     RideMetric(title: "Auf/Ab", value: String(format: "%.0f/%.0f", ride.ascent, ride.descent))
                 }
 
-                NavigationLink {
-                    SettingsView()
-                } label: {
-                    Image(systemName: "gearshape.fill")
-                        .font(.body.weight(.semibold))
-                        .frame(width: 42, height: 42)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(.orange)
-                .background(.black.opacity(0.7), in: Circle())
-                .accessibilityLabel("Einstellungen")
             }
 
             HStack(spacing: 12) {
@@ -721,83 +767,6 @@ private struct RideDashboard: View {
         .padding(.vertical, 6)
         .background(.black.opacity(0.76), in: RoundedRectangle(cornerRadius: 16))
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(.white.opacity(0.14)))
-    }
-
-    private var bottomOverlay: some View {
-        VStack(spacing: 6) {
-            if let navigationProgress {
-                navigationBanner(navigationProgress)
-            } else if routePlan != nil {
-                HStack(spacing: 8) {
-                    Text(routeMessage)
-                        .font(.caption.weight(.semibold))
-                        .lineLimit(1)
-                    Spacer(minLength: 0)
-                    clearRouteButton
-                }
-                .padding(.leading, 12)
-                .padding(.trailing, 4)
-                .padding(.vertical, 4)
-                .background(.black.opacity(0.78), in: Capsule())
-            }
-
-            HStack(spacing: 8) {
-                compactAction("map.fill", label: "Zielroute planen") {
-                    showingRoutePlanner = true
-                }
-
-                if ride.active {
-                    compactAction("qrcode.viewfinder", label: "DJI Action 5 Pro synchronisieren") {
-                        showingCameraSync = true
-                    }
-                } else {
-                    compactAction("square.and.arrow.down", label: "GPX-Strecke importieren") {
-                        importing = true
-                    }
-                }
-
-                if !ride.active, let url = ride.exportURL {
-                    ShareLink(item: url) {
-                        Image(systemName: "square.and.arrow.up")
-                            .font(.system(size: 19, weight: .semibold))
-                            .frame(width: 48, height: 48)
-                    }
-                    .compactToolButton()
-                    .accessibilityLabel("Aufgezeichnete GPX teilen")
-                }
-
-                primaryRideButton
-
-                if ride.active {
-                    Button { ride.stop() } label: {
-                        Image(systemName: "stop.fill")
-                            .font(.system(size: 18, weight: .bold))
-                            .frame(width: 48, height: 48)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.red)
-                    .accessibilityLabel("Fahrt beenden")
-                }
-            }
-            .frame(maxWidth: .infinity)
-            .padding(5)
-            .background(.black.opacity(0.80), in: RoundedRectangle(cornerRadius: 17))
-            .overlay(RoundedRectangle(cornerRadius: 17).stroke(.white.opacity(0.16)))
-        }
-    }
-
-    private func compactAction(
-        _ systemImage: String,
-        label: String,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            Image(systemName: systemImage)
-                .font(.system(size: 19, weight: .semibold))
-                .frame(width: 48, height: 48)
-        }
-        .compactToolButton()
-        .accessibilityLabel(label)
     }
 
     private var routeCoordinates: [CLLocationCoordinate2D] {
@@ -882,57 +851,6 @@ private struct RideDashboard: View {
             : "\(minutes) Min"
     }
 
-    @ViewBuilder
-    private var primaryRideButton: some View {
-        if ride.active {
-            Button {
-                if ride.isPaused { ride.resume() } else { ride.pause() }
-            } label: {
-                Label(
-                    ride.isPaused ? "Weiter" : "Pause",
-                    systemImage: ride.isPaused ? "play.fill" : "pause.fill"
-                )
-                .font(.subheadline.weight(.bold))
-                .frame(maxWidth: .infinity, minHeight: 48)
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(.orange)
-        } else if !ride.recoveryAvailable {
-            Button { ride.start() } label: {
-                Label("Start", systemImage: "record.circle.fill")
-                    .font(.subheadline.weight(.bold))
-                    .frame(maxWidth: .infinity, minHeight: 48)
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(.orange)
-            .accessibilityHint("Beginnt das Speichern der GPS-Spur und Fahrtdaten")
-        }
-    }
-
-    private var recoveryOverlay: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Label("Unterbrochene Fahrt wiederherstellen", systemImage: "arrow.clockwise.heart.fill")
-                .font(.headline)
-                .foregroundStyle(.orange)
-            Text("\(ride.points) Trackpunkte und \(formatDuration(ride.elapsedSeconds)) Gesamtzeit wurden sicher gefunden.")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-            HStack(spacing: 10) {
-                Button("Fortsetzen") { ride.resumeRecoveredRide() }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.orange)
-                    .frame(maxWidth: .infinity, minHeight: 52)
-                Button("GPX abschließen") { ride.finishRecoveredRide() }
-                    .buttonStyle(.bordered)
-                    .tint(.orange)
-                    .frame(maxWidth: .infinity, minHeight: 52)
-            }
-        }
-        .padding()
-        .background(.black.opacity(0.92), in: RoundedRectangle(cornerRadius: 20))
-        .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color.orange.opacity(0.7)))
-        .padding(24)
-    }
 }
 
 private struct RideMetric: View {
@@ -1216,6 +1134,12 @@ private func formatDuration(_ seconds: Int) -> String {
 }
 
 struct SettingsView: View {
+    @ObservedObject var ride: RideTracker
+    let hasActiveRoute: Bool
+    let planRoute: () -> Void
+    let importRoute: () -> Void
+    let clearRoute: () -> Void
+    let openCameraSync: () -> Void
     @AppStorage("rideMapLayer") private var rideMapLayerRaw = RideMapLayer.appleStandard.rawValue
     @AppStorage("rideMapZoomMeters") private var rideMapZoomMeters = 1_500.0
     @AppStorage("rideMapAutoZoom") private var rideMapAutoZoom = true
@@ -1259,10 +1183,13 @@ struct SettingsView: View {
                         }
                         Slider(value: $rideAutoPauseDelaySeconds, in: 3...30, step: 1)
                     }
-                    Text("Stoppt die Fahrzeit erst nach anhaltendem Stillstand. Bewegung startet automatisch wieder; eine manuelle Pause bleibt immer bestehen.")
+                    Text("Stoppt die Fahrzeit erst nach anhaltendem Stillstand. Bewegung setzt die automatische Tagesfahrt selbstständig fort.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+                Text("Kein Startknopf nötig: Solange Streckenschmiede geöffnet ist oder im Hintergrund weiterläuft, werden die Fahrabschnitte eines Kalendertags automatisch in einer Tagesroute gesammelt.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
             Section("Fahrtkarte") {
                 Picker("Kartendarstellung", selection: $rideMapLayerRaw) {
@@ -1320,6 +1247,35 @@ struct SettingsView: View {
                         .foregroundStyle(.secondary)
                 }
             }
+            Section("Strecken & Dateien") {
+                Button(action: planRoute) {
+                    Label("Zielroute planen", systemImage: "point.topleft.down.to.point.bottomright.curvepath")
+                }
+                Button(action: importRoute) {
+                    Label("GPX aus Dateien oder Share Sheet importieren", systemImage: "square.and.arrow.down")
+                }
+                if hasActiveRoute {
+                    Button(role: .destructive, action: clearRoute) {
+                        Label("Navigation beenden", systemImage: "xmark.circle")
+                    }
+                }
+                Button(action: openCameraSync) {
+                    Label("DJI Action 5 Pro synchronisieren", systemImage: "qrcode.viewfinder")
+                }
+                Button {
+                    ride.prepareDailyExport()
+                } label: {
+                    Label("Tages-GPX vorbereiten", systemImage: "doc.badge.gearshape")
+                }
+                if let url = ride.exportURL {
+                    ShareLink(item: url) {
+                        Label("Tages-GPX teilen", systemImage: "square.and.arrow.up")
+                    }
+                }
+                Text(ride.status)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
             Section("Musik") {
                 Toggle("Musiksteuerung im Outdoor-Cockpit", isOn: $rideMusicControlsEnabled)
                 if rideMusicControlsEnabled {
@@ -1342,6 +1298,8 @@ struct SettingsView: View {
             }
         }
         .navigationTitle("Einstellungen")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.visible, for: .navigationBar)
         .onAppear {
             if RideMapLayer(rawValue: rideMapLayerRaw) == .openCycleMap,
                RideMapLayer.openCycleMapKey == nil {
@@ -1354,22 +1312,5 @@ struct SettingsView: View {
         RideMapLayer.allCases.filter { layer in
             layer != .openCycleMap || RideMapLayer.openCycleMapKey != nil
         }
-    }
-}
-
-private struct CompactToolButtonModifier: ViewModifier {
-    func body(content: Content) -> some View {
-        content
-            .buttonStyle(.plain)
-            .foregroundStyle(.white)
-            .frame(maxWidth: .infinity)
-            .background(.black.opacity(0.82), in: RoundedRectangle(cornerRadius: 14))
-            .overlay(RoundedRectangle(cornerRadius: 14).stroke(.white.opacity(0.2)))
-    }
-}
-
-private extension View {
-    func compactToolButton() -> some View {
-        modifier(CompactToolButtonModifier())
     }
 }
