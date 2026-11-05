@@ -14,6 +14,9 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
   getrennt ausschließlich im Zustand „Aufzeichnung läuft“ gespeichert
 - Breite orange Haupttaste „Aufzeichnung starten“ getrennt von Import-, Kamera-
   und Teilen-Werkzeugen; Pause/Fortsetzen und Stopp bleiben große Fahrtaktionen
+- Einstellbare GPS-Auto-Pause: Geschwindigkeit und Verzögerung sind wählbar,
+  Wiederanfahren setzt automatisch fort, und eine manuelle Pause kann durch
+  Bewegung niemals aufgehoben werden; reale Stop-and-go-Testfahrt steht aus
 - Hintergrund-Ortung ist für eine laufende Fahrt konfiguriert; die echte
   Sperrbildschirm- und Langzeittestfahrt steht noch aus
 - Bildschirmfüllendes, oben beginnendes Karten-Cockpit mit kompakten

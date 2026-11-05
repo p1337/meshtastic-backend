@@ -37,9 +37,11 @@ Ortung darf weder abstürzen noch eine Fahrt vortäuschen.
 Die Kartenposition ist kein Nebenprodukt einer laufenden Fahrt. Mit erteilter
 Freigabe verwendet die aktive App kontinuierliche Vordergrund-Updates, damit
 Position, Kurs und Vorausblick schon vor „Start“ und während manueller Pause
-aktuell bleiben. Nur `RideSessionPhase.recording` schreibt Trackpunkte und darf
-Ortung im Hintergrund fortsetzen. Eine inaktive App ohne laufende Aufzeichnung
-beendet Updates, damit „Live-GPS“ nicht unbemerkt dauerhaft Akku verbraucht.
+aktuell bleiben. Nur `RideSessionPhase.recording` schreibt Trackpunkte. Während
+einer automatischen Pause bleibt die Ortung auch im Hintergrund aktiv, damit
+echte Bewegung die Fahrt wieder starten kann; eine manuelle Pause tut dies nie.
+Eine inaktive App ohne laufende oder automatisch pausierte Aufzeichnung beendet
+Updates, damit „Live-GPS“ nicht unbemerkt dauerhaft Akku verbraucht.
 Diese drei Modi (`foregroundLive`, `recordingBackground`, `off`) werden als
 reine Policy mit Referenztests abgesichert.
 
@@ -56,6 +58,14 @@ Sitzung wird `recoveryRequired`; die Oberfläche bietet Fortsetzen oder einen
 sauberen GPX-Abschluss an. Die aktuelle JSON-Gesamtsicherung ist ein
 migrationsfähiger MVP. Vor sehr langen produktiven Aufzeichnungen wird die
 Punktreihe in das vorgesehene append-orientierte kompakte Format getrennt.
+
+`AutoPauseController` ist eine getrennt getestete Zustandsmaschine vor dem
+Session-Engine: anhaltende GPS-Geschwindigkeit unter der einstellbaren Schwelle
+pausiert erst nach der gewählten Verzögerung. Fortgesetzt wird oberhalb einer
+höheren Schwelle, damit GPS-Rauschen nicht flattert. Die Zustandsmaschine kennt
+einen manuellen Besitzer; Bewegung und Einstellungsänderungen dürfen eine
+manuelle Pause niemals aufheben. BLE-/Watch-Geschwindigkeit folgt erst mit der
+dokumentierten Quellenpriorität und ersetzt bis dahin nicht stillschweigend GPS.
 
 Persistente Hauptobjekte:
 

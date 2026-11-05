@@ -32,6 +32,7 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
     @Published private(set) var startedAt: Date?
     private let location = CLLocationManager()
     private let sessionEngine: RideSessionEngine
+    private let autoPause = AutoPauseController()
     private enum PendingAction { case newRide, recoveredRide }
     private var pendingActionAfterAuthorization: PendingAction?
     private var elapsedTimer: Timer?
@@ -40,7 +41,26 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
     var active: Bool { sessionPhase == .recording || sessionPhase == .paused }
     var isRecording: Bool { sessionPhase == .recording }
     var isPaused: Bool { sessionPhase == .paused }
+    var isAutoPaused: Bool { isPaused && autoPause.isAutomaticallyPaused }
     var recoveryAvailable: Bool { sessionPhase == .recoveryRequired }
+
+    private var autoPauseConfiguration: AutoPauseConfiguration {
+        let defaults = UserDefaults.standard
+        let enabled = defaults.object(forKey: "rideAutoPauseEnabled") == nil
+            ? true
+            : defaults.bool(forKey: "rideAutoPauseEnabled")
+        let speed = defaults.object(forKey: "rideAutoPauseSpeedKmh") == nil
+            ? 2.5
+            : defaults.double(forKey: "rideAutoPauseSpeedKmh")
+        let delay = defaults.object(forKey: "rideAutoPauseDelaySeconds") == nil
+            ? 8
+            : defaults.double(forKey: "rideAutoPauseDelaySeconds")
+        return AutoPauseConfiguration(
+            enabled: enabled,
+            pauseBelowKmh: min(max(speed, 1), 8),
+            pauseDelaySeconds: min(max(delay, 3), 30)
+        )
+    }
 
     var elapsedMilliseconds: Int64 {
         Int64(elapsedSeconds) * 1_000
@@ -103,6 +123,7 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
 
     private func beginRecording() {
+        autoPause.reset()
         sessionEngine.start(now: Date())
         trackCoordinates = []
         distance = 0
@@ -127,6 +148,7 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
 
     func pause() {
         guard isRecording else { return }
+        autoPause.manualPause()
         sessionEngine.pause(now: Date())
         syncFromSession(now: Date())
         updateLocationMode()
@@ -140,6 +162,7 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
             status = "Standortzugriff in Einstellungen erlauben"
             return
         }
+        autoPause.manualResume()
         sessionEngine.resume(now: Date())
         syncFromSession(now: Date())
         startLocationUpdates()
@@ -167,6 +190,7 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
 
     private func beginRecoveredRecording() {
+        autoPause.reset()
         sessionEngine.resume(now: Date())
         syncFromSession(now: Date())
         startElapsedTimer()
@@ -197,7 +221,7 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
             isAuthorized: allowed,
             servicesEnabled: CLLocationManager.locationServicesEnabled(),
             applicationIsActive: applicationIsActive,
-            isRecording: isRecording
+            isRecording: isRecording || autoPause.isAutomaticallyPaused
         )
         switch mode {
         case .off:
@@ -245,6 +269,7 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
 
     private func finishSession() {
+        autoPause.reset()
         _ = sessionEngine.finish(now: Date())
         elapsedTimer?.invalidate()
         elapsedTimer = nil
@@ -283,21 +308,42 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
 
     func locationManager(_ manager: CLLocationManager, didUpdateLocations updates: [CLLocation]) {
-        if !isRecording {
-            guard let point = updates.last(where: {
-                $0.horizontalAccuracy >= 0
-                    && $0.horizontalAccuracy < 100
-                    && abs($0.timestamp.timeIntervalSinceNow) < 30
-            }) else { return }
-            currentCoordinate = point.coordinate
-            currentHorizontalAccuracy = point.horizontalAccuracy
-            if point.verticalAccuracy >= 0 { elevation = point.altitude }
-            speedKmh = point.speed >= 0 ? point.speed * 3.6 : 0
-            if point.course >= 0, point.speed >= 0.8 { courseDegrees = point.course }
+        guard let point = updates.last(where: {
+            $0.horizontalAccuracy >= 0
+                && $0.horizontalAccuracy < 100
+                && abs($0.timestamp.timeIntervalSinceNow) < 30
+        }) else { return }
+        currentCoordinate = point.coordinate
+        currentHorizontalAccuracy = point.horizontalAccuracy
+        if point.verticalAccuracy >= 0 { elevation = point.altitude }
+        speedKmh = point.speed >= 0 ? point.speed * 3.6 : 0
+        if point.course >= 0, point.speed >= 0.8 { courseDegrees = point.course }
+
+        guard active else { return }
+        let autoPauseAction = autoPause.evaluate(
+            speedKmh: point.speed >= 0 ? point.speed * 3.6 : nil,
+            at: point.timestamp,
+            configuration: autoPauseConfiguration
+        )
+        switch autoPauseAction {
+        case .pause where isRecording:
+            sessionEngine.pause(now: Date())
+            syncFromSession(now: Date())
+            updateLocationMode()
+            status = "Auto-Pause · Bewegung startet wieder"
             return
+        case .resume where isPaused:
+            sessionEngine.resume(now: Date())
+            syncFromSession(now: Date())
+            updateLocationMode()
+            status = "Aufzeichnung automatisch fortgesetzt"
+        default:
+            break
         }
+        guard isRecording else { return }
+        let recordingUpdates = autoPauseAction == .resume ? [point] : updates
         var acceptedPoint = false
-        for point in updates {
+        for point in recordingUpdates {
             let sample = RideSample(
                 latitude: point.coordinate.latitude,
                 longitude: point.coordinate.longitude,
@@ -528,7 +574,7 @@ private struct RideDashboard: View {
                         Circle()
                             .fill(ride.isRecording ? Color.green : (ride.recoveryAvailable ? Color.red : Color.orange))
                             .frame(width: 8, height: 8)
-                        Text("TEMPO")
+                        Text(ride.isAutoPaused ? "AUTO-PAUSE" : "TEMPO")
                             .font(.caption2.weight(.bold))
                             .foregroundStyle(.secondary)
                     }
@@ -968,6 +1014,9 @@ struct SettingsView: View {
     @AppStorage("rideMapZoomMeters") private var rideMapZoomMeters = 1_500.0
     @AppStorage("rideMapAutoZoom") private var rideMapAutoZoom = true
     @AppStorage("rideMapHeadingUp") private var rideMapHeadingUp = true
+    @AppStorage("rideAutoPauseEnabled") private var rideAutoPauseEnabled = true
+    @AppStorage("rideAutoPauseSpeedKmh") private var rideAutoPauseSpeedKmh = 2.5
+    @AppStorage("rideAutoPauseDelaySeconds") private var rideAutoPauseDelaySeconds = 8.0
 
     private let zoomPresets: [(String, Double)] = [
         ("Nah", 500),
@@ -978,6 +1027,34 @@ struct SettingsView: View {
 
     var body: some View {
         Form {
+            Section("Aufzeichnung") {
+                Toggle("Auto-Pause", isOn: $rideAutoPauseEnabled)
+                if rideAutoPauseEnabled {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text("Pause unter")
+                            Spacer()
+                            Text(String(format: "%.1f km/h", rideAutoPauseSpeedKmh))
+                                .foregroundStyle(.secondary)
+                                .monospacedDigit()
+                        }
+                        Slider(value: $rideAutoPauseSpeedKmh, in: 1...8, step: 0.5)
+                    }
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text("Verzögerung")
+                            Spacer()
+                            Text("\(Int(rideAutoPauseDelaySeconds)) s")
+                                .foregroundStyle(.secondary)
+                                .monospacedDigit()
+                        }
+                        Slider(value: $rideAutoPauseDelaySeconds, in: 3...30, step: 1)
+                    }
+                    Text("Stoppt die Fahrzeit erst nach anhaltendem Stillstand. Bewegung startet automatisch wieder; eine manuelle Pause bleibt immer bestehen.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
             Section("Fahrtkarte") {
                 Toggle("Automatischer Zoom", isOn: $rideMapAutoZoom)
                 Toggle("Fahrtrichtung oben und Vorausblick", isOn: $rideMapHeadingUp)
