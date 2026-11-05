@@ -4,7 +4,7 @@ Stand: 4. November 2026. Dieses Dokument beschreibt die geplante Architektur. De
 
 ## Produktgrenzen
 
-- Genau zwei Hauptreiter bleiben erhalten: **Aufzeichnung** und **Indoor-Training**.
+- Genau zwei Hauptreiter bleiben erhalten: **Outdoor** und **Indoor**.
 - Routen, Historie, Statistiken, Sensoren und Einstellungen sind innerhalb dieser beiden Bereiche erreichbar und keine zusätzlichen Hauptreiter.
 - Fitmeter Bike ist eine Funktions-Mindestlinie, keine Design- oder Codevorlage. Es werden weder fremder Code noch Texte, Grafiken oder Markenauftritt kopiert.
 - Offline nutzbare Kernfunktionen, lokale Datenhaltung, kein Abo, kein Zwangskonto.
@@ -173,7 +173,9 @@ Der erste vertikale RouteCore-Pfad bleibt innerhalb des Aufzeichnungsbereichs:
 Eine MapKit-Suche löst Adresse oder POI auf, die aktuelle GPS-Position ist der
 Start und `MKDirections` fordert `.cycling` mit Alternativrouten an. Angezeigt
 werden tatsächliche Distanz, erwartete Zeit, Providerhinweise und die von Apple
-gelieferten Alternativen. Erst die ausdrückliche Auswahl übernimmt die
+gelieferten Alternativen gemeinsam auf derselben Karte. Große nummerierte
+Routenpunkte und die zugehörigen Detailzeilen ändern dieselbe Auswahl; erst die
+ausdrückliche Bestätigung übernimmt die
 Polyline in das gemeinsame Kartenmodell; dadurch erscheint sie identisch auf
 Apple-, OSM- und CyclOSM-Ebenen. Apple bietet keine Streckenschmiede-Regler für
 Gravel, Untergrund oder Straßenanteil; diese bleiben der getrennten Valhalla-
@@ -217,8 +219,10 @@ Zoom wird als sichtbare Breite/Höhe in Metern statt als anbieterspezifische Kac
 - Fahrtrichtung oben nutzt geglätteten Kurs; bei Stillstand wird nicht unruhig gedreht.
 - Die Fahrtkarte füllt die verfügbare Aufzeichnungsfläche bis an den oberen Bildschirmrand. Messwerte und Fahrtaktionen liegen als kompakte kontrastreiche Overlays darauf; es gibt keine separate dauerhaft sichtbare „Bereit“- oder GPS-Punkt-Zeile.
 - Live-GPS und Aufzeichnung sind auch in der Bedienung getrennt: Eine breite orange Haupttaste „Aufzeichnung starten“ beginnt erst die Speicherung. Import, Kamera und Teilen stehen in einer eigenen Werkzeugzeile und dürfen die Starttaste nicht zusammendrücken.
-- Im Vorausblick wird der Kartenmittelpunkt um ein Drittel des wirksamen Sichtbereichs in Fahrtrichtung vor das Fahrrad verschoben. Bei gleichzeitig gedrehter Karte erscheint der Positionspfeil dadurch horizontal mittig bei ungefähr zwei Dritteln der Bildschirmhöhe, also ein Drittel über dem unteren Rand, ohne die tatsächliche GPS-Position zu verändern. Fehlt ein aktueller Kurs, dienen zuletzt gefahrene Spur oder nächste GPX-Richtung als Fallback.
+- Im Vorausblick wird der Kartenmittelpunkt so weit in Fahrtrichtung vor das Fahrrad verschoben, dass der Positionspfeil horizontal mittig bei ungefähr zwei Dritteln der Bildschirmhöhe, also ein Drittel über dem unteren Rand, erscheint, ohne die tatsächliche GPS-Position zu verändern. Fehlt ein aktueller Kurs, dienen zuletzt gefahrene Spur oder nächste GPX-Richtung als Fallback. Eine separat gespeicherte 3D-Option steuert die Neigung.
 - Die untere Kartensteuerung ist symmetrisch und handschuhtauglich: Minus unten links, das optisch vom Positionspfeil getrennte Fadenkreuz-Zentrieren mittig und Plus unten rechts. Alle drei Kartenknöpfe sind mit 84 × 84 Punkten exakt Faktor 1,5 gegenüber der ersten 56-Punkte-Zoomstufe vergrößert.
+- Bei aktiver Navigation rückt die Kartensteuerung um die Höhe des Manöverbanners nach oben. Route, GPX-Import, Kamera-Sync und Teilen liegen darunter als vier gleich große kompakte Werkzeugflächen; Start/Pause/Stop bleiben eigene große Fahrtaktionen.
+- „An geplante Straße kleben“ ist eine reine Darstellungshilfe und standardmäßig aus. In der ersten Stufe darf sie nur den sichtbaren Positionspfeil innerhalb einer engen Schwelle auf die aktive Routengeometrie projizieren. Roh-GPS, gespeicherte Spur und Abweichungslogik verwenden immer die unveränderte Messung. Allgemeines Street-Matching gehört in einen austauschbaren Provider und darf niemals still aktiviert werden.
 - Puls, Kadenz, Leistung und Sensorakku werden kompakt in das obere Daten-Cockpit integriert. Eine zusätzliche untere Sensorleiste darf die freie Kartenfläche und die Fahrtaktionen nicht verkleinern.
 
 Offline- und Integrationsentscheidungen stehen ausführlich in [ROUTES_MAPS_INTEGRATIONS.md](ROUTES_MAPS_INTEGRATIONS.md). MapLibre/PMTiles ist die Zielrichtung für lokale Vektorkarten; öffentliche OSM-Standardkacheln werden nicht vorgeladen.
@@ -228,6 +232,19 @@ Offline- und Integrationsentscheidungen stehen ausführlich in [ROUTES_MAPS_INTE
 Die Navigation führt einen Fortschrittszeiger entlang der Route und berechnet Querabstand sowie plausiblen Vorwärtsfortschritt. GPS-Rauschen allein löst keine Neuberechnung aus. Eine anhaltende Abweichung erzeugt zuerst eine Warnung, dann – abhängig von der Einstellung – eine neue Route vom aktuellen Punkt zum nächsten sinnvollen Routenabschnitt oder Ziel.
 
 Manöver werden auf iPhone, Apple Watch, optional per Sprache und Haptik ausgegeben. Sicherheitsrelevante Hinweise bleiben kurz; die Karte darf während der Fahrt keine kleinen Pflichtbedienelemente verlangen.
+
+## Indoor-Trainingspläne und Geistfahrt
+
+Ein `TrainingPlan` besteht aus geordneten Abschnitten mit Dauer oder Distanz,
+Zielbereichen und Übergangsregeln. Die Ausführung erzeugt nur deklarative
+Trainerziele; ausschließlich `TrainerCore` prüft FTMS-Fähigkeiten, Grenzen,
+Control-Point-Eigentum und Not-Stopp.
+
+Eine Geistfahrt referenziert eine eigene gespeicherte Fahrt und vergleicht
+Fortschritt auf derselben Distanzbasis. Angezeigt werden Zeitabstand und
+tatsächlich vorhandene Leistung, Kadenz und Puls beider Fahrten. Die
+Referenzdaten bleiben lokal, sind keine simulierte Person und senden keine
+Trainerkommandos außerhalb derselben `TrainerCore`-Sicherheitsgrenzen.
 
 ## Historie und Auswertung
 

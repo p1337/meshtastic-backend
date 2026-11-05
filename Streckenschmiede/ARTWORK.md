@@ -33,3 +33,13 @@ Verwendeter Prompt:
 Corporate-Logo und App-Icon werden durch den CI-Build mit Apples Asset-Compiler
 geprüft. Vor einer Verwendung als Store-Material oder Marketinggrafik sind die
 jeweiligen Plattformvorgaben getrennt zu prüfen.
+
+## Hauptreiter-Symbole
+
+- `OutdoorTab`: originaler Vektor aus einem Baum und einer schmalen Strecke,
+  die perspektivisch in die Ferne führt.
+- `IndoorTab`: originaler Vektor aus Fahrrad-Vorderteil ohne Hinterrad und
+  einem dreieckigen Hometrainer-Ständer an der gedachten Hinterachse.
+- Beide SVGs sind einfarbige Template-Assets, damit iOS sie im Tab-Balken mit
+  der aktiven oder inaktiven Systemfarbe rendert. Sie enthalten weder fremde
+  Markenformen noch D100-Produktgrafiken.

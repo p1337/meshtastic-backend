@@ -6,7 +6,8 @@ Verbindlicher Gesamtumfang und Status: [../TODO.md](../TODO.md) · Zielarchitekt
 Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Training, ohne laufendes Abonnement.
 
 ## Aktueller iOS-Grundprototyp
-- Zwei Hauptreiter: Aufzeichnung und Indoor-Training
+- Zwei Hauptreiter: Outdoor und Indoor mit eigenen, originalen Symbolen für
+  Strecke/Baum beziehungsweise Fahrrad am Hometrainer
 - GPS-Aufzeichnung mit Distanz, GPX-Export, manueller Pause/Fortsetzung,
   getrennter Gesamt-/Fahrt-/Pausenzeit und atomarem Wiederherstellungsstand
 - Dauerhafte Live-Position und Live-Kurs im geöffneten Kartenbild bereits vor
@@ -29,6 +30,11 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
   Fadenkreuz-Zentrieren-Knopf und 84-Punkte-Handschuhsteuerung unten: Minus
   links, Zentrieren mittig, Plus rechts; separate „Bereit“- und GPS-Punkt-
   Zeilen sowie die untere Sensorleiste wurden zugunsten der Karte entfernt
+- Zentrieren stellt den Vorausblick statt einer Bildschirmmitte wieder her;
+  die geneigte 3D-Ansicht ist separat abschaltbar. Bei aktiver Navigation
+  rücken die drei Kartenknöpfe nach oben, damit die Führung sie nicht verdeckt
+- Die vier unteren Werkzeuge Route, GPX-Import, Kamera-Sync und Teilen besitzen
+  jetzt gleiche kompakte Flächen; Start/Pause/Stop bleiben davon getrennt groß
 - Puls, Kadenz, Leistung und Sensorakku stehen im oberen Daten-Cockpit
 - Kartenebenenknopf rechts oben mit dauerhaft gespeicherter Wahl: Apple Karte,
   Apple Satellit, Apple Hybrid, interaktives OpenStreetMap und die offene
@@ -36,8 +42,8 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
   benötigt aber einen gültigen Thunderforest-Key
 - Erster Zielplaner innerhalb des Aufzeichnungsbereichs: Adresse oder POI
   suchen, Apple-Fahrradrouten ab aktueller GPS-Position einschließlich
-  verfügbarer Alternativen vergleichen und ausgewählte Linie auf die
-  Fahrtkarte übernehmen
+  verfügbarer Alternativen gemeinsam auf der Karte vergleichen, über große
+  nummerierte Kartenpunkte auswählen und die ausgewählte Linie übernehmen
 - Erste Live-Routenführung für Apple- und GPX-Linien: Fortschritt auf der
   Geometrie, nächstes Apple-Manöver samt Entfernung, Restdistanz, anteilige
   Restzeit und sichtbare Abweichung ab 60 Metern; die aktive Route und ihre
@@ -45,6 +51,9 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
   wiederhergestellt und über das X ausdrücklich beendet; beschädigte
   Routensicherungen werden sicher verworfen; echte Fahrt, Haptik, Sprache und
   kontrollierte Neuberechnung stehen noch aus
+- Einstellung „An geplante Straße kleben“ ist standardmäßig aus. Eingeschaltet
+  wird nur der sichtbare Kartenpfeil in höchstens 50 m Entfernung an die aktive
+  Route gelegt; Roh-GPS, Aufzeichnung und Abweichungswarnung bleiben unverändert
 - Eigenes orange/schwarzes Corporate-Zeichen mit mittigem Rennrad-Vorderrad,
   steiler Gabel und angeschnittenem Rennlenker; separates Routenmotiv als Hero-Asset
 - Mehrere gleichzeitige BLE-Verbindungen mit State Restoration sowie Live-Parsern
@@ -70,7 +79,8 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
 - Zwift Click V2 Tastenprotokoll und virtuelle Schaltung
 - DJI Osmo Action 5 Pro Videoimport, QR-/Timecode-/FIT-Synchronisierung und optionale Kamerasteuerung; das technische Konzept ist dokumentiert
 - Offline-Vektorkarten/OSM-Fahrradstil, Komoot-Kontosync und freiwillige Gruppenpositionen; Grenzen und Providerentscheidung sind dokumentiert
-- Training/ERG, Apple-TV-App, Apple Look Around
+- Trainingsplan-Bibliothek, Geistfahrt gegen eine eigene gespeicherte Fahrt,
+  Apple-TV-App und Apple Look Around
 
 ## Build und Veröffentlichung
 Workflow: `.github/workflows/streckenschmiede-ios.yml`

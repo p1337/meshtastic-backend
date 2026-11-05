@@ -69,6 +69,9 @@ Kostenentscheidung:
   eigene Routinglogik, sondern nur eine Quellcode-Kompatibilitätsschicht.
 - Die gewählte Apple-Polyline wird in das providerneutrale Kartenmodell
   übernommen und kann deshalb auf Apple-, OSM- und CyclOSM-Basiskarten liegen.
+- Alle von Apple gelieferten Alternativen werden gemeinsam auf der Vorschaukarte
+  gezeichnet. Große nummerierte Punkte auf den Linien und die Detailzeilen
+  wählen dieselbe Route; erst „Übernehmen“ aktiviert sie für die Fahrt.
 - Die Apple-Schritte werden beim Übernehmen in providerneutrale Manöver
   umgewandelt. Ein lokaler Geometriepfad berechnet daraus während der Fahrt
   nächste Anweisung, Entfernung, Reststrecke, anteilige Restzeit und
@@ -79,6 +82,11 @@ Kostenentscheidung:
 - Apple stellt keine Feinregler für Radweganteil, Gravel, Untergrund oder
   Hügel bereit. Diese Profile folgen ausschließlich über den getrennten
   Valhalla-Provider.
+- Die optionale erste „Stick to Street“-Stufe projiziert ausschließlich den
+  sichtbaren Pfeil innerhalb 50 m auf eine bereits aktive Routengeometrie.
+  Sie ist standardmäßig aus und verändert weder Roh-GPS noch Track oder
+  Abweichungswarnung. Freies Map-Matching auf beliebige Straßen folgt nur über
+  einen ausdrücklich gewählten, regelkonformen Provider.
 
 ## Position anderer Personen
 

@@ -10,6 +10,7 @@ struct RoutePlannerView: View {
     @State private var query = ""
     @State private var searchResults: [MKMapItem] = []
     @State private var routes: [MKRoute] = []
+    @State private var selectedRouteIndex = 0
     @State private var destination: MKMapItem?
     @State private var isSearching = false
     @State private var isRouting = false
@@ -86,31 +87,64 @@ struct RoutePlannerView: View {
                     }
                 }
 
-                if let firstRoute = routes.first,
-                   let destination {
-                    Section("Vorschau") {
+                if !routes.isEmpty, let destination {
+                    Section("Routen auf der Karte auswählen") {
                         RoutePlannerPreview(
                             origin: origin,
                             destination: destination.placemark.coordinate,
-                            coordinates: coordinates(of: firstRoute)
+                            routes: routes.indices.map { index in
+                                RoutePreviewLine(
+                                    id: index,
+                                    coordinates: coordinates(of: routes[index])
+                                )
+                            },
+                            selectedIndex: $selectedRouteIndex
                         )
+                        if routes.indices.contains(selectedRouteIndex) {
+                            let route = routes[selectedRouteIndex]
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(routeTitle(route, index: selectedRouteIndex))
+                                        .font(.headline)
+                                    Text("\(formatDistance(route.distance)) · \(formatDuration(route.expectedTravelTime))")
+                                        .font(.caption.monospacedDigit())
+                                        .foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                Button("Übernehmen") {
+                                    use(route: route, index: selectedRouteIndex)
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .tint(.orange)
+                            }
+                        }
                     }
                 }
 
                 if !routes.isEmpty {
-                    Section("Apple-Fahrradrouten") {
+                    Section("Routendetails") {
                         ForEach(routes.indices, id: \.self) { index in
                             let route = routes[index]
                             Button {
-                                use(route: route, index: index)
+                                selectedRouteIndex = index
                             } label: {
                                 VStack(alignment: .leading, spacing: 6) {
                                     HStack {
+                                        Text("\(index + 1)")
+                                            .font(.caption.weight(.black))
+                                            .frame(width: 26, height: 26)
+                                            .background(
+                                                selectedRouteIndex == index ? Color.orange : Color.secondary.opacity(0.25),
+                                                in: Circle()
+                                            )
+                                            .foregroundStyle(selectedRouteIndex == index ? Color.black : Color.primary)
                                         Text(routeTitle(route, index: index))
                                             .font(.headline)
                                         Spacer()
-                                        Image(systemName: "chevron.right.circle.fill")
-                                            .foregroundStyle(.orange)
+                                        Image(systemName: selectedRouteIndex == index
+                                              ? "checkmark.circle.fill"
+                                              : "circle")
+                                            .foregroundStyle(selectedRouteIndex == index ? Color.orange : Color.secondary)
                                     }
                                     Text("\(formatDistance(route.distance)) · \(formatDuration(route.expectedTravelTime))")
                                         .font(.subheadline.weight(.semibold))
@@ -195,6 +229,7 @@ struct RoutePlannerView: View {
         isRouting = true
         errorMessage = nil
         routes = []
+        selectedRouteIndex = 0
         destination = item
         defer { isRouting = false }
         do {
@@ -210,6 +245,7 @@ struct RoutePlannerView: View {
             request.departureDate = Date()
             let response = try await MKDirections(request: request).calculate()
             routes = response.routes
+            selectedRouteIndex = 0
             if routes.isEmpty {
                 errorMessage = "Apple hat für dieses Ziel keine Fahrradroute geliefert"
             }
@@ -292,12 +328,19 @@ struct RoutePlannerView: View {
     }
 }
 
+private struct RoutePreviewLine: Identifiable {
+    let id: Int
+    let coordinates: [CLLocationCoordinate2D]
+}
+
 private struct RoutePlannerPreview: View {
     let origin: CLLocationCoordinate2D?
     let destination: CLLocationCoordinate2D
-    let coordinates: [CLLocationCoordinate2D]
+    let routes: [RoutePreviewLine]
+    @Binding var selectedIndex: Int
 
     private var initialPosition: MapCameraPosition {
+        let coordinates = routes.flatMap(\.coordinates)
         guard coordinates.count > 1 else {
             return .region(MKCoordinateRegion(
                 center: destination,
@@ -311,9 +354,45 @@ private struct RoutePlannerPreview: View {
 
     var body: some View {
         Map(initialPosition: initialPosition, interactionModes: [.pan, .zoom]) {
-            if coordinates.count > 1 {
-                MapPolyline(coordinates: coordinates)
-                    .stroke(.orange, style: StrokeStyle(lineWidth: 6, lineCap: .round, lineJoin: .round))
+            ForEach(routes.filter { $0.id != selectedIndex }) { route in
+                if route.coordinates.count > 1 {
+                    MapPolyline(coordinates: route.coordinates)
+                        .stroke(
+                            .white.opacity(0.58),
+                            style: StrokeStyle(lineWidth: 5, lineCap: .round, lineJoin: .round)
+                        )
+                }
+            }
+            ForEach(routes.filter { $0.id == selectedIndex }) { route in
+                if route.coordinates.count > 1 {
+                    MapPolyline(coordinates: route.coordinates)
+                        .stroke(
+                            .orange,
+                            style: StrokeStyle(lineWidth: 8, lineCap: .round, lineJoin: .round)
+                        )
+                }
+            }
+            ForEach(routes) { route in
+                if let coordinate = route.coordinates.dropFirst(route.coordinates.count / 2).first {
+                    Annotation("Route \(route.id + 1)", coordinate: coordinate) {
+                        Button {
+                            selectedIndex = route.id
+                        } label: {
+                            Text("\(route.id + 1)")
+                                .font(.headline.weight(.black))
+                                .frame(width: 42, height: 42)
+                                .foregroundStyle(selectedIndex == route.id ? Color.black : Color.white)
+                                .background(
+                                    selectedIndex == route.id ? Color.orange : Color.black.opacity(0.82),
+                                    in: Circle()
+                                )
+                                .overlay(Circle().stroke(.white, lineWidth: 2))
+                                .shadow(color: .black.opacity(0.6), radius: 5, y: 2)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Route \(route.id + 1) auswählen")
+                    }
+                }
             }
             if let origin {
                 Marker("Start", systemImage: "location.fill", coordinate: origin)
@@ -323,8 +402,8 @@ private struct RoutePlannerPreview: View {
                 .tint(.green)
         }
         .mapStyle(.standard(elevation: .realistic))
-        .frame(height: 230)
+        .frame(height: 300)
         .clipShape(RoundedRectangle(cornerRadius: 16))
-        .accessibilityLabel("Vorschau der berechneten Fahrradroute")
+        .accessibilityLabel("Karte mit allen berechneten Fahrradrouten")
     }
 }
