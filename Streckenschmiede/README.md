@@ -31,7 +31,7 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
 - Bildschirmfüllendes, oben beginnendes Karten-Cockpit mit kompakten
   transparenten Messwert-Overlays, gefahrenem Track, Geschwindigkeit, Zeit,
   Höhe, Auf-/Abstieg und gespeichertem Karten-Zoom; die laufende Position liegt
-  beim Folgen horizontal mittig ungefähr ein Drittel über dem unteren Rand
+  beim Folgen horizontal mittig knapp oberhalb der unteren Kartenknöpfe
 - Die Karte reicht unverändert hinter Uhr, Dynamic Island und Statussymbolen
   bis an die Oberkante. Dort liegt ausschließlich ein durchscheinender
   Material-Blur; er reserviert keinen Platz und verschiebt die Karte nicht.
@@ -46,8 +46,10 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
   wurden zugunsten der Karte entfernt
 - Zentrieren stellt den sicheren Vorausblick statt einer Bildschirmmitte wieder
   her; ein gemeinsamer MapKit-Kamerapfad verankert den Fahrer auf Apple- und
-  OSM-Karten ein Drittel über dem unteren Rand. Auf kompakten Displays wandert
-  der Pfeil automatisch nach oben und hält mindestens 24 Punkte Abstand vor
+  OSM-Karten gegenüber dem früheren unteren-Drittel-Anker um 15 Prozent der
+  Kartenhöhe weiter unten. Die Sicherheitsgrenze setzt ihn knapp oberhalb der
+  Kartenknöpfe; auf kompakten Displays wandert
+  der Pfeil automatisch nach oben und hält mindestens 15 Punkte Abstand vor
   den tiefen 84-Punkte-Kartenknöpfen. Die Position wird auch ohne verfügbaren
   Fahrkurs aus der Bildschirmmitte in den unteren Kartenbereich gesetzt. Die
   geneigte 3D-Ansicht wirkt auch im Stand, ist separat abschaltbar und lässt
