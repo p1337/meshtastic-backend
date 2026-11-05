@@ -252,6 +252,15 @@ Trainerkommandos außerhalb derselben `TrainerCore`-Sicherheitsgrenzen.
 
 Rohmessungen bleiben unverändert. Zusammenfassungen, Rekorde und Diagrammreihen werden versioniert abgeleitet und können nach Algorithmusänderungen neu berechnet werden. Karten-Vorschaubilder sind Cache, nicht Primärdaten. Löschen einer Fahrt ist ausdrücklich, rückgängig machbar soweit praktisch und entfernt zugehörige HealthKit-Daten nur nach separater Bestätigung und Berechtigung.
 
+Die erste lokale Historienstufe speichert mit `RideArchiveStore` genau einen
+versionierten Metadatensatz pro lokalem Kalendertag. Der Index liegt atomar als
+JSON im Application-Support-Verzeichnis, ist auf 3.650 plausible, eindeutige
+Einträge begrenzt und verweist ausschließlich auf sichere
+`Tagesfahrt-YYYY-MM-DD.gpx`-Dateinamen im Documents-Verzeichnis. Ein erneuter
+Export desselben Tages ersetzt dessen Zusammenfassung atomar. Die GPX-Datei
+bleibt Rohdatenquelle; Kartenbilder, Diagramme, Sensorzusammenfassungen und eine
+spätere SwiftData-/Backup-Schicht dürfen daraus neu abgeleitet werden.
+
 ## Musik und Audio
 
 Musik ist ein optionales, standardmäßig ausgeschaltetes Cockpit-Modul. Nur die

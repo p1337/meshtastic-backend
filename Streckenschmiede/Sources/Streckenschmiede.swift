@@ -27,6 +27,7 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
     @Published var ridingSeconds = 0
     @Published var pausedSeconds = 0
     @Published var exportURL: URL?
+    @Published private(set) var rideHistory: [RideArchiveEntry] = []
     @Published var status = "Bereit"
     @Published private(set) var rideID = UUID()
     @Published private(set) var startedAt: Date?
@@ -74,6 +75,7 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
         location.desiredAccuracy = kCLLocationAccuracyBest
         location.distanceFilter = 5
         syncFromSession(now: Date())
+        rideHistory = (try? RideArchiveStore.load()) ?? []
         if recoveryAvailable {
             status = "Unterbrochene Fahrt gefunden"
             startElapsedTimer()
@@ -292,6 +294,26 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
         }
     }
 
+    func refreshRideHistory(includeCurrentDay: Bool = true) {
+        do {
+            if includeCurrentDay, !sessionEngine.samples.isEmpty {
+                exportURL = try writeDailyGPX(now: Date())
+            } else {
+                rideHistory = try RideArchiveStore.load()
+            }
+        } catch {
+            status = "Historie konnte nicht geladen werden"
+        }
+    }
+
+    func historyGPXURL(for entry: RideArchiveEntry) -> URL? {
+        guard let url = RideArchiveStore.gpxURL(for: entry),
+              FileManager.default.fileExists(atPath: url.path) else {
+            return nil
+        }
+        return url
+    }
+
     func persistNow() {
         sessionEngine.persistNow(now: Date())
         if sessionEngine.lastPersistenceError != nil, active {
@@ -413,6 +435,13 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
 
     private func writeDailyGPX(now: Date) throws -> URL {
+        guard let snapshot = sessionEngine.snapshot else {
+            throw NSError(
+                domain: "Streckenschmiede.RideArchive",
+                code: 2,
+                userInfo: [NSLocalizedDescriptionKey: "Keine Tagesfahrt vorhanden"]
+            )
+        }
         let timestampFormatter = ISO8601DateFormatter()
         timestampFormatter.formatOptions = [.withInternetDateTime]
         var gpx = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><gpx version=\"1.1\" creator=\"Streckenschmiede\" xmlns=\"http://www.topografix.com/GPX/1/1\"><trk><name>Tagesfahrt</name><trkseg>"
@@ -432,6 +461,23 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
         ).first ?? FileManager.default.temporaryDirectory
         let url = documents.appendingPathComponent("Tagesfahrt-\(day).gpx")
         try gpx.write(to: url, atomically: true, encoding: .utf8)
+        let durations = sessionEngine.durations(at: now)
+        let entry = RideArchiveEntry(
+            dayIdentifier: day,
+            rideID: snapshot.rideID,
+            startedAt: snapshot.startedAt,
+            updatedAt: now,
+            distanceMeters: snapshot.distanceMeters,
+            totalSeconds: max(0, Int(durations.totalSeconds)),
+            ridingSeconds: max(0, Int(durations.ridingSeconds)),
+            pausedSeconds: max(0, Int(durations.pausedSeconds)),
+            maximumSpeedKmh: snapshot.maximumSpeedKmh,
+            ascentMeters: snapshot.ascentMeters,
+            descentMeters: snapshot.descentMeters,
+            pointCount: snapshot.samples.count,
+            gpxFileName: url.lastPathComponent
+        )
+        rideHistory = try RideArchiveStore.upsert(entry)
         return url
     }
 }
@@ -1188,6 +1234,26 @@ struct SettingsView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+            Section("Historie") {
+                NavigationLink {
+                    RideHistoryView(ride: ride)
+                } label: {
+                    Label("Tagesfahrten", systemImage: "clock.arrow.circlepath")
+                    Spacer()
+                    Text("\(ride.rideHistory.count)")
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                }
+                if let latest = ride.rideHistory.first {
+                    LabeledContent(
+                        "Letzte Tagesfahrt",
+                        value: String(format: "%.1f km", latest.distanceMeters / 1_000)
+                    )
+                }
+                Text("Ein Kalendertag bleibt eine Fahrt. Die Historie wird lokal gespeichert; jede Tages-GPX kann einzeln geteilt werden.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
             Section("Fahrtkarte") {
                 Picker("Kartendarstellung", selection: $rideMapLayerRaw) {
                     ForEach(availableMapLayers) { layer in
@@ -1310,4 +1376,83 @@ struct SettingsView: View {
             layer != .openCycleMap || RideMapLayer.openCycleMapKey != nil
         }
     }
+}
+
+struct RideHistoryView: View {
+    @ObservedObject var ride: RideTracker
+
+    var body: some View {
+        Group {
+            if ride.rideHistory.isEmpty {
+                ContentUnavailableView(
+                    "Noch keine Tagesfahrt",
+                    systemImage: "bicycle",
+                    description: Text("Sobald GPS-Fahrpunkte vorhanden sind, erscheint die heutige Fahrt hier automatisch.")
+                )
+            } else {
+                List(ride.rideHistory) { entry in
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack(alignment: .firstTextBaseline) {
+                            Text(entry.startedAt, format: .dateTime.day().month(.wide).year())
+                                .font(.headline)
+                            Spacer()
+                            if let url = ride.historyGPXURL(for: entry) {
+                                ShareLink(item: url) {
+                                    Label("GPX", systemImage: "square.and.arrow.up")
+                                        .labelStyle(.titleAndIcon)
+                                }
+                                .tint(.orange)
+                            }
+                        }
+                        HStack(spacing: 18) {
+                            historyMetric(
+                                String(format: "%.1f km", entry.distanceMeters / 1_000),
+                                label: "Distanz"
+                            )
+                            historyMetric(
+                                formatHistoryDuration(entry.ridingSeconds),
+                                label: "Fahrt"
+                            )
+                            historyMetric(
+                                String(format: "%.1f", entry.averageSpeedKmh),
+                                label: "Ø km/h"
+                            )
+                        }
+                        HStack(spacing: 14) {
+                            Label(String(format: "max %.1f km/h", entry.maximumSpeedKmh), systemImage: "gauge.with.dots.needle.50percent")
+                            Label(String(format: "↑ %.0f · ↓ %.0f m", entry.ascentMeters, entry.descentMeters), systemImage: "mountain.2")
+                            Spacer()
+                            Text("\(entry.pointCount) Punkte")
+                        }
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    }
+                    .padding(.vertical, 5)
+                }
+                .listStyle(.insetGrouped)
+            }
+        }
+        .navigationTitle("Historie")
+        .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            ride.refreshRideHistory(includeCurrentDay: true)
+        }
+    }
+
+    private func historyMetric(_ value: String, label: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(value)
+                .font(.subheadline.weight(.semibold))
+                .monospacedDigit()
+            Text(label)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+    }
+}
+
+private func formatHistoryDuration(_ seconds: Int) -> String {
+    let hours = seconds / 3_600
+    let minutes = (seconds % 3_600) / 60
+    return hours > 0 ? String(format: "%d:%02d h", hours, minutes) : "\(minutes) min"
 }
