@@ -461,7 +461,13 @@ struct MainView: View {
                 }
                 .toolbar(.hidden, for: .navigationBar)
             }
-            .tabItem { Label("Aufzeichnung",systemImage:"record.circle") }
+            .tabItem {
+                Label {
+                    Text("Outdoor")
+                } icon: {
+                    Image("OutdoorTab")
+                }
+            }
             .tag(AppTab.recording)
             NavigationStack {
                 Form {
@@ -494,7 +500,7 @@ struct MainView: View {
                         Text("ERG, Intervalle und RLV werden vorbereitet")
                     }
                 }
-                .navigationTitle("Indoor-Training")
+                .navigationTitle("Indoor")
                 .toolbar {
                     ToolbarItem(placement: .topBarTrailing) {
                         NavigationLink {
@@ -505,7 +511,13 @@ struct MainView: View {
                     }
                 }
             }
-            .tabItem { Label("Indoor-Training",systemImage:"bicycle") }
+            .tabItem {
+                Label {
+                    Text("Indoor")
+                } icon: {
+                    Image("IndoorTab")
+                }
+            }
             .tag(AppTab.indoor)
         }
         .onOpenURL { url in
@@ -709,44 +721,49 @@ private struct RideDashboard: View {
                 primaryRideButton
             }
 
-            HStack(spacing: 14) {
+            HStack(spacing: 8) {
                 Button { showingRoutePlanner = true } label: {
                     Image(systemName: "map.fill")
-                        .font(.title2.weight(.bold))
-                        .frame(width: 54, height: 54)
+                        .font(.title3.weight(.bold))
+                        .frame(maxWidth: .infinity, minHeight: 50)
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(.black.opacity(0.82))
+                .compactToolButton()
                 .accessibilityLabel("Zielroute planen")
 
                 Button { importing = true } label: {
                     Image(systemName: "square.and.arrow.down")
-                        .font(.title2.weight(.bold))
-                        .frame(width: 54, height: 54)
+                        .font(.title3.weight(.bold))
+                        .frame(maxWidth: .infinity, minHeight: 50)
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(.black.opacity(0.82))
+                .compactToolButton()
                 .accessibilityLabel("GPX-Strecke importieren")
 
                 Button { showingCameraSync = true } label: {
                     Image(systemName: "qrcode.viewfinder")
-                        .font(.title2.weight(.bold))
-                        .frame(width: 54, height: 54)
+                        .font(.title3.weight(.bold))
+                        .frame(maxWidth: .infinity, minHeight: 50)
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(.black.opacity(0.82))
+                .compactToolButton()
                 .disabled(!ride.active && ride.points == 0)
                 .accessibilityLabel("DJI Action 5 Pro synchronisieren")
 
                 if let url = ride.exportURL {
                     ShareLink(item: url) {
                         Image(systemName: "square.and.arrow.up")
-                            .font(.title2.weight(.bold))
-                            .frame(width: 54, height: 54)
+                            .font(.title3.weight(.bold))
+                            .frame(maxWidth: .infinity, minHeight: 50)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.black.opacity(0.82))
+                    .compactToolButton()
                     .accessibilityLabel("Aufgezeichnete GPX teilen")
+                } else {
+                    Button {} label: {
+                        Image(systemName: "square.and.arrow.up")
+                            .font(.title3.weight(.bold))
+                            .frame(maxWidth: .infinity, minHeight: 50)
+                    }
+                    .compactToolButton()
+                    .disabled(true)
+                    .accessibilityLabel("GPX-Teilen nach abgeschlossener Aufzeichnung verfügbar")
                 }
             }
             .frame(maxWidth: .infinity)
@@ -1153,6 +1170,8 @@ struct SettingsView: View {
     @AppStorage("rideMapZoomMeters") private var rideMapZoomMeters = 1_500.0
     @AppStorage("rideMapAutoZoom") private var rideMapAutoZoom = true
     @AppStorage("rideMapHeadingUp") private var rideMapHeadingUp = true
+    @AppStorage("rideMap3DEnabled") private var rideMap3DEnabled = true
+    @AppStorage("rideMapStickToRoute") private var rideMapStickToRoute = false
     @AppStorage("rideAutoPauseEnabled") private var rideAutoPauseEnabled = true
     @AppStorage("rideAutoPauseSpeedKmh") private var rideAutoPauseSpeedKmh = 2.5
     @AppStorage("rideAutoPauseDelaySeconds") private var rideAutoPauseDelaySeconds = 8.0
@@ -1197,6 +1216,13 @@ struct SettingsView: View {
             Section("Fahrtkarte") {
                 Toggle("Automatischer Zoom", isOn: $rideMapAutoZoom)
                 Toggle("Fahrtrichtung oben und Vorausblick", isOn: $rideMapHeadingUp)
+                Toggle("Geneigte 3D-Ansicht", isOn: $rideMap3DEnabled)
+                Toggle("An geplante Straße kleben", isOn: $rideMapStickToRoute)
+                Text(rideMapStickToRoute
+                     ? "Nur der Kartenpfeil wird bis 50 m an die aktive Route angelegt. Aufzeichnung, Roh-GPS und Abweichungswarnung bleiben unverändert."
+                     : "Roh-GPS: Der Kartenpfeil wird nicht auf eine Nachbarstraße oder Route verschoben.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 10) {
                         ForEach(zoomPresets, id: \.0) { preset in
@@ -1238,5 +1264,22 @@ struct SettingsView: View {
             }
         }
         .navigationTitle("Einstellungen")
+    }
+}
+
+private struct CompactToolButtonModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .buttonStyle(.plain)
+            .foregroundStyle(.white)
+            .frame(maxWidth: .infinity)
+            .background(.black.opacity(0.82), in: RoundedRectangle(cornerRadius: 14))
+            .overlay(RoundedRectangle(cornerRadius: 14).stroke(.white.opacity(0.2)))
+    }
+}
+
+private extension View {
+    func compactToolButton() -> some View {
+        modifier(CompactToolButtonModifier())
     }
 }

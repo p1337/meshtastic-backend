@@ -114,7 +114,7 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 
 ## Bereits nachgewiesen
 
-- [x] Native iOS-Grund-App mit genau zwei Hauptreitern: **Aufzeichnung** und **Indoor-Training**.
+- [x] Native iOS-Grund-App mit genau zwei Hauptreitern: **Outdoor** und **Indoor**.
 - [x] Einfacher GPS-Track, Distanzberechnung und GPX-Export im Vordergrund.
 - [x] GPX-Import und Darstellung einer importierten Strecke mit Start/Ziel in Apple MapKit.
 - [x] Allgemeine BLE-Gerätesuche ohne Sensor-Dekodierung oder Trainersteuerung.
@@ -138,17 +138,21 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 
 ## P0 – modernes Fahrt-Cockpit und Karten
 
+- [~] Die beiden Hauptreiter heißen **Outdoor** und **Indoor** und verwenden eigene Template-Vektoren: Baum mit perspektivischer Strecke sowie Fahrrad-Vorderteil am dreieckigen Hometrainer-Ständer. Asset-Compiler- und echte Tabbar-Abnahme fehlen.
 - [~] Bildschirmfüllende schwarze/orange Karten-Cockpitansicht beginnt oben und legt Live-Werte kompakt über die Karte; Anpassbarkeit, vollständige Dynamic-Type- und Geräteabnahme bleiben offen.
+- [~] Das Kartenbild läuft hinter Status-/Top-Bereich weiter; Cockpit, Ebenenknopf und Pflichtaktionen müssen auf allen unterstützten Displaygrößen innerhalb sicherer, überlappungsfreier Bedienbereiche bleiben. Kleine-iPhone-Abnahme fehlt.
 - [~] Eine breite, mindestens 64 Punkte hohe orange Haupttaste startet die Aufzeichnung ausdrücklich; GPS-Liveposition und Hilfswerkzeuge bleiben davon getrennt. Reale Handschuh- und Geräteabnahme steht aus.
 - [ ] Anpassbare Datenfelder und mindestens drei speicherbare Cockpit-Layouts.
 - [~] Live-Karte mit aktueller Position, gefahrenem Track und geplanter GPX-Linie im Fahrtbild; Abweichung und echte Navigation fehlen noch.
 - [~] Kartenebenenknopf rechts oben mit gespeicherter Wahl: Apple Standard, Satellit und Hybrid sowie interaktives Online-OpenStreetMap und die offene Fahrradkarte CyclOSM mit sichtbarer Attribution sind implementiert. OpenCycleMap ist als getrennte Thunderforest-Option vorhanden, bleibt ohne gültigen Provider-Key deaktiviert; reale Geräte-, Last- und Sperrtestfahrt fehlen.
-- [ ] Kartenorientierung: Norden oben, Fahrtrichtung oben und 3D-Perspektive.
-- [~] Follow-Modus mit eindeutigem Fadenkreuz-Zentrieren-Knopf unten mittig; Verschieben/Pinch schaltet auf freie Karte. Reale Gestenabnahme steht aus.
+- [~] Kartenorientierung mit Norden oben, Fahrtrichtung oben und separat abschaltbarer geneigter 3D-Perspektive ist vorhanden; Stillstand, Kompassglättung und reale Geräteabnahme fehlen.
+- [~] Follow-Modus mit eindeutigem Fadenkreuz-Zentrieren-Knopf unten mittig; Verschieben/Pinch schaltet auf freie Karte, Zentrieren stellt den Vorausblick mit Position im unteren Drittel wieder her. Reale Gestenabnahme steht aus.
 - [~] Live-Karten-Zoom per Gesten und auf 84 Punkte beziehungsweise Faktor 1,5 vergrößerten Tasten: Minus unten links, Zentrieren unten mittig, Plus unten rechts; Standardbereich 250 m bis 10 km und Presets Nah/Fahrt/Voraus/Übersicht sind implementiert, reale Handschuhabnahme fehlt.
 - [~] Puls, Kadenz, Leistung und Sensorakku stehen im oberen Daten-Cockpit; die untere Sensorleiste entfällt für mehr freie Kartenfläche. Reale Geräte- und Dynamic-Type-Abnahme fehlt.
 - [~] Dauerhaft gespeicherter Live-Karten-Zoom und optionaler geschwindigkeitsabhängiger Auto-Zoom; manöverabhängiger Zoom fehlt.
-- [~] Fahrtrichtung/Vorausblick setzt den orangefarbenen Positionspfeil durch einen um ein Drittel vorausliegenden Kartenmittelpunkt horizontal mittig auf zwei Drittel der Bildschirmhöhe, also ein Drittel über den unteren Rand; Kurs fällt auf Track- oder GPX-Richtung zurück. Glättung, Stillstandstest und echte Fahrabnahme fehlen.
+- [~] Fahrtrichtung/Vorausblick setzt den orangefarbenen Positionspfeil durch einen weiter vorausliegenden Kartenmittelpunkt horizontal mittig ungefähr auf zwei Drittel der Bildschirmhöhe, also ein Drittel über den unteren Rand; Kurs fällt auf Track- oder GPX-Richtung zurück. Glättung, Stillstandstest und echte Fahrabnahme fehlen.
+- [~] Kartensteuerung und Navigationsbanner erhalten getrennte vertikale Bereiche; die vier unteren Werkzeugflächen sind gleich groß und kompakter. Kleine iPhones, Dynamic Type und Handschuhe müssen real geprüft werden.
+- [~] „An geplante Straße kleben“ ist standardmäßig aus und verändert eingeschaltet nur den sichtbaren Kartenpfeil innerhalb 50 m der aktiven Routengeometrie; Roh-GPS, Aufzeichnung und Abweichungsprüfung bleiben unverändert. Allgemeines Street-Matching ohne aktive Route benötigt einen regelkonformen Routing-/Map-Matching-Provider und bleibt offen.
 - [ ] Bildschirm-Wachhalten optional, Helligkeits-/OLED-schonender Nachtmodus und Live Activity/Lock-Screen-Status.
 
 ## P0 – Routenplaner und Zielnavigation
@@ -161,7 +165,7 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 - [~] Apple-MapKit-Fahrradrouting nutzt `.cycling`, Distanz, erwartete Zeit, Hinweise und verfügbare Alternativen; Regionsverfügbarkeit, echte Route und Fehlerfälle auf dem iPhone bleiben zu testen.
 - [ ] OSM-basiertes Valhalla-Routing als austauschbaren Provider anbinden, damit Radweg-/Straßenanteil, Fahrradtyp, Untergrund und Hügel tatsächlich steuerbar sind.
 - [ ] Keine Produktionsabhängigkeit von einem ungarantierten öffentlichen Test-Endpunkt; Server/Provider austauschbar konfigurieren.
-- [~] Von Apple gelieferte Alternativrouten werden mit Distanz, Fahrzeit und Hinweisen verglichen; mindestens zwei sind providerabhängig, Auf-/Abstieg und Untergrundhinweise fehlen.
+- [~] Von Apple gelieferte Alternativrouten werden gemeinsam auf der Karte dargestellt, über große nummerierte Routenpunkte oder die Detailzeile ausgewählt und mit Distanz, Fahrzeit sowie Hinweisen verglichen; die Anzahl bleibt providerabhängig, Auf-/Abstieg und Untergrundhinweise fehlen.
 - [~] Apple-Manöver, Entfernung zur nächsten Anweisung, Restdistanz und anteilige Restzeit werden kompakt über der Fahrtkarte angezeigt und durch Geometrietests belegt; Symbolklassifizierung, Höhenprofil, Sprache/Haptik und echte Fahrabnahme fehlen.
 - [~] Querabstand zur Route wird laufend berechnet und ab 60 Metern sichtbar gewarnt; zeitliche Entprellung, akustische/haptische Warnung und kontrollierte Neuberechnung mit Erhalt der ursprünglichen Route fehlen.
 - [ ] Sprachansagen und Apple-Watch-Haptik mit getrennten Lautstärke-/Hinweisoptionen.
@@ -214,6 +218,8 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 - [ ] Linken Click über mindestens 60 Minuten auf den historisch dokumentierten firmwareabhängigen Ausfall testen.
 - [~] Indoor-Cockpit zeigt Leistung, Kadenz, Herzfrequenz und FTMS-Steuerung für Widerstand/ERG/Steigung; Gang, Indoor-Zeit/Energie, Intervalle und anpassbare Felder fehlen.
 - [ ] Strukturierte Workouts mit Warm-up, Intervallen, ERG, frei fahren und Cool-down.
+- [ ] Trainingsplan-Bibliothek mit Vorlagen, selbst erstellbaren Einheiten, Kalender/Planfortschritt, Zielbereichen für Leistung, Puls und Kadenz sowie sicherer Pause/Fortsetzung.
+- [ ] Indoor-„Geistfahrt“ gegen eine eigene gespeicherte Referenzfahrt: Fortschritt entlang derselben Distanz/Route, Zeitabstand, bisherige und aktuelle Leistung/Kadenz/Puls, persönliche Bestzeit und Datenschutz vollständig lokal; Trainerziele laufen weiterhin ausschließlich über `TrainerCore` und seine Sicherheitsgrenzen.
 
 ## P1 – Strecken, Historie, Statistik und Rekorde
 

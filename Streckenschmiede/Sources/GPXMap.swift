@@ -21,12 +21,17 @@ struct LiveRideMap: View {
     @AppStorage("rideMapZoomMeters") private var rideMapZoomMeters = 1_500.0
     @AppStorage("rideMapAutoZoom") private var rideMapAutoZoom = true
     @AppStorage("rideMapHeadingUp") private var rideMapHeadingUp = true
+    @AppStorage("rideMap3DEnabled") private var rideMap3DEnabled = true
+    @AppStorage("rideMapStickToRoute") private var rideMapStickToRoute = false
     @AppStorage("rideMapLayer") private var rideMapLayerRaw = RideMapLayer.appleStandard.rawValue
     @State private var cameraPosition: MapCameraPosition = .automatic
     @State private var rasterCameraTarget: RasterCameraTarget?
     @State private var cameraRevision = 0
     @State private var followsPosition = true
     private let mapControlSize: CGFloat = 84
+
+    private var hasActiveRoute: Bool { plannedRoute.count > 1 }
+    private var mapControlsBottomPadding: CGFloat { hasActiveRoute ? 222 : 142 }
 
     private var effectiveZoomMeters: Double {
         guard rideMapAutoZoom else { return rideMapZoomMeters }
@@ -40,7 +45,7 @@ struct LiveRideMap: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .overlay(alignment: .topTrailing) {
             mapLayerMenu
-                .padding(.top, 126)
+                .padding(.top, 210)
                 .padding(.trailing, 12)
         }
         .overlay(alignment: .bottomTrailing) {
@@ -54,18 +59,17 @@ struct LiveRideMap: View {
                         .background(.black.opacity(0.78), in: Capsule())
                 }
                 .padding(.trailing, 12)
-                .padding(.bottom, 234)
+                .padding(.bottom, hasActiveRoute ? 314 : 234)
             }
         }
         .overlay(alignment: .bottom) {
-            HStack(spacing: 12) {
+            HStack(spacing: 0) {
                 mapButton(systemImage: "minus", accessibilityLabel: "Karte verkleinern") {
                     rideMapZoomMeters = min(10_000, rideMapZoomMeters * 1.5)
                     followsPosition = true
                     recenter()
                 }
-
-                Spacer(minLength: 0)
+                .frame(maxWidth: .infinity)
 
                 mapButton(
                     systemImage: "scope",
@@ -75,17 +79,17 @@ struct LiveRideMap: View {
                     followsPosition = true
                     recenter()
                 }
-
-                Spacer(minLength: 0)
+                .frame(maxWidth: .infinity)
 
                 mapButton(systemImage: "plus", accessibilityLabel: "Karte vergrößern") {
                     rideMapZoomMeters = max(250, rideMapZoomMeters / 1.5)
                     followsPosition = true
                     recenter()
                 }
+                .frame(maxWidth: .infinity)
             }
-            .padding(.horizontal, 14)
-            .padding(.bottom, 142)
+            .padding(.horizontal, 8)
+            .padding(.bottom, mapControlsBottomPadding)
         }
         .overlay(alignment: .topLeading) {
             if !followsPosition {
@@ -94,7 +98,7 @@ struct LiveRideMap: View {
                     .padding(.horizontal, 10)
                     .padding(.vertical, 7)
                     .background(.black.opacity(0.78), in: Capsule())
-                    .padding(.top, 126)
+                    .padding(.top, 210)
                     .padding(.leading, 12)
             }
         }
@@ -111,6 +115,21 @@ struct LiveRideMap: View {
             recenter()
         }
         .onChange(of: rideMapLayerRaw) { _, _ in recenter() }
+        .onChange(of: rideMapZoomMeters) { _, _ in
+            if followsPosition { recenter() }
+        }
+        .onChange(of: rideMapAutoZoom) { _, _ in
+            if followsPosition { recenter() }
+        }
+        .onChange(of: rideMapHeadingUp) { _, _ in
+            if followsPosition { recenter() }
+        }
+        .onChange(of: rideMap3DEnabled) { _, _ in
+            if followsPosition { recenter() }
+        }
+        .onChange(of: rideMapStickToRoute) { _, _ in
+            if followsPosition { recenter() }
+        }
         .onChange(of: currentCoordinate?.latitude) { _, _ in
             if followsPosition { recenter() }
         }
@@ -138,7 +157,7 @@ struct LiveRideMap: View {
                 tileTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
                 coordinates: coordinates,
                 plannedRoute: plannedRoute,
-                currentCoordinate: currentCoordinate,
+                currentCoordinate: displayedCoordinate,
                 courseDegrees: courseDegrees,
                 cameraTarget: rasterCameraTarget,
                 cameraRevision: cameraRevision,
@@ -150,7 +169,7 @@ struct LiveRideMap: View {
                 tileTemplate: "https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png",
                 coordinates: coordinates,
                 plannedRoute: plannedRoute,
-                currentCoordinate: currentCoordinate,
+                currentCoordinate: displayedCoordinate,
                 courseDegrees: courseDegrees,
                 cameraTarget: rasterCameraTarget,
                 cameraRevision: cameraRevision,
@@ -163,7 +182,7 @@ struct LiveRideMap: View {
                     tileTemplate: "https://tile.thunderforest.com/cycle/{z}/{x}/{y}.png?apikey=\(openCycleMapKey)",
                     coordinates: coordinates,
                     plannedRoute: plannedRoute,
-                    currentCoordinate: currentCoordinate,
+                    currentCoordinate: displayedCoordinate,
                     courseDegrees: courseDegrees,
                     cameraTarget: rasterCameraTarget,
                     cameraRevision: cameraRevision,
@@ -190,8 +209,8 @@ struct LiveRideMap: View {
                 MapPolyline(coordinates: coordinates)
                     .stroke(.orange, style: StrokeStyle(lineWidth: 6, lineCap: .round, lineJoin: .round))
             }
-            if let currentCoordinate {
-                Annotation("Aktuelle Position", coordinate: currentCoordinate) {
+            if let displayedCoordinate {
+                Annotation("Aktuelle Position", coordinate: displayedCoordinate) {
                     ZStack {
                         Circle()
                             .fill(.black.opacity(0.86))
@@ -295,28 +314,30 @@ struct LiveRideMap: View {
     }
 
     private func recenter() {
-        guard let currentCoordinate else { return }
+        guard let currentCoordinate = displayedCoordinate else { return }
         let travelBearing = travelBearingDegrees
         let heading = rideMapHeadingUp ? travelBearing ?? 0 : 0
+        let lookAheadFraction = rideMap3DEnabled ? 0.48 : 0.38
         let center = travelBearing.map {
             coordinate(
                 from: currentCoordinate,
                 bearingDegrees: $0,
-                distanceMeters: effectiveZoomMeters / 3
+                distanceMeters: effectiveZoomMeters * lookAheadFraction
             )
         } ?? currentCoordinate
+        let pitch: CGFloat = rideMap3DEnabled && travelBearing != nil ? 55 : 0
         let camera = MapCamera(
             centerCoordinate: center,
             distance: effectiveZoomMeters,
             heading: heading,
-            pitch: rideMapHeadingUp && travelBearing != nil ? 40 : 0
+            pitch: pitch
         )
         cameraPosition = .camera(camera)
         rasterCameraTarget = RasterCameraTarget(
             center: center,
             distance: effectiveZoomMeters,
             heading: heading,
-            pitch: rideMapHeadingUp && travelBearing != nil ? 40 : 0
+            pitch: pitch
         )
         cameraRevision &+= 1
     }
@@ -349,6 +370,61 @@ struct LiveRideMap: View {
             }
         }
         return nil
+    }
+
+    private var displayedCoordinate: CLLocationCoordinate2D? {
+        guard let currentCoordinate else { return nil }
+        guard rideMapStickToRoute, plannedRoute.count > 1 else {
+            return currentCoordinate
+        }
+        return snappedCoordinate(
+            currentCoordinate,
+            to: plannedRoute,
+            maximumDistanceMeters: 50
+        ) ?? currentCoordinate
+    }
+
+    private func snappedCoordinate(
+        _ position: CLLocationCoordinate2D,
+        to route: [CLLocationCoordinate2D],
+        maximumDistanceMeters: Double
+    ) -> CLLocationCoordinate2D? {
+        let earthRadius = 6_378_137.0
+        let referenceLatitude = position.latitude * .pi / 180
+        func local(_ coordinate: CLLocationCoordinate2D) -> (x: Double, y: Double) {
+            (
+                (coordinate.longitude - position.longitude) * .pi / 180
+                    * earthRadius * cos(referenceLatitude),
+                (coordinate.latitude - position.latitude) * .pi / 180 * earthRadius
+            )
+        }
+
+        var nearest: (coordinate: CLLocationCoordinate2D, distance: Double)?
+        for index in 0..<(route.count - 1) {
+            let start = route[index]
+            let end = route[index + 1]
+            let a = local(start)
+            let b = local(end)
+            let dx = b.x - a.x
+            let dy = b.y - a.y
+            let squaredLength = dx * dx + dy * dy
+            guard squaredLength > 0 else { continue }
+            let fraction = max(0, min(1, -(a.x * dx + a.y * dy) / squaredLength))
+            let x = a.x + fraction * dx
+            let y = a.y + fraction * dy
+            let distance = hypot(x, y)
+            if nearest == nil || distance < nearest!.distance {
+                nearest = (
+                    CLLocationCoordinate2D(
+                        latitude: start.latitude + fraction * (end.latitude - start.latitude),
+                        longitude: start.longitude + fraction * (end.longitude - start.longitude)
+                    ),
+                    distance
+                )
+            }
+        }
+        guard let nearest, nearest.distance <= maximumDistanceMeters else { return nil }
+        return nearest.coordinate
     }
 
     private func squaredDistance(
