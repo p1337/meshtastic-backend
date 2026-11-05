@@ -660,35 +660,32 @@ private struct RideDashboard: View {
     private let columns = [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())]
 
     var body: some View {
-        GeometryReader { geometry in
-            ZStack {
-                LiveRideMap(
-                    coordinates: ride.trackCoordinates,
-                    plannedRoute: routeCoordinates,
-                    currentCoordinate: ride.currentCoordinate,
-                    speedKmh: ride.speedKmh,
-                    courseDegrees: ride.courseDegrees
-                )
-                .frame(width: geometry.size.width, height: geometry.size.height)
-                .ignoresSafeArea(edges: .top)
+        ZStack {
+            LiveRideMap(
+                coordinates: ride.trackCoordinates,
+                plannedRoute: routeCoordinates,
+                currentCoordinate: ride.currentCoordinate,
+                speedKmh: ride.speedKmh,
+                courseDegrees: ride.courseDegrees
+            )
+            .ignoresSafeArea()
 
-                VStack(spacing: 0) {
-                    cockpitOverlay
-                    Spacer(minLength: 0)
-                    if let navigationProgress {
-                        navigationBanner(navigationProgress)
-                            .padding(.bottom, 92)
-                    }
+            VStack(spacing: 0) {
+                cockpitOverlay
+                Spacer(minLength: 0)
+                if let navigationProgress {
+                    navigationBanner(navigationProgress)
+                        .padding(.bottom, 92)
                 }
-                .padding(.horizontal, 10)
-                .padding(.top, 56)
+            }
+            .padding(.horizontal, 10)
+            .padding(.top, 56)
 
-                if rideMusicControlsEnabled {
-                    musicLauncher
-                        .padding(.top, 168)
-                        .padding(.trailing, 12)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-                }
+            if rideMusicControlsEnabled {
+                musicLauncher
+                    .padding(.top, 168)
+                    .padding(.trailing, 12)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
             }
         }
         .background(Color.black)

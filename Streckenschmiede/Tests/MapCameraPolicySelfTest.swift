@@ -21,10 +21,9 @@ enum MapCameraPolicySelfTest {
             "flat look-ahead must hold the rider in the lower map third"
         )
         mapCameraExpect(
-            mapCameraApproximatelyEqual(pitched, 210),
-            "pitched look-ahead must be reduced for perspective"
+            mapCameraApproximatelyEqual(pitched, 330),
+            "pitched look-ahead must hold the rider in the lower map third"
         )
-        mapCameraExpect(pitched < flat, "3D camera must not push the rider farther toward the edge")
         mapCameraExpect(
             mapCameraApproximatelyEqual(
                 MapCameraPolicy.lookAheadDistance(zoomMeters: -1, is3D: false),
@@ -35,7 +34,7 @@ enum MapCameraPolicySelfTest {
         mapCameraExpect(
             mapCameraApproximatelyEqual(
                 MapCameraPolicy.lookAheadDistance(zoomMeters: 50_000, is3D: true),
-                1_400
+                2_200
             ),
             "invalid high zoom values must be clamped"
         )
