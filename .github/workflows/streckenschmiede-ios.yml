@@ -82,6 +82,31 @@ jobs:
       - name: Generate project
         working-directory: Streckenschmiede
         run: xcodegen generate
+      - name: Build and capture iPhone simulator UI
+        working-directory: Streckenschmiede
+        run: |
+          set -euo pipefail
+          DEVICE_ID=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; groups=json.load(sys.stdin)["devices"].values(); devices=[d for group in groups for d in group if d.get("isAvailable") and d.get("name", "").startswith("iPhone")]; preferred=[d for d in devices if "Pro" in d["name"]]; print((preferred or devices)[0]["udid"])')
+          xcrun simctl shutdown all >/dev/null 2>&1 || true
+          xcrun simctl boot "$DEVICE_ID"
+          xcrun simctl bootstatus "$DEVICE_ID" -b
+          xcodebuild -project Streckenschmiede.xcodeproj -scheme Streckenschmiede -configuration Release -sdk iphonesimulator -destination "id=$DEVICE_ID" -derivedDataPath "$RUNNER_TEMP/simulator" CODE_SIGNING_ALLOWED=NO build
+          APP="$RUNNER_TEMP/simulator/Build/Products/Release-iphonesimulator/Streckenschmiede.app"
+          test -d "$APP"
+          xcrun simctl install "$DEVICE_ID" "$APP"
+          xcrun simctl privacy "$DEVICE_ID" grant location de.p1337.Streckenschmiede || true
+          xcrun simctl location "$DEVICE_ID" set 48.8300,9.3200
+          xcrun simctl launch "$DEVICE_ID" de.p1337.Streckenschmiede
+          sleep 5
+          mkdir -p "$RUNNER_TEMP/ui"
+          xcrun simctl io "$DEVICE_ID" screenshot "$RUNNER_TEMP/ui/outdoor.png"
+      - name: Upload iPhone UI screenshot
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: Streckenschmiede-iPhone-UI
+          path: ${{ runner.temp }}/ui/outdoor.png
+          if-no-files-found: error
+          retention-days: 30
       - name: Compile iPhone app without signing
         working-directory: Streckenschmiede
         run: |
@@ -265,6 +290,7 @@ jobs:
           print("Verified Apple Distribution signature and embedded OTA profile.")
           PY
           python3 Streckenschmiede/scripts/package_release.py --ipa "$IPA" --store-html Streckenschmiede/webstore/index.html --out "$RUNNER_TEMP/site" --base-url "https://p1337.github.io/meshtastic-backend/"
+          cp "$RUNNER_TEMP/ui/outdoor.png" "$RUNNER_TEMP/site/ui-outdoor.png"
       - name: Upload verified signed IPA and OTA files
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:

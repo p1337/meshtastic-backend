@@ -9,9 +9,10 @@ Verbindlicher Gesamtumfang und Abnahmestatus: [TODO.md](TODO.md) · Technische Z
 - **Outdoor:** bildschirmfüllendes Karten-Cockpit mit Positionspfeil im
   unteren Drittel und großem Vorausblick; Live-Position läuft bei geöffneter
   App dauerhaft, während Trackpunkte erst nach Start geschrieben werden;
-  eine breite orange Haupttaste „Aufzeichnung starten“ beginnt die Speicherung;
+  eine kompakte orange Fahrtaktion „Start“ beginnt die Speicherung;
   Puls, Kadenz, Leistung und Sensorakku stehen kompakt im oberen Cockpit;
-  84-Punkte-Kartensteuerung mit Minus links, Zentrieren mittig und Plus rechts;
+  handschuhtaugliche 84-Punkte-Trefferflächen mit visuell kompaktem Minus
+  links, Zentrieren mittig und Plus rechts;
   Kartenwahl in den Einstellungen für Apple Karte, Satellit, Hybrid,
   Online-OSM und die offene Fahrradkarte CyclOSM, ohne zusätzlichen
   Ebenenknopf über der Fahrkarte;

@@ -36,10 +36,12 @@ jeweiligen Plattformvorgaben getrennt zu prüfen.
 
 ## Hauptreiter-Symbole
 
-- `OutdoorTab`: originaler Vektor aus einem Baum und einer schmalen Strecke,
-  die perspektivisch in die Ferne führt.
-- `IndoorTab`: originaler Vektor aus Fahrrad-Vorderteil ohne Hinterrad und
-  einem dreieckigen Hometrainer-Ständer an der gedachten Hinterachse.
+- `OutdoorTab`: stark vereinfachter, bei Tab-Größe lesbarer Vektor aus einem
+  einzelnen Baum und einer breiten Strecke, die zur oberen rechten Ferne führt;
+  keine kleinteiligen Richtungspfeile oder überlagerten Konturen.
+- `IndoorTab`: vereinfachter Vektor mit genau einem sichtbaren Vorderrad,
+  angedeutetem Diamantrahmen und einem klaren dreieckigen Hometrainer-Ständer
+  an der Hinterachse; keine zweite Radkontur und keine Produktkopie.
 - Beide SVGs sind einfarbige Template-Assets, damit iOS sie im Tab-Balken mit
   der aktiven oder inaktiven Systemfarbe rendert. Sie enthalten weder fremde
   Markenformen noch D100-Produktgrafiken.
