@@ -40,11 +40,13 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
   Apple Karte, Apple Satellit, Apple Hybrid, interaktives OpenStreetMap und
   CyclOSM sind aktiv. OpenCycleMap erscheint nur mit gültigem
   Thunderforest-Key; auf der Fahrtkarte verdeckt kein Ebenenknopf die Route
-- Optionale, standardmäßig ausgeschaltete Musikleiste im Outdoor-Cockpit. Sie
-  kann nur in den Einstellungen aktiviert werden und steuert in der ersten
-  Stufe nach ausdrücklicher Freigabe Apple Music mit Titel/Künstler sowie
-  Zurück, Play/Pause und Weiter; Spotify, Amazon Music und eigener
-  iCloud-/Dateien-Player sind als getrennte Adapter dokumentiert
+- Optionale, standardmäßig ausgeschaltete Musiksteuerung. Sie kann nur in den
+  Einstellungen aktiviert werden; im Outdoor-Cockpit bleibt danach nur ein
+  kleiner Doppelnotenknopf. Er öffnet einen dunklen Player als Sheet, der nach
+  ausdrücklicher Freigabe Apple Music mit Titel/Künstler sowie Zurück,
+  Play/Pause und Weiter steuert und geschlossen keinen Kartenplatz belegt;
+  Spotify, Amazon Music und eigener iCloud-/Dateien-Player sind als getrennte
+  Adapter dokumentiert
 - Erster Zielplaner innerhalb des Aufzeichnungsbereichs: Adresse oder POI
   suchen, Apple-Fahrradrouten ab aktueller GPS-Position einschließlich
   verfügbarer Alternativen gemeinsam auf der Karte vergleichen, über große
@@ -86,6 +88,11 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
 - Offline-Vektorkarten/OSM-Fahrradstil, Komoot-Kontosync und freiwillige Gruppenpositionen; Grenzen und Providerentscheidung sind dokumentiert
 - Trainingsplan-Bibliothek, Geistfahrt gegen eine eigene gespeicherte Fahrt,
   Apple-TV-App und Apple Look Around
+- Dunkle Live Activity für Lock Screen und Dynamic Island während einer Fahrt;
+  die ActivityKit-/WidgetKit-Erweiterung ist geplant, aber noch nicht gebaut
+- Freiwillige Gruppenfahrt mit eigener zeitlich begrenzter Standortfreigabe;
+  private Google-Maps- oder Apple-„Wo ist?“-Personenpositionen können nicht über
+  eine öffentliche Drittanbieter-API ausgelesen werden
 
 ## Build und Veröffentlichung
 Workflow: `.github/workflows/streckenschmiede-ios.yml`

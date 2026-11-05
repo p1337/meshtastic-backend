@@ -254,9 +254,10 @@ Rohmessungen bleiben unverändert. Zusammenfassungen, Rekorde und Diagrammreihen
 ## Musik und Audio
 
 Musik ist ein optionales, standardmäßig ausgeschaltetes Cockpit-Modul. Nur die
-Einstellungen dürfen es aktivieren oder die Quelle ändern; die Fahrtansicht
-enthält danach ausschließlich kompakte Wiedergabebefehle und niemals
-Kontozugangsdaten oder versteckte Kopplungsschritte.
+Einstellungen dürfen es aktivieren oder die Quelle ändern. Aktiviert erscheint
+auf der Fahrtkarte ausschließlich ein kleiner Doppelnotenknopf. Er öffnet einen
+dunklen Player als Sheet; geschlossen belegt der Player keinen Kartenplatz.
+Kontozugangsdaten oder versteckte Kopplungsschritte erscheinen nie im Cockpit.
 
 Die erste Implementierung verwendet auf dem Main Thread
 `MPMusicPlayerController.systemMusicPlayer`. Sie übernimmt den Zustand der
@@ -288,6 +289,45 @@ AVFoundation, Spotify iOS App Remote sowie Amazon Music Developer Program:
 - <https://developer.apple.com/documentation/avfoundation/configuring-your-app-for-media-playback>
 - <https://developer.spotify.com/documentation/ios>
 - <https://developer.amazon.com/docs/music/get_started_program-overview.html>
+
+## Live Activity und Sperrbildschirm
+
+Eine gestartete Outdoor- oder Indoor-Fahrt erhält genau eine ActivityKit-Live-
+Activity. Die WidgetKit-Erweiterung unterstützt Lock Screen sowie Dynamic
+Island kompakt, minimal und erweitert. Der dunkle Stil zeigt nur auf einen
+Blick notwendige, nicht sensible Werte: Fahrtzustand, Zeit, Distanz und
+optional Tempo. Route, Zieladresse, Gesundheitswerte und Teilnehmerpositionen
+bleiben standardmäßig verborgen. Die Aktivität wird von derselben
+`RideSessionEngine` gestartet, aktualisiert und beendet; nach Relaunch werden
+verwaiste Activities abgeglichen. Eine Schnellaktion benötigt App Intent und
+darf höchstens Pause/Fortsetzen auslösen, niemals Fahrt löschen oder Not-Stopp
+umgehen.
+
+Primärquellen:
+
+- <https://developer.apple.com/documentation/activitykit/displaying-live-data-with-live-activities>
+- <https://developer.apple.com/design/human-interface-guidelines/live-activities>
+
+## Freiwillige Gruppenposition
+
+Streckenschmiede liest keine privaten Freunde-/Familienpositionen aus Google
+Maps oder Apple „Wo ist?“ aus. Googles dokumentierte Maps-URLs können Maps für
+Orte, Karten und Navigation öffnen; die Nutzerfunktion zur Echtzeitfreigabe
+liefert jedoch keinen dokumentierten Drittanbieter-Datenstrom. Apples
+öffentliches Find-My-Programm adressiert MFi-Zubehör im Find-My-Netzwerk und
+ist keine API für die Personenpositionen aus „Wo ist?“.
+
+Die produktive Lösung ist deshalb eine eigene, freiwillige Gruppenfahrt:
+zeitlich begrenzte Einladung per Link/QR, ausdrücklicher Beitritt jedes
+Teilnehmers, verschlüsselte aktuelle Position mit Zeit/Genauigkeit, sichtbarer
+Ablauf, Widerruf und automatische Löschung. Google-/Apple-Links dürfen nur als
+ausdrückliche Übergabe zum jeweiligen Dienst dienen und werden nicht gescrapt.
+
+Primärquellen:
+
+- <https://developers.google.com/maps/documentation/urls/get-started>
+- <https://support.google.com/maps/answer/15437054>
+- <https://developer.apple.com/find-my/>
 
 ## Kamera
 

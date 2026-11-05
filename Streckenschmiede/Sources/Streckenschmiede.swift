@@ -587,6 +587,7 @@ private struct RideDashboard: View {
     let clearRoute: () -> Void
     @State private var showingCameraSync = false
     @State private var showingRoutePlanner = false
+    @State private var showingMusicControls = false
     @AppStorage("rideMusicControlsEnabled") private var rideMusicControlsEnabled = false
 
     private let columns = [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())]
@@ -606,10 +607,6 @@ private struct RideDashboard: View {
 
                 VStack(spacing: 0) {
                     cockpitOverlay
-                    if rideMusicControlsEnabled {
-                        AppleMusicControlsView()
-                            .padding(.top, 6)
-                    }
                     Spacer(minLength: 170)
                     bottomOverlay
                 }
@@ -618,6 +615,13 @@ private struct RideDashboard: View {
                 .padding(.bottom, 12)
 
                 if ride.recoveryAvailable { recoveryOverlay }
+
+                if rideMusicControlsEnabled {
+                    musicLauncher
+                        .padding(.top, 168)
+                        .padding(.trailing, 12)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                }
             }
         }
         .background(Color.black)
@@ -630,7 +634,33 @@ private struct RideDashboard: View {
                 onSelectRoute: selectPlannedRoute
             )
         }
+        .sheet(isPresented: $showingMusicControls) {
+            AppleMusicPlayerSheet()
+        }
         .onAppear { ride.activateLiveLocation() }
+    }
+
+    private var musicLauncher: some View {
+        Button {
+            showingMusicControls = true
+        } label: {
+            ZStack {
+                Image(systemName: "music.note")
+                    .font(.system(size: 20, weight: .black))
+                    .offset(x: -5, y: 4)
+                Image(systemName: "music.note")
+                    .font(.system(size: 16, weight: .black))
+                    .offset(x: 6, y: -5)
+            }
+            .frame(width: 50, height: 50)
+            .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.orange)
+        .background(.black.opacity(0.86), in: Circle())
+        .overlay(Circle().stroke(.white.opacity(0.45), lineWidth: 1.5))
+        .shadow(color: .black.opacity(0.6), radius: 7, y: 3)
+        .accessibilityLabel("Musiksteuerung öffnen")
     }
 
     private var cockpitOverlay: some View {
@@ -1279,8 +1309,8 @@ struct SettingsView: View {
             Section("Musik") {
                 Toggle("Musiksteuerung im Outdoor-Cockpit", isOn: $rideMusicControlsEnabled)
                 if rideMusicControlsEnabled {
-                    AppleMusicControlsView()
-                    Text("Apple Music ist die erste freigegebene Quelle. Streckenschmiede greift erst nach deiner ausdrücklichen Freigabe auf Titelinformationen und Wiedergabe zu.")
+                    AppleMusicSettingsView()
+                    Text("Im Outdoor-Cockpit bleibt nur ein kleiner Musikknopf sichtbar. Er öffnet den Player als dunkles, verschiebbares Blatt und belegt keinen dauerhaften Kartenplatz.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     LabeledContent("Spotify", value: "Adapter geplant")
