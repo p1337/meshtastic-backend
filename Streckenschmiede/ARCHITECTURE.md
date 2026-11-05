@@ -167,6 +167,7 @@ Zoom wird als sichtbare Breite/Höhe in Metern statt als anbieterspezifische Kac
 - Auto-Zoom darf Geschwindigkeit, Distanz zum nächsten Manöver und Routenkrümmung verwenden, bleibt abschaltbar.
 - Fahrtrichtung oben nutzt geglätteten Kurs; bei Stillstand wird nicht unruhig gedreht.
 - Die Fahrtkarte füllt die verfügbare Aufzeichnungsfläche bis an den oberen Bildschirmrand. Messwerte und Fahrtaktionen liegen als kompakte kontrastreiche Overlays darauf; es gibt keine separate dauerhaft sichtbare „Bereit“- oder GPS-Punkt-Zeile.
+- Live-GPS und Aufzeichnung sind auch in der Bedienung getrennt: Eine breite orange Haupttaste „Aufzeichnung starten“ beginnt erst die Speicherung. Import, Kamera und Teilen stehen in einer eigenen Werkzeugzeile und dürfen die Starttaste nicht zusammendrücken.
 - Im Vorausblick wird der Kartenmittelpunkt um ein Drittel des wirksamen Sichtbereichs in Fahrtrichtung vor das Fahrrad verschoben. Bei gleichzeitig gedrehter Karte erscheint der Positionspfeil dadurch horizontal mittig bei ungefähr zwei Dritteln der Bildschirmhöhe, also ein Drittel über dem unteren Rand, ohne die tatsächliche GPS-Position zu verändern. Fehlt ein aktueller Kurs, dienen zuletzt gefahrene Spur oder nächste GPX-Richtung als Fallback.
 - Pflichtbedienelemente auf der Fahrkarte erhalten mindestens 52 × 52 Punkte; Zentrieren liegt als Fadenkreuz unten mittig, ist optisch vom Positionspfeil getrennt und aktiviert Follow erneut.
 
