@@ -264,12 +264,14 @@ struct LiveRideMap: View {
         guard let currentCoordinate = displayedCoordinate else { return }
         let travelBearing = travelBearingDegrees
         let heading = rideMapHeadingUp ? travelBearing ?? 0 : 0
-        let lookAheadFraction = rideMap3DEnabled ? 0.48 : 0.38
         let center = travelBearing.map {
             coordinate(
                 from: currentCoordinate,
                 bearingDegrees: $0,
-                distanceMeters: effectiveZoomMeters * lookAheadFraction
+                distanceMeters: MapCameraPolicy.lookAheadDistance(
+                    zoomMeters: effectiveZoomMeters,
+                    is3D: rideMap3DEnabled
+                )
             )
         } ?? currentCoordinate
         let pitch: CGFloat = rideMap3DEnabled && travelBearing != nil ? 55 : 0

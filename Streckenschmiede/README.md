@@ -30,8 +30,9 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
   Fadenkreuz-Zentrieren-Knopf und 84-Punkte-Handschuhsteuerung unten: Minus
   links, Zentrieren mittig, Plus rechts; separate „Bereit“- und GPS-Punkt-
   Zeilen sowie die untere Sensorleiste wurden zugunsten der Karte entfernt
-- Zentrieren stellt den Vorausblick statt einer Bildschirmmitte wieder her;
-  die geneigte 3D-Ansicht ist separat abschaltbar. Bei aktiver Navigation
+- Zentrieren stellt den sicheren Vorausblick statt einer Bildschirmmitte wieder
+  her; dessen begrenzter 2D-/3D-Kameraversatz hält den Fahrer sichtbar. Die
+  geneigte 3D-Ansicht ist separat abschaltbar. Bei aktiver Navigation
   rücken die drei Kartenknöpfe nach oben, damit die Führung sie nicht verdeckt
 - Die vier unteren Werkzeuge Route, GPX-Import, Kamera-Sync und Teilen besitzen
   jetzt gleiche kompakte Flächen; Start/Pause/Stop bleiben davon getrennt groß
