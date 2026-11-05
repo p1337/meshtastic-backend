@@ -76,7 +76,14 @@ Persistente Hauptobjekte:
 - `RoutePlan`: Start, Ziel, Zwischenziele, Provider, Profil, Geometrie, Manöver und Höhenprofil.
 - `SavedRoute`: benannte Route, Vorschau, Statistik, Importursprung und optionale Fotos.
 - `SensorBond`: stabile CoreBluetooth-ID, Geräteinformationen, Fahrrad, Rollen und Nutzervorrang.
-- `BikeProfile`: Typ, Radumfang, Gewicht, E-Bike-Konfiguration, Sensoren und Routingpräferenzen.
+- `BikeProfile`: Die erste persistente Stufe speichert UUID, freien Namen,
+  umfassenden Fahrradtyp, Abroll-Durchmesser sowie Erstellungs-/Änderungszeit
+  in `bike-profiles-v1.json`. Genau ein vorhandenes Profil ist aktiv; Wechsel,
+  Bearbeiten und Löschen werden atomar gespeichert. Der Durchmesser leitet den
+  Radumfang für `SensorHub` ab und setzt dessen Revolutionszustand zurück, damit
+  keine CSC-Messperiode zwei Räder vermischt. Gewicht, E-Bike-Konfiguration,
+  dauerhafte Sensorzuordnung und Routingpräferenzen ergänzen dasselbe Modell,
+  statt eine parallele Profilablage zu erzeugen.
 
 SwiftData ist für Indizes und Metadaten vorgesehen. Große zeitliche Reihen werden kompakt und atomar dateibasiert gespeichert, damit eine lange Fahrt nicht durch tausende UI-Datenbankänderungen belastet wird. Ein migrationsfähiges Format und Roundtrip-Tests sind Pflicht, bevor produktive Daten entstehen.
 
@@ -268,6 +275,13 @@ Einträge begrenzt und verweist ausschließlich auf sichere
 Export desselben Tages ersetzt dessen Zusammenfassung atomar. Die GPX-Datei
 bleibt Rohdatenquelle; Kartenbilder, Diagramme, Sensorzusammenfassungen und eine
 spätere SwiftData-/Backup-Schicht dürfen daraus neu abgeleitet werden.
+
+Die Indoor-Streckenbibliothek liest dieselben `RideArchiveEntry`-Metadaten und
+die referenzierte Tages-GPX; sie legt keine zweite Fahrtenhistorie an.
+Karten-Vorschauen werden aus der GPX-Geometrie erzeugt und bleiben ableitbarer
+Cache. Löschen benötigt eine Bestätigung, validiert den sicheren Dateinamen und
+entfernt erst die GPX und anschließend atomar den Historieneintrag; bei einem
+Dateifehler darf kein falscher Erfolg angezeigt werden.
 
 ## Musik und Audio
 

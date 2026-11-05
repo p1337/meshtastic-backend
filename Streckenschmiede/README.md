@@ -73,6 +73,12 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
   der optionalen Musiksteuerung. Er pausiert die automatisch laufende
   Tagesfahrt manuell oder setzt sie fort; ein großer Startbalken kehrt nicht
   zurück und die aktuelle Route bleibt beim Pausieren vollständig erhalten
+- Versionierte lokale Fahrradprofile mit genau einem aktiven Rad: freier Name,
+  28 verbreitete Typen einschließlich Rennrad, Gravel, Trekking, MTB,
+  Lastenrad und E-Bike-Varianten, eigener Code-Vektor als Schattenbild sowie
+  ein editierbarer Abroll-Durchmesser. Der berechnete Umfang wird unmittelbar
+  für die bestehende BLE-CSC-Geschwindigkeitsberechnung übernommen; echte
+  Sensorabnahme und dauerhafte Sensorzuordnung je Rad stehen noch aus
 - Erster Zielplaner innerhalb des Aufzeichnungsbereichs: Adresse oder POI
   suchen, Apple-Fahrradrouten ab aktueller GPS-Position einschließlich
   verfügbarer Alternativen gemeinsam auf der Karte vergleichen, über große
@@ -106,6 +112,8 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
 - Reale Abnahme der GPS-Aufzeichnung bei gesperrtem Display und nach einem
   erzwungenen App-/Telefonneustart
 - Persistente Fahrtenbibliothek
+- Indoor-Streckenbibliothek aller Fahrten mit Karten-Vorschau, Daten und
+  bestätigtem Löschen von Eintrag und zugehöriger GPX-Datei
 - Apple-Watch-Begleit-App, HealthKit-Workout/-Route und Übergabe an Apple Fitness
 - Vollständige Hardwareabnahme, dauerhafte Fahrradzuordnung und Quellenpriorität
   für standardisierte BLE-Sensoren
