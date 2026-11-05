@@ -226,7 +226,7 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 ## P1 – Strecken, Historie, Statistik und Rekorde
 
 - [ ] Persistente Streckenbibliothek mit Karten-Vorschau, Name, Distanz, erwarteter Zeit, Auf-/Abstieg und Auswahlstatus.
-- [ ] Persistente Fahrtenhistorie mit Karten-Vorschau oder eigenem Foto, Datum, Distanz, Zeit, Durchschnitt, Höhe und Sensorzusammenfassung.
+- [~] Erste versionierte, atomare und lokale Tagesfahrten-Historie mit Datum, Distanz, Gesamt-/Fahrt-/Pausenzeit, Durchschnitt, Maximum, Auf-/Abstieg, Punktzahl und einzeln teilbarer GPX. Karten-Vorschau/eigenes Foto, Höhenwert und Sensorzusammenfassung fehlen noch.
 - [ ] Detailansicht mit Karte, Höhenprofil und Diagrammen über Zeit/Distanz für Geschwindigkeit, Herzfrequenz, Trittfrequenz und Leistung.
 - [ ] Statistik nach Woche, Monat, Jahr und frei gewähltem Zeitraum.
 - [ ] Rekorde und Gesamtsummen; Indoor/Outdoor, Fahrrad und Sensorquelle filterbar.

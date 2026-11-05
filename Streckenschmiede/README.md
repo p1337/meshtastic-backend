@@ -16,6 +16,9 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
 - GPX-Tagesexport, getrennte Gesamt-/Fahrt-/Pausenzeit und atomarer
   Wiederherstellungsstand; Planung, Import, Teilen und DJI-Sync wurden aus der
   Fahrtkarte in die Einstellungen verschoben
+- Erste lokale Tagesfahrten-Historie unter Einstellungen: Datum, Distanz,
+  Fahrtzeit, Durchschnitt, Maximum, Auf-/Abstieg und GPS-Punktzahl werden
+  versioniert und atomar gesichert; jede Tages-GPX ist einzeln teilbar
 - Einstellbare GPS-Auto-Pause: Geschwindigkeit und Verzögerung sind wählbar,
   Wiederanfahren setzt automatisch fort, und eine manuelle Pause kann durch
   Bewegung niemals aufgehoben werden; reale Stop-and-go-Testfahrt steht aus
