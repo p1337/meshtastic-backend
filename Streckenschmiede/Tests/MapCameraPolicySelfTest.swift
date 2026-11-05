@@ -12,15 +12,15 @@ enum MapCameraPolicySelfTest {
     static func main() {
         let flat = MapCameraPolicy.lookAheadDistance(zoomMeters: 1_500, is3D: false)
         let pitched = MapCameraPolicy.lookAheadDistance(zoomMeters: 1_500, is3D: true)
-        mapCameraExpect(flat == 180, "flat look-ahead must remain a small safe camera fraction")
-        mapCameraExpect(pitched == 120, "pitched look-ahead must be reduced further")
+        mapCameraExpect(flat == 330, "flat look-ahead must hold the rider in the lower map third")
+        mapCameraExpect(pitched == 210, "pitched look-ahead must be reduced for perspective")
         mapCameraExpect(pitched < flat, "3D camera must not push the rider farther toward the edge")
         mapCameraExpect(
-            MapCameraPolicy.lookAheadDistance(zoomMeters: -1, is3D: false) == 30,
+            MapCameraPolicy.lookAheadDistance(zoomMeters: -1, is3D: false) == 55,
             "invalid low zoom values must be clamped"
         )
         mapCameraExpect(
-            MapCameraPolicy.lookAheadDistance(zoomMeters: 50_000, is3D: true) == 800,
+            MapCameraPolicy.lookAheadDistance(zoomMeters: 50_000, is3D: true) == 1_400,
             "invalid high zoom values must be clamped"
         )
         mapCameraExpect(

@@ -31,9 +31,8 @@ struct LiveRideMap: View {
     private let mapControlHitSize: CGFloat = 84
     private let mapControlVisualSize: CGFloat = 58
 
-    private var hasActiveRoute: Bool { plannedRoute.count > 1 }
-    private var mapControlsBottomPadding: CGFloat { hasActiveRoute ? 134 : 76 }
-    private var attributionBottomPadding: CGFloat { mapControlsBottomPadding + 88 }
+    private let mapControlsBottomPadding: CGFloat = 2
+    private let attributionBottomPadding: CGFloat = 88
 
     private var effectiveZoomMeters: Double {
         guard rideMapAutoZoom else { return rideMapZoomMeters }
@@ -66,7 +65,7 @@ struct LiveRideMap: View {
                     followsPosition = true
                     recenter()
                 }
-                .frame(maxWidth: .infinity)
+                Spacer(minLength: 0)
 
                 mapButton(
                     systemImage: "scope",
@@ -76,16 +75,15 @@ struct LiveRideMap: View {
                     followsPosition = true
                     recenter()
                 }
-                .frame(maxWidth: .infinity)
+                Spacer(minLength: 0)
 
                 mapButton(systemImage: "plus", accessibilityLabel: "Karte vergrößern") {
                     rideMapZoomMeters = max(250, rideMapZoomMeters / 1.5)
                     followsPosition = true
                     recenter()
                 }
-                .frame(maxWidth: .infinity)
             }
-            .padding(.horizontal, 8)
+            .padding(.horizontal, 0)
             .padding(.bottom, mapControlsBottomPadding)
         }
         .overlay(alignment: .topLeading) {
@@ -259,7 +257,11 @@ struct LiveRideMap: View {
                 Image(systemName: systemImage)
                     .font(.system(size: 22, weight: .bold))
             }
-            .frame(width: mapControlHitSize, height: mapControlHitSize)
+            .frame(
+                width: mapControlHitSize,
+                height: mapControlHitSize,
+                alignment: .bottom
+            )
             .contentShape(Circle())
         }
         .buttonStyle(.plain)
@@ -271,16 +273,15 @@ struct LiveRideMap: View {
         guard let currentCoordinate = displayedCoordinate else { return }
         let travelBearing = travelBearingDegrees
         let heading = rideMapHeadingUp ? travelBearing ?? 0 : 0
-        let center = travelBearing.map {
-            coordinate(
-                from: currentCoordinate,
-                bearingDegrees: $0,
-                distanceMeters: MapCameraPolicy.lookAheadDistance(
-                    zoomMeters: effectiveZoomMeters,
-                    is3D: rideMap3DEnabled
-                )
+        let screenTopBearing = rideMapHeadingUp ? travelBearing ?? 0 : 0
+        let center = coordinate(
+            from: currentCoordinate,
+            bearingDegrees: screenTopBearing,
+            distanceMeters: MapCameraPolicy.lookAheadDistance(
+                zoomMeters: effectiveZoomMeters,
+                is3D: rideMap3DEnabled
             )
-        } ?? currentCoordinate
+        )
         let pitch = CGFloat(MapCameraPolicy.pitchDegrees(is3DEnabled: rideMap3DEnabled))
         let camera = MapCamera(
             centerCoordinate: center,

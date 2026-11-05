@@ -5,11 +5,11 @@ Native Fahrrad-App für iPhone, später optional tvOS. Kostenlos nutzbare Lösun
 Verbindlicher Gesamtumfang und Abnahmestatus: [TODO.md](TODO.md) · Technische Zielarchitektur: [Streckenschmiede/ARCHITECTURE.md](Streckenschmiede/ARCHITECTURE.md)
 
 ## App (iOS 17+)
-**Exakt zwei Hauptreiter:**
+**Exakt zwei Hauptmodi in einem kompakten Umschalter rechts oben:**
 - **Outdoor:** bildschirmfüllendes Karten-Cockpit mit Positionspfeil im
-  unteren Drittel und großem Vorausblick; Live-Position läuft bei geöffneter
-  App dauerhaft, während Trackpunkte erst nach Start geschrieben werden;
-  eine kompakte orange Fahrtaktion „Start“ beginnt die Speicherung;
+  unteren Drittel und großem Vorausblick; bei Standortfreigabe läuft eine
+  automatische Tagesaufzeichnung ohne Startknopf. Bewegte Abschnitte werden
+  durch Auto-Pause getrennt und pro Kalendertag in einer Route gesammelt;
   Puls, Kadenz, Leistung und Sensorakku stehen kompakt im oberen Cockpit;
   handschuhtaugliche 84-Punkte-Trefferflächen mit visuell kompaktem Minus
   links, Zentrieren mittig und Plus rechts;
@@ -25,8 +25,8 @@ Verbindlicher Gesamtumfang und Abnahmestatus: [TODO.md](TODO.md) · Technische Z
   optional ausschließlich in den Einstellungen aktivierbare Apple-Music-
   Steuerung: Auf der Karte bleibt nur ein kleiner Doppelnotenknopf, der den
   dunklen Player mit Titel, Künstler, Zurück, Play/Pause und Weiter öffnet;
-  GPS-Fahrt mit Pause/Fortsetzen, atomarer Notfall-Wiederherstellung, Distanz
-  und GPX-Export; GPX-Import und Kartenansicht über Apple MapKit
+  atomare Notfall-Wiederherstellung, Distanz und Tages-GPX-Export; Planung,
+  Import, Teilen und Kamera-Sync liegen außerhalb der störungsfreien Fahrkarte
 - **Indoor:** gleichzeitige BLE-Sensorverbindungen mit Puls, Tempo,
   Kadenz, Leistung, FTMS-Livewerten und Akku sowie erste begrenzte
   FTMS-Steuerung für D100-kompatible Trainer mit ERG, Widerstand, Steigung,

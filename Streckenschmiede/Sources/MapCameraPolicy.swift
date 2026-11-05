@@ -10,7 +10,7 @@ enum MapCameraPolicy {
 
     static func lookAheadDistance(zoomMeters: Double, is3D: Bool) -> Double {
         let safeZoom = min(max(zoomMeters, minimumZoomMeters), maximumZoomMeters)
-        let safeFraction = is3D ? 0.08 : 0.12
+        let safeFraction = is3D ? 0.14 : 0.22
         return safeZoom * safeFraction
     }
 
