@@ -28,8 +28,9 @@ Verbindlicher Gesamtumfang und Abnahmestatus: [TODO.md](TODO.md) · Technische Z
   einstellbare GPS-Auto-Pause mit Verzögerung, Hysterese und sicherem Vorrang
   der manuellen Pause;
   optional ausschließlich in den Einstellungen aktivierbare Apple-Music-
-  Steuerung: Auf der Karte bleibt nur ein kleiner Doppelnotenknopf, der den
-  dunklen Player mit Titel, Künstler, Zurück, Play/Pause und Weiter öffnet;
+  Steuerung: Auf der Karte bleibt nur ein kleiner Doppelnotenknopf unterhalb
+  des tatsächlichen Cockpits. Er öffnet von rechts Zurück, Play/Pause, Weiter
+  und die Mediathek; das Blatt von unten bietet Apple-Music-Playlists;
   atomare Notfall-Wiederherstellung, Distanz und Tages-GPX-Export; Planung,
   Import, Teilen und Kamera-Sync liegen außerhalb der störungsfreien Fahrkarte
 - **Indoor:** gleichzeitige BLE-Sensorverbindungen mit Puls, Tempo,

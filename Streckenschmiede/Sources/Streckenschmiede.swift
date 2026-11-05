@@ -712,6 +712,7 @@ private struct RideDashboard: View {
     let routePlan: RideRoutePlan?
     let clearRoute: () -> Void
     @State private var showingMusicControls = false
+    @State private var showingMusicLibrary = false
     @AppStorage("rideMusicControlsEnabled") private var rideMusicControlsEnabled = false
     @AppStorage("rideCockpitFieldCount") private var rideCockpitFieldCount = 6
     @AppStorage("rideCockpitTextSize") private var rideCockpitTextSizeRaw = "suggested"
@@ -748,22 +749,41 @@ private struct RideDashboard: View {
             .padding(.top, 34)
 
             if rideMusicControlsEnabled {
-                musicLauncher
-                    .padding(.top, 168)
+                Group {
+                    if showingMusicControls {
+                        AppleMusicRideFlyout(
+                            openLibrary: { showingMusicLibrary = true },
+                            close: {
+                                withAnimation(.snappy) { showingMusicControls = false }
+                            }
+                        )
+                        .transition(.move(edge: .trailing).combined(with: .opacity))
+                    } else {
+                        musicLauncher
+                            .transition(.move(edge: .trailing).combined(with: .opacity))
+                    }
+                }
+                    .padding(.top, musicOverlayTopPadding)
                     .padding(.trailing, 12)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
             }
         }
         .background(Color.black)
-        .sheet(isPresented: $showingMusicControls) {
+        .sheet(isPresented: $showingMusicLibrary) {
             AppleMusicPlayerSheet()
         }
         .onAppear { ride.activateDailyTracking() }
+        .onChange(of: rideMusicControlsEnabled) { _, enabled in
+            if !enabled {
+                showingMusicControls = false
+                showingMusicLibrary = false
+            }
+        }
     }
 
     private var musicLauncher: some View {
         Button {
-            showingMusicControls = true
+            withAnimation(.snappy) { showingMusicControls = true }
         } label: {
             ZStack {
                 Image(systemName: "music.note")
@@ -782,6 +802,20 @@ private struct RideDashboard: View {
         .overlay(Circle().stroke(.white.opacity(0.45), lineWidth: 1.5))
         .shadow(color: .black.opacity(0.6), radius: 7, y: 3)
         .accessibilityLabel("Musiksteuerung öffnen")
+    }
+
+    private var musicOverlayTopPadding: CGFloat {
+        let columns = cockpitColumns.count
+        let rows = Int(ceil(Double(visibleFieldCount) / Double(max(1, columns))))
+        let cellHeight: CGFloat
+        switch cockpitTextSize {
+        case .compact: cellHeight = 36
+        case .medium: cellHeight = 50
+        case .large: cellHeight = 72
+        }
+        let gridHeight = CGFloat(rows) * cellHeight + CGFloat(max(0, rows - 1)) * 3
+        let cockpitHeight: CGFloat = 27 + gridHeight
+        return 34 + cockpitHeight + 10
     }
 
     private var cockpitOverlay: some View {
