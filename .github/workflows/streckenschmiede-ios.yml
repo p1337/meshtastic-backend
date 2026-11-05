@@ -67,6 +67,10 @@ jobs:
         run: |
           xcrun swiftc Streckenschmiede/Sources/MapCameraPolicy.swift Streckenschmiede/Tests/MapCameraPolicySelfTest.swift -o "$RUNNER_TEMP/map-camera-tests"
           "$RUNNER_TEMP/map-camera-tests"
+      - name: Test configurable cockpit layouts
+        run: |
+          xcrun swiftc Streckenschmiede/Sources/CockpitConfiguration.swift Streckenschmiede/Tests/CockpitConfigurationSelfTest.swift -o "$RUNNER_TEMP/cockpit-configuration-tests"
+          "$RUNNER_TEMP/cockpit-configuration-tests"
       - name: Test safe map tile URL templates
         run: |
           xcrun swiftc Streckenschmiede/Sources/TileURLTemplate.swift Streckenschmiede/Tests/TileURLTemplateSelfTest.swift -o "$RUNNER_TEMP/tile-url-tests"

@@ -10,7 +10,9 @@ Verbindlicher Gesamtumfang und Abnahmestatus: [TODO.md](TODO.md) · Technische Z
   unteren Drittel und großem Vorausblick; bei Standortfreigabe läuft eine
   automatische Tagesaufzeichnung ohne Startknopf. Bewegte Abschnitte werden
   durch Auto-Pause getrennt und pro Kalendertag in einer Route gesammelt;
-  Puls, Kadenz, Leistung und Sensorakku stehen kompakt im oberen Cockpit;
+  ein in Einstellungen auf 1, 2, 4, 6 oder 8 Felder schaltbares Cockpit;
+  jedes Feld kann im Hauptbild per Antippen auf einen Fahrt- oder Sensorwert
+  gelegt werden;
   handschuhtaugliche 84-Punkte-Trefferflächen mit visuell kompaktem Minus
   links, Zentrieren mittig und Plus rechts; der Pfeil bleibt im Follow-Modus
   mit reserviertem Abstand oberhalb dieser Bedienzone;

@@ -72,6 +72,18 @@ enum MapCameraPolicySelfTest {
             compactRiderY + 21 + MapCameraPolicy.minimumRiderControlGap <= 300 - 34 - 84,
             "compact screens must move the rider upward before controls overlap"
         )
+        let navigationRiderY = MapCameraPolicy.riderScreenY(
+            viewHeight: 568,
+            controlHitSize: 84,
+            controlsBottomPadding: 34,
+            markerDiameter: 42,
+            additionalBottomReservedHeight: 82
+        )
+        mapCameraExpect(
+            navigationRiderY + 21 + MapCameraPolicy.minimumRiderControlGap
+                <= 568 - 34 - 84 - 82,
+            "an active navigation banner must also reserve space above the rider"
+        )
         print("Map camera policy self-test passed")
     }
 }

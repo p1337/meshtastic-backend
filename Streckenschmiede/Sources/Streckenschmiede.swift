@@ -702,8 +702,15 @@ private struct RideDashboard: View {
     let clearRoute: () -> Void
     @State private var showingMusicControls = false
     @AppStorage("rideMusicControlsEnabled") private var rideMusicControlsEnabled = false
-
-    private let columns = [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())]
+    @AppStorage("rideCockpitFieldCount") private var rideCockpitFieldCount = 6
+    @AppStorage("rideCockpitField0") private var rideCockpitField0 = RideDataField.speed.rawValue
+    @AppStorage("rideCockpitField1") private var rideCockpitField1 = RideDataField.distance.rawValue
+    @AppStorage("rideCockpitField2") private var rideCockpitField2 = RideDataField.averageSpeed.rawValue
+    @AppStorage("rideCockpitField3") private var rideCockpitField3 = RideDataField.maximumSpeed.rawValue
+    @AppStorage("rideCockpitField4") private var rideCockpitField4 = RideDataField.ridingTime.rawValue
+    @AppStorage("rideCockpitField5") private var rideCockpitField5 = RideDataField.elevation.rawValue
+    @AppStorage("rideCockpitField6") private var rideCockpitField6 = RideDataField.heartRate.rawValue
+    @AppStorage("rideCockpitField7") private var rideCockpitField7 = RideDataField.power.rawValue
 
     var body: some View {
         ZStack {
@@ -712,7 +719,8 @@ private struct RideDashboard: View {
                 plannedRoute: routeCoordinates,
                 currentCoordinate: ride.currentCoordinate,
                 speedKmh: ride.speedKmh,
-                courseDegrees: ride.courseDegrees
+                courseDegrees: ride.courseDegrees,
+                bottomOverlayHeight: navigationProgress == nil ? 0 : 82
             )
             .ignoresSafeArea()
 
@@ -765,51 +773,122 @@ private struct RideDashboard: View {
     }
 
     private var cockpitOverlay: some View {
-        VStack(spacing: 3) {
-            HStack(alignment: .center, spacing: 8) {
-                VStack(alignment: .leading, spacing: 0) {
-                    HStack(spacing: 6) {
-                        Circle()
-                            .fill(ride.isRecording ? Color.green : (ride.recoveryAvailable ? Color.red : Color.orange))
-                            .frame(width: 8, height: 8)
-                        Text(ride.isAutoPaused ? "AUTO-PAUSE" : "TEMPO")
-                            .font(.caption2.weight(.bold))
-                            .foregroundStyle(.secondary)
-                    }
-                    HStack(alignment: .firstTextBaseline, spacing: 4) {
-                        Text(String(format: "%.1f", ride.speedKmh))
-                            .font(.system(size: 36, weight: .black, design: .rounded))
-                            .monospacedDigit()
-                        Text("km/h")
-                            .font(.caption.weight(.bold))
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .frame(minWidth: 108, alignment: .leading)
-
-                LazyVGrid(columns: columns, spacing: 6) {
-                    RideMetric(title: "km", value: String(format: "%.2f", ride.distance / 1_000))
-                    RideMetric(title: "Ø", value: String(format: "%.1f", ride.averageSpeedKmh))
-                    RideMetric(title: "max", value: String(format: "%.1f", ride.maximumSpeedKmh))
-                    RideMetric(title: "Fahrt", value: formatDuration(ride.ridingSeconds))
-                    RideMetric(title: "Höhe", value: String(format: "%.0f m", ride.elevation))
-                    RideMetric(title: "Auf/Ab", value: String(format: "%.0f/%.0f", ride.ascent, ride.descent))
-                }
-
+        VStack(spacing: 4) {
+            HStack(spacing: 6) {
+                Circle()
+                    .fill(ride.isRecording ? Color.green : (ride.recoveryAvailable ? Color.red : Color.orange))
+                    .frame(width: 8, height: 8)
+                Text(ride.isAutoPaused ? "AUTO-PAUSE" : "TAGESFAHRT")
+                Spacer()
+                Text("\(visibleFieldCount) FELDER · ANTIPPEN")
             }
+            .font(.system(size: 9, weight: .bold))
+            .foregroundStyle(.secondary)
 
-            HStack(spacing: 12) {
-                SensorChip(systemImage: "heart.fill", value: sensors.heartRateBpm.map { "\($0)" } ?? "–")
-                SensorChip(systemImage: "arrow.triangle.2.circlepath", value: sensors.cadenceRpm.map { String(format: "%.0f", $0) } ?? "–")
-                SensorChip(systemImage: "bolt.fill", value: sensors.powerWatts.map { "\($0) W" } ?? "–")
-                SensorChip(systemImage: "battery.75percent", value: sensors.batteryPercent.map { "\($0)%" } ?? "–")
+            LazyVGrid(columns: cockpitColumns, spacing: 3) {
+                ForEach(0..<visibleFieldCount, id: \.self) { slot in
+                    cockpitFieldMenu(slot: slot)
+                }
             }
-            .frame(maxWidth: .infinity)
         }
-        .padding(.horizontal, 10)
+        .padding(.horizontal, 7)
         .padding(.vertical, 6)
         .background(.black.opacity(0.76), in: RoundedRectangle(cornerRadius: 16))
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(.white.opacity(0.14)))
+    }
+
+    private var visibleFieldCount: Int {
+        CockpitConfiguration.normalizedFieldCount(rideCockpitFieldCount)
+    }
+
+    private var cockpitColumns: [GridItem] {
+        let columnCount: Int
+        switch visibleFieldCount {
+        case 1: columnCount = 1
+        case 2, 4: columnCount = 2
+        case 6: columnCount = 3
+        default: columnCount = 4
+        }
+        return Array(
+            repeating: GridItem(.flexible(minimum: 0), spacing: 3),
+            count: columnCount
+        )
+    }
+
+    private func cockpitFieldMenu(slot: Int) -> some View {
+        let binding = fieldBinding(for: slot)
+        let field = CockpitConfiguration.field(rawValue: binding.wrappedValue, slot: slot)
+        let display = fieldDisplay(field)
+        return Menu {
+            ForEach(RideDataField.allCases) { candidate in
+                Button {
+                    binding.wrappedValue = candidate.rawValue
+                } label: {
+                    Label(candidate.title, systemImage: fieldSystemImage(candidate))
+                }
+            }
+        } label: {
+            CockpitFieldCell(
+                title: field.title,
+                value: display.value,
+                unit: display.unit,
+                prominent: visibleFieldCount <= 2
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Datenfeld \(slot + 1): \(field.title), \(display.value) \(display.unit)")
+        .accessibilityHint("Antippen, um den angezeigten Wert zu ändern")
+    }
+
+    private func fieldBinding(for slot: Int) -> Binding<String> {
+        switch slot {
+        case 0: $rideCockpitField0
+        case 1: $rideCockpitField1
+        case 2: $rideCockpitField2
+        case 3: $rideCockpitField3
+        case 4: $rideCockpitField4
+        case 5: $rideCockpitField5
+        case 6: $rideCockpitField6
+        default: $rideCockpitField7
+        }
+    }
+
+    private func fieldDisplay(_ field: RideDataField) -> (value: String, unit: String) {
+        switch field {
+        case .speed: (String(format: "%.1f", ride.speedKmh), "km/h")
+        case .distance: (String(format: "%.2f", ride.distance / 1_000), "km")
+        case .averageSpeed: (String(format: "%.1f", ride.averageSpeedKmh), "km/h")
+        case .maximumSpeed: (String(format: "%.1f", ride.maximumSpeedKmh), "km/h")
+        case .ridingTime: (formatDuration(ride.ridingSeconds), "")
+        case .totalTime: (formatDuration(ride.elapsedSeconds), "")
+        case .pausedTime: (formatDuration(ride.pausedSeconds), "")
+        case .elevation: (String(format: "%.0f", ride.elevation), "m")
+        case .ascent: (String(format: "%.0f", ride.ascent), "m")
+        case .descent: (String(format: "%.0f", ride.descent), "m")
+        case .heartRate: (sensors.heartRateBpm.map { String($0) } ?? "–", "bpm")
+        case .cadence: (sensors.cadenceRpm.map { String(format: "%.0f", $0) } ?? "–", "rpm")
+        case .power: (sensors.powerWatts.map { String($0) } ?? "–", "W")
+        case .sensorBattery: (sensors.batteryPercent.map { String($0) } ?? "–", "%")
+        }
+    }
+
+    private func fieldSystemImage(_ field: RideDataField) -> String {
+        switch field {
+        case .speed: "speedometer"
+        case .distance: "point.topleft.down.to.point.bottomright.curvepath"
+        case .averageSpeed: "gauge.with.dots.needle.33percent"
+        case .maximumSpeed: "gauge.with.dots.needle.100percent"
+        case .ridingTime: "timer"
+        case .totalTime: "clock"
+        case .pausedTime: "pause.circle"
+        case .elevation: "mountain.2"
+        case .ascent: "arrow.up.right"
+        case .descent: "arrow.down.right"
+        case .heartRate: "heart.fill"
+        case .cadence: "arrow.triangle.2.circlepath"
+        case .power: "bolt.fill"
+        case .sensorBattery: "battery.75percent"
+        }
     }
 
     private var routeCoordinates: [CLLocationCoordinate2D] {
@@ -896,41 +975,48 @@ private struct RideDashboard: View {
 
 }
 
-private struct RideMetric: View {
+private struct CockpitFieldCell: View {
     let title: String
     let value: String
+    let unit: String
+    let prominent: Bool
 
     var body: some View {
-        VStack(spacing: 1) {
+        VStack(spacing: prominent ? 2 : 1) {
             Text(title)
-                .font(.system(size: 9, weight: .bold))
+                .font(.system(size: prominent ? 10 : 8, weight: .bold))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
-            Text(value)
-                .font(.caption.weight(.bold))
-                .monospacedDigit()
-                .minimumScaleFactor(0.55)
-                .lineLimit(1)
+            HStack(alignment: .firstTextBaseline, spacing: 3) {
+                Text(value)
+                    .font(.system(
+                        size: prominent ? 30 : 15,
+                        weight: prominent ? .black : .bold,
+                        design: .rounded
+                    ))
+                    .monospacedDigit()
+                if !unit.isEmpty {
+                    Text(unit)
+                        .font(.system(size: prominent ? 11 : 8, weight: .bold))
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .minimumScaleFactor(0.45)
+            .lineLimit(1)
         }
-        .frame(maxWidth: .infinity)
-    }
-}
-
-private struct SensorChip: View {
-    let systemImage: String
-    let value: String
-
-    var body: some View {
-        HStack(spacing: 4) {
-            Image(systemName: systemImage)
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(.orange)
-            Text(value)
-                .font(.caption2.weight(.bold))
-                .monospacedDigit()
-                .lineLimit(1)
-        }
-        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 4)
+        .frame(
+            maxWidth: .infinity,
+            minHeight: prominent ? 62 : 36,
+            maxHeight: prominent ? 62 : 36
+        )
+        .background(.white.opacity(0.055), in: RoundedRectangle(cornerRadius: 9))
+        .overlay(
+            RoundedRectangle(cornerRadius: 9)
+                .stroke(.white.opacity(0.08), lineWidth: 0.75)
+        )
+        .contentShape(RoundedRectangle(cornerRadius: 9))
+        .foregroundStyle(.primary)
         .accessibilityElement(children: .combine)
     }
 }
@@ -1193,6 +1279,7 @@ struct SettingsView: View {
     @AppStorage("rideAutoPauseSpeedKmh") private var rideAutoPauseSpeedKmh = 2.5
     @AppStorage("rideAutoPauseDelaySeconds") private var rideAutoPauseDelaySeconds = 8.0
     @AppStorage("rideMusicControlsEnabled") private var rideMusicControlsEnabled = false
+    @AppStorage("rideCockpitFieldCount") private var rideCockpitFieldCount = 6
 
     private let zoomPresets: [(String, Double)] = [
         ("Nah", 500),
@@ -1251,6 +1338,17 @@ struct SettingsView: View {
                     )
                 }
                 Text("Ein Kalendertag bleibt eine Fahrt. Die Historie wird lokal gespeichert; jede Tages-GPX kann einzeln geteilt werden.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Section("Cockpit") {
+                Picker("Datenfelder", selection: $rideCockpitFieldCount) {
+                    ForEach(CockpitConfiguration.allowedFieldCounts, id: \.self) { count in
+                        Text("\(count)").tag(count)
+                    }
+                }
+                .pickerStyle(.segmented)
+                Text("Wähle hier 1, 2, 4, 6 oder 8 Felder. Im Outdoor-Hauptbild kannst du jedes Feld antippen und seinen Wert direkt ändern.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -1364,6 +1462,9 @@ struct SettingsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.visible, for: .navigationBar)
         .onAppear {
+            rideCockpitFieldCount = CockpitConfiguration.normalizedFieldCount(
+                rideCockpitFieldCount
+            )
             if RideMapLayer(rawValue: rideMapLayerRaw) == .openCycleMap,
                RideMapLayer.openCycleMapKey == nil {
                 rideMapLayerRaw = RideMapLayer.appleStandard.rawValue

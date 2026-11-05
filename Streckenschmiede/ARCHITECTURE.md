@@ -225,7 +225,9 @@ Zoom wird als sichtbare Breite/Höhe in Metern statt als anbieterspezifische Kac
 - Die untere Kartensteuerung ist symmetrisch und handschuhtauglich: Minus direkt unten links, Fadenkreuz-Zentrieren unten mittig und Plus direkt unten rechts. Alle drei Knöpfe besitzen eine unsichtbare 84 × 84 Punkte große Trefferfläche bei einem ruhigen 58-Punkte-Kreis. Nur ein aktives Manöverbanner liegt mit eigenem Abstand darüber.
 - Outdoor, Indoor und Einstellungen teilen sich rechts oben einen kompakten Modus-Umschalter. Die untere Tab-Leiste entfällt vollständig, damit die Karte bis an den unteren Bildschirmrand reicht.
 - „An geplante Straße kleben“ ist eine reine Darstellungshilfe und standardmäßig aus. In der ersten Stufe darf sie nur den sichtbaren Positionspfeil innerhalb einer engen Schwelle auf die aktive Routengeometrie projizieren. Roh-GPS, gespeicherte Spur und Abweichungslogik verwenden immer die unveränderte Messung. Allgemeines Street-Matching gehört in einen austauschbaren Provider und darf niemals still aktiviert werden.
-- Puls, Kadenz, Leistung und Sensorakku werden kompakt in das obere Daten-Cockpit integriert. Eine zusätzliche untere Sensorleiste darf die freie Kartenfläche und die Fahrtaktionen nicht verkleinern.
+- Das obere Outdoor-Cockpit besitzt genau 1, 2, 4, 6 oder 8 sichtbare Felder. Die Anzahl wird in Einstellungen gewählt; jedes Feld besitzt eine stabile Slot-ID und kann im Hauptbild per Menü unabhängig auf einen verfügbaren Fahrt-/Sensorwert gelegt werden. Der erste persistente Stand nutzt acht versionierbare UserDefaults-Slots und stabile `RideDataField`-Kennungen; unbekannte Kennungen fallen auf sichere Slot-Standardwerte zurück. Mehrere benannte Layoutprofile folgen später.
+- Puls, Kadenz, Leistung und Sensorakku sind reguläre wählbare Datenfelder. Eine zusätzliche untere Sensorleiste darf die freie Kartenfläche und die Fahrtaktionen nicht verkleinern.
+- Die GPS-Position besitzt im Follow-Modus eine exklusive Schutzzone. Untere Overlays melden ihre reservierte Höhe an `MapCameraPolicy`; der native Kartenpfad verschiebt den unveränderten Positionspunkt bei Bedarf weiter nach oben. Cockpit, Manöverbanner, Kamera, Musik und Bedienelemente dürfen nicht über diese Zone gelegt werden.
 
 Offline- und Integrationsentscheidungen stehen ausführlich in [ROUTES_MAPS_INTEGRATIONS.md](ROUTES_MAPS_INTEGRATIONS.md). MapLibre/PMTiles ist die Zielrichtung für lokale Vektorkarten; öffentliche OSM-Standardkacheln werden nicht vorgeladen.
 
@@ -346,6 +348,13 @@ Verbindliches erstes Modell ist die **DJI Osmo Action 5 Pro**. Die detaillierte 
 Primär wird das Video nach der Fahrt mit der unabhängig aufgezeichneten Streckenschmiede-Spur verbunden. Ein gefilmter Start-QR liefert den Zeitversatz; ein Endcode oder weitere Checkpoints ermöglichen eine lineare Driftkorrektur. AVFoundation-Timecode und Aufnahmemetadaten sind zusätzliche Anker. FIT-Export ermöglicht den von DJI dokumentierten Import in Mimo.
 
 Der optionale `CameraAdapter` darf weder Fahrt- noch Trainer-Session besitzen. Eine direkte Kamerasteuerung wird erst aktiviert, wenn eine offiziell dokumentierte oder anderweitig rechtlich nutzbare Schnittstelle und echte Hardwaretests vorliegen. Bis dahin ist der DJI GPS Bluetooth Remote Controller der offizielle Start-/Stop-/GNSS-Weg. Kameraereignisse verwenden immer monotone Fahrtzeit; Systemzeitänderungen dürfen die Zuordnung nicht zerstören.
+
+Eine spätere rückwärts gerichtete Cockpit-Vorschau ist ein eigener
+`CameraPreviewAdapter`, kein Sonderfall eines Zahlenfelds. Sie darf nur bei
+einer dokumentierten, autorisierten und real hardwaregeprüften Videoquelle als
+Feldoption erscheinen, kennzeichnet Latenz und Verbindungsabbruch und erhält
+keinen Zugriff auf Fahrt- oder Trainerzustand. Ihr Rahmen bleibt im oberen
+Cockpit und darf die exklusive GPS-Schutzzone niemals schneiden.
 
 Für Indoor-Real-Life-Video ist zunächst MP4 plus zeitgestempeltes, gleichnamiges GPX der portable Austauschweg. Tacx-RLV/PGMF ist eine zusätzliche Binärformatstufe und wird gemäß [RLV_COMPATIBILITY.md](RLV_COMPATIBILITY.md) nur mit defensivem Parser, Referenzdateien und Lizenzhinweisen ergänzt.
 
