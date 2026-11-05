@@ -37,6 +37,17 @@ Kostenentscheidung:
 - Zielrenderer für Offline-Vektorkarten ist MapLibre Native (BSD-2-Clause) mit PMTiles/MBTiles oder einem Provider, der Offline-/Prefetch ausdrücklich erlaubt.
 - `tile.openstreetmap.org` wird nie für Gebietsdownloads verwendet. Die offizielle Richtlinie verbietet Offline-Prefetch/Bulkdownload.
 - „OpenBikeMap“ ist kein ausreichend eindeutiger technischer Providername. Vor der Einbindung werden Style-URL, Tile-Lizenz, Attribution, Offline-Recht, Kostenlimit und Verfügbarkeit festgehalten. OpenCycleMap/Thunderforest, OpenFreeMap, eigene OSM-Vektorkacheln und andere Anbieter sind unterschiedliche Produkte.
+- Erste Online-Stufe: Ein Ebenenknopf rechts oben schaltet Apple Standard,
+  Satellit und Hybrid sowie OpenStreetMap Carto. OSM lädt nur die aktuelle
+  interaktive Ansicht, sendet `Streckenschmiede/<Version>` mit Projekt-URL als
+  User-Agent, respektiert HTTP-Caching und zeigt dauerhaft
+  „© OpenStreetMap contributors“. Es gibt keinen OSM-Prefetch und keinen
+  OSM-Offlineknopf.
+- OpenCycleMap ist ein Thunderforest-Produkt, kein kostenloser OSM-Systemstil.
+  Die Ebene ist im Wähler sichtbar, aber nur mit gültigem 32-stelligem
+  Thunderforest-Key aktiv. Thunderforest nennt aktuell einen kostenlosen
+  Hobby-Tarif mit begrenztem Monatskontingent und kostenpflichtige Folgetarife;
+  Konto, Schlüssel und Kostenlimit sind vor Aktivierung zu entscheiden.
 - Jeder Download zeigt Gebiet, Zoomspanne, geschätzte Größe, Stand, Attribution und Löschen-Schaltfläche. Begonnene Navigation speichert Route und Manöver unabhängig von der Kartenoptik lokal.
 
 ## Position anderer Personen

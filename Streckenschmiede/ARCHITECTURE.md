@@ -158,6 +158,16 @@ GPX ist zugleich die erste Interoperabilitätsschicht zu WhatsApp, Dateien und K
 
 Kartenanzeige und Routing sind getrennt. Apple MapKit bleibt die sichere Standarddarstellung. Eine OSM-Darstellung benötigt sichtbare Attribution und einen geeigneten Vector-Tile-Anbieter oder eigene Kacheln. Die öffentlichen `tile.openstreetmap.org`-Server erlauben kein Offline-Prefetch und bieten keine Verfügbarkeitsgarantie; deshalb werden sie nicht als Offline-Backend verwendet.
 
+Die erste Online-Ebenenstufe verwendet rechts oben einen gespeicherten
+Kartenwähler. Apple Standard, Satellit und Hybrid bleiben native MapKit-Stile.
+OpenStreetMap Carto wird ausschließlich für die gerade sichtbare interaktive
+Ansicht über einen identifizierten, HTTP-Cache-Regeln respektierenden Client
+geladen, zeigt die Attribution dauerhaft und bietet keinerlei Prefetch oder
+Offline-Download. OpenCycleMap ist technisch als Thunderforest-Ebene
+vorbereitet, aber ohne einen 32-stelligen gültigen Provider-Key deaktiviert.
+Ein Schlüssel wird nie in Git eingecheckt; Kosten- und Kontowahl bleiben eine
+explizite Produktentscheidung.
+
 ### Zoom- und Follow-Modell
 
 Zoom wird als sichtbare Breite/Höhe in Metern statt als anbieterspezifische Kachelstufe gespeichert. Voreinstellungen: **Nah**, **Fahrt**, **Vorausblick**, **Übersicht** und **Benutzerdefiniert**. Jede Ansicht kann ein eigenes Preset haben.
