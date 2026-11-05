@@ -268,16 +268,21 @@ spätere SwiftData-/Backup-Schicht dürfen daraus neu abgeleitet werden.
 ## Musik und Audio
 
 Musik ist ein optionales, standardmäßig ausgeschaltetes Cockpit-Modul. Nur die
-Einstellungen dürfen es aktivieren oder die Quelle ändern. Aktiviert erscheint
-auf der Fahrtkarte ausschließlich ein kleiner Doppelnotenknopf. Er öffnet einen
-dunklen Player als Sheet; geschlossen belegt der Player keinen Kartenplatz.
+Einstellungen dürfen es aktivieren. Aktiviert erscheint auf der Fahrtkarte
+ausschließlich ein kleiner Doppelnotenknopf. Sein oberer Abstand wird aus
+Cockpit-Zeile, Feldanzahl und Typografiestufe berechnet; er darf kein Datenfeld
+und keine GPS-Schutzzone überdecken. Antippen öffnet einen vertikalen
+Mini-Player von rechts. Dessen Quelle-/Playlist-Aktion öffnet ein wegwischbares
+Blatt von unten; nach dem Schließen bleibt der seitliche Mini-Player erhalten.
 Kontozugangsdaten oder versteckte Kopplungsschritte erscheinen nie im Cockpit.
 
 Die erste Implementierung verwendet auf dem Main Thread
 `MPMusicPlayerController.systemMusicPlayer`. Sie übernimmt den Zustand der
 Apple-Music-App und bietet Titel/Künstler, Zurück, Play/Pause und Weiter erst
-nach `MPMediaLibrary`-Freigabe. Streckenschmiede ersetzt keine Apple-Music-
-Bibliothek und beginnt ohne Nutzeraktion keine Wiedergabe.
+nach `MPMediaLibrary`-Freigabe. `MPMediaQuery.playlists()` liefert danach die
+Playlists; eine ausdrücklich gewählte Liste wird als System-Musikwarteschlange
+gestartet. Streckenschmiede ersetzt keine Apple-Music-Bibliothek und beginnt
+ohne Nutzeraktion keine Wiedergabe.
 
 Weitere Dienste bleiben getrennte Adapter mit ehrlichen Fähigkeiten:
 

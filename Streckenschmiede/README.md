@@ -56,9 +56,11 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
   Apple-Verkehr ist für die nativen Apple-Kartenstile separat zuschaltbar
 - Optionale, standardmäßig ausgeschaltete Musiksteuerung. Sie kann nur in den
   Einstellungen aktiviert werden; im Outdoor-Cockpit bleibt danach nur ein
-  kleiner Doppelnotenknopf. Er öffnet einen dunklen Player als Sheet, der nach
-  ausdrücklicher Freigabe Apple Music mit Titel/Künstler sowie Zurück,
-  Play/Pause und Weiter steuert und geschlossen keinen Kartenplatz belegt;
+  kleiner Doppelnotenknopf, dessen Position aus der tatsächlichen Feldanzahl
+  und Schriftgröße berechnet wird und deshalb niemals ein Datenfeld überdeckt.
+  Er öffnet rechts einen vertikalen Mini-Player; Quelle und Playlists erscheinen
+  als wegwischbares Blatt von unten. Apple-Music-Playlists werden nach
+  ausdrücklicher Freigabe direkt gelesen und gestartet;
   Spotify, Amazon Music und eigener iCloud-/Dateien-Player sind als getrennte
   Adapter dokumentiert
 - Erster Zielplaner innerhalb des Aufzeichnungsbereichs: Adresse oder POI
