@@ -197,8 +197,9 @@ GPX ist zugleich die erste Interoperabilitätsschicht zu WhatsApp, Dateien und K
 
 Kartenanzeige und Routing sind getrennt. Apple MapKit bleibt die sichere Standarddarstellung. Eine OSM-Darstellung benötigt sichtbare Attribution und einen geeigneten Vector-Tile-Anbieter oder eigene Kacheln. Die öffentlichen `tile.openstreetmap.org`-Server erlauben kein Offline-Prefetch und bieten keine Verfügbarkeitsgarantie; deshalb werden sie nicht als Offline-Backend verwendet.
 
-Die erste Online-Ebenenstufe verwendet rechts oben einen gespeicherten
-Kartenwähler. Apple Standard, Satellit und Hybrid bleiben native MapKit-Stile.
+Die erste Online-Ebenenstufe verwendet einen ausschließlich in den Einstellungen
+liegenden, gespeicherten Kartenwähler. Dadurch verdeckt auf der Fahrtkarte kein
+Ebenenknopf die Route oder Fahrposition. Apple Standard, Satellit und Hybrid bleiben native MapKit-Stile.
 OpenStreetMap Carto wird ausschließlich für die gerade sichtbare interaktive
 Ansicht über einen identifizierten, HTTP-Cache-Regeln respektierenden Client
 geladen, zeigt die Attribution dauerhaft und bietet keinerlei Prefetch oder
@@ -249,6 +250,44 @@ Trainerkommandos außerhalb derselben `TrainerCore`-Sicherheitsgrenzen.
 ## Historie und Auswertung
 
 Rohmessungen bleiben unverändert. Zusammenfassungen, Rekorde und Diagrammreihen werden versioniert abgeleitet und können nach Algorithmusänderungen neu berechnet werden. Karten-Vorschaubilder sind Cache, nicht Primärdaten. Löschen einer Fahrt ist ausdrücklich, rückgängig machbar soweit praktisch und entfernt zugehörige HealthKit-Daten nur nach separater Bestätigung und Berechtigung.
+
+## Musik und Audio
+
+Musik ist ein optionales, standardmäßig ausgeschaltetes Cockpit-Modul. Nur die
+Einstellungen dürfen es aktivieren oder die Quelle ändern; die Fahrtansicht
+enthält danach ausschließlich kompakte Wiedergabebefehle und niemals
+Kontozugangsdaten oder versteckte Kopplungsschritte.
+
+Die erste Implementierung verwendet auf dem Main Thread
+`MPMusicPlayerController.systemMusicPlayer`. Sie übernimmt den Zustand der
+Apple-Music-App und bietet Titel/Künstler, Zurück, Play/Pause und Weiter erst
+nach `MPMediaLibrary`-Freigabe. Streckenschmiede ersetzt keine Apple-Music-
+Bibliothek und beginnt ohne Nutzeraktion keine Wiedergabe.
+
+Weitere Dienste bleiben getrennte Adapter mit ehrlichen Fähigkeiten:
+
+- Spotify App Remote benötigt eine registrierte Spotify-Developer-App,
+  Client-ID, Redirect-URI, installierte Spotify-App und ausdrückliche
+  Autorisierung. Die Spotify-Bibliothek und Zugangsdaten werden nicht
+  nachgebaut oder eingecheckt.
+- Amazon Music besitzt derzeit kein öffentliches iOS-SDK; die Web-API ist eine
+  geschlossene Beta und verlangt Prüfung/Zertifizierung. Deshalb gibt es keine
+  undokumentierte Fernsteuerung.
+- Lokale Musik aus Dateien/iCloud Drive wird später von einem eigenen
+  `LocalAudioProvider` abgespielt. Ein Nutzer wählt den Ordner mit dem
+  Dokumentenpicker; die App speichert nur ein Security-Scoped Bookmark und
+  behandelt widerrufenen Zugriff. AVFoundation, Background Audio sowie System-
+  Now-Playing/Headsetbefehle gehören zu diesem Provider und beeinflussen
+  Navigation oder Fahrtaufzeichnung nicht.
+
+Primärquellen: Apple `MPMusicPlayerController`, Apple Document Picker und
+AVFoundation, Spotify iOS App Remote sowie Amazon Music Developer Program:
+
+- <https://developer.apple.com/documentation/mediaplayer/mpmusicplayercontroller>
+- <https://developer.apple.com/documentation/uikit/providing-access-to-directories>
+- <https://developer.apple.com/documentation/avfoundation/configuring-your-app-for-media-playback>
+- <https://developer.spotify.com/documentation/ios>
+- <https://developer.amazon.com/docs/music/get_started_program-overview.html>
 
 ## Kamera
 

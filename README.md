@@ -12,14 +12,17 @@ Verbindlicher Gesamtumfang und Abnahmestatus: [TODO.md](TODO.md) · Technische Z
   eine breite orange Haupttaste „Aufzeichnung starten“ beginnt die Speicherung;
   Puls, Kadenz, Leistung und Sensorakku stehen kompakt im oberen Cockpit;
   84-Punkte-Kartensteuerung mit Minus links, Zentrieren mittig und Plus rechts;
-  Ebenenknopf rechts oben für Apple Karte, Satellit, Hybrid, Online-OSM und
-  die offene Fahrradkarte CyclOSM;
+  Kartenwahl in den Einstellungen für Apple Karte, Satellit, Hybrid,
+  Online-OSM und die offene Fahrradkarte CyclOSM, ohne zusätzlichen
+  Ebenenknopf über der Fahrkarte;
   erster Zielplaner mit Adress-/POI-Suche, Apple-Fahrradrouten und Alternativen;
   kompakte Live-Führung mit nächstem Apple-Manöver, Entfernung, Reststrecke,
   Restzeit und sichtbarer Routenabweichung; die aktive Apple- oder GPX-Route
   bleibt über einen App-Neustart erhalten und kann ausdrücklich beendet werden;
   einstellbare GPS-Auto-Pause mit Verzögerung, Hysterese und sicherem Vorrang
   der manuellen Pause;
+  optional ausschließlich in den Einstellungen aktivierbare Apple-Music-
+  Steuerung mit Titel, Künstler, Zurück, Play/Pause und Weiter;
   GPS-Fahrt mit Pause/Fortsetzen, atomarer Notfall-Wiederherstellung, Distanz
   und GPX-Export; GPX-Import und Kartenansicht über Apple MapKit
 - **Indoor:** gleichzeitige BLE-Sensorverbindungen mit Puls, Tempo,

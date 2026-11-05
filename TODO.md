@@ -41,7 +41,7 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 - [~] Eine breite, mindestens 64 Punkte hohe orange Haupttaste startet die Aufzeichnung ausdrücklich; GPS-Liveposition und Hilfswerkzeuge bleiben davon getrennt. Reale Handschuh- und Geräteabnahme steht aus.
 - [ ] Anpassbare Datenfelder und mindestens drei speicherbare Cockpit-Layouts.
 - [~] Live-Karte mit aktueller Position, gefahrenem Track und geplanter GPX-Linie im Fahrtbild; Abweichung und echte Navigation fehlen noch.
-- [~] Kartenebenenknopf rechts oben mit gespeicherter Wahl: Apple Standard, Satellit und Hybrid sowie interaktives Online-OpenStreetMap und die offene Fahrradkarte CyclOSM mit sichtbarer Attribution sind implementiert. OpenCycleMap ist als getrennte Thunderforest-Option vorhanden, bleibt ohne gültigen Provider-Key deaktiviert; reale Geräte-, Last- und Sperrtestfahrt fehlen.
+- [~] Gespeicherte Kartenwahl liegt ausschließlich in **Einstellungen > Fahrtkarte**, damit kein Ebenenknopf die Fahrkarte verdeckt: Apple Standard, Satellit und Hybrid sowie interaktives Online-OpenStreetMap und CyclOSM mit sichtbarer Attribution sind implementiert. OpenCycleMap ist als getrennte Thunderforest-Option vorhanden, bleibt ohne gültigen Provider-Key ausgeblendet; reale Geräte-, Last- und Sperrtestfahrt fehlen.
 - [~] Kartenorientierung mit Norden oben, Fahrtrichtung oben und separat abschaltbarer geneigter 3D-Perspektive ist vorhanden; Stillstand, Kompassglättung und reale Geräteabnahme fehlen.
 - [~] Follow-Modus mit eindeutigem Fadenkreuz-Zentrieren-Knopf unten mittig; Verschieben/Pinch schaltet auf freie Karte, Zentrieren stellt den Vorausblick mit Position im unteren Drittel wieder her. Reale Gestenabnahme steht aus.
 - [~] Live-Karten-Zoom per Gesten und auf 84 Punkte beziehungsweise Faktor 1,5 vergrößerten Tasten: Minus unten links, Zentrieren unten mittig, Plus unten rechts; Standardbereich 250 m bis 10 km und Presets Nah/Fahrt/Voraus/Übersicht sind implementiert, reale Handschuhabnahme fehlt.
@@ -137,6 +137,14 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 - [ ] Export-Validierung mit Roundtrip-Tests und unabhängigen Beispielwerkzeugen.
 - [x] Komoot-, Offlinekarten-, GPX-Dateihandler- und Standortfreigabegrenzen in `Streckenschmiede/ROUTES_MAPS_INTEGRATIONS.md` dokumentiert.
 - [ ] Komoot-Austausch zunächst ausschließlich über offiziellen GPX-Import/-Export und iOS Share Sheet; Kontosync nur mit offiziell vereinbarter Partner-API.
+
+## P1 – optionale Musiksteuerung
+
+- [~] Musiksteuerung ist standardmäßig aus und ausschließlich in **Einstellungen > Musik** aktivierbar. Die erste Stufe steuert den Apple-System-Musikplayer mit Titel/Künstler sowie Zurück, Play/Pause und Weiter; Compiler- und echter Apple-Music-Gerätetest stehen aus.
+- [ ] Spotify App Remote als getrennten Adapter ergänzen. Voraussetzung sind eine registrierte Spotify-Developer-App, Client-ID, Redirect-URI, Spotify-App auf dem Gerät und ausdrückliche Autorisierung; keine Zugangsdaten im Repository.
+- [ ] Amazon Music erst integrieren, wenn Amazon den Zugriff auf die derzeit geschlossene Beta freigibt, die App zertifiziert ist und eine belastbare iOS-Schnittstelle bereitsteht; keine undokumentierte Fernsteuerung.
+- [ ] Eigenen lokalen Player für MP3/AAC/ALAC aus einem vom Nutzer gewählten Dateien-/iCloud-Drive-Ordner bauen: Security-Scoped Bookmark, Bibliotheksindex, Wiedergabeliste, Unterbrechungsbehandlung, Background Audio, Sperrbildschirm-/Headset-Steuerung und nachvollziehbarer Rechteentzug.
+- [ ] Musiklautstärke und Navigationsansagen gegeneinander testen; Anweisungen dürfen Musik nur nach einer ausdrücklichen Einstellung absenken oder unterbrechen.
 
 ## P1 – Gruppenfahrt und freiwillige Live-Position
 
