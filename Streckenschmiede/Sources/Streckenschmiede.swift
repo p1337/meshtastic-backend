@@ -31,6 +31,7 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
     @Published var status = "Bereit"
     @Published private(set) var rideID = UUID()
     @Published private(set) var startedAt: Date?
+    @Published private(set) var isManuallyStopped = false
     private let location = CLLocationManager()
     private let sessionEngine: RideSessionEngine
     private let autoPause = AutoPauseController()
@@ -38,12 +39,19 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
     private var pendingActionAfterAuthorization: PendingAction?
     private var elapsedTimer: Timer?
     private var applicationIsActive = true
+    private static let manualStopDateKey = "rideManualStopDate"
+    private static let manualStopRideIDKey = "rideManualStopRideID"
 
     var active: Bool { sessionPhase == .recording || sessionPhase == .paused }
     var isRecording: Bool { sessionPhase == .recording }
     var isPaused: Bool { sessionPhase == .paused }
     var isAutoPaused: Bool { isPaused && autoPause.isAutomaticallyPaused }
     var recoveryAvailable: Bool { sessionPhase == .recoveryRequired }
+    var hasRideData: Bool {
+        points > 0
+            || distance > 0
+            || rideHistory.contains(where: { $0.rideID == rideID })
+    }
 
     private var autoPauseConfiguration: AutoPauseConfiguration {
         let defaults = UserDefaults.standard
@@ -76,6 +84,7 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
         location.distanceFilter = 5
         syncFromSession(now: Date())
         rideHistory = (try? RideArchiveStore.load()) ?? []
+        restoreManualStop(now: Date())
         if recoveryAvailable {
             status = "Unterbrochene Fahrt gefunden"
             startElapsedTimer()
@@ -112,6 +121,7 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
 
     func start() {
+        setManualStop(false, now: Date())
         activateDailyTracking()
     }
 
@@ -130,6 +140,7 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
         elapsedSeconds = 0
         ridingSeconds = 0
         pausedSeconds = 0
+        exportURL = nil
         syncFromSession(now: now)
         startElapsedTimer()
         startLocationUpdates()
@@ -255,8 +266,53 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
 
     func stop() {
-        guard active else { return }
+        guard active || recoveryAvailable else { return }
+        setManualStop(true, now: Date())
         finishSession()
+        if status == "Tagesfahrt gesichert" {
+            status = "Fahrt gestoppt und gesichert"
+        }
+    }
+
+    func resetCurrentRideAndStartFresh() {
+        let archivedEntry = rideHistory.first(where: { $0.rideID == rideID })
+        do {
+            if let archivedEntry {
+                rideHistory = try RideArchiveStore.delete(archivedEntry)
+            } else if let exportURL,
+                      (exportURL.lastPathComponent.hasPrefix("Fahrt-")
+                        || exportURL.lastPathComponent.hasPrefix("Tagesfahrt-")) {
+                let documents = FileManager.default.urls(
+                    for: .documentDirectory,
+                    in: .userDomainMask
+                ).first ?? FileManager.default.temporaryDirectory
+                let safeURL = exportURL.standardizedFileURL
+                guard safeURL.deletingLastPathComponent() == documents.standardizedFileURL else {
+                    throw NSError(
+                        domain: "Streckenschmiede.RideReset",
+                        code: 1,
+                        userInfo: [NSLocalizedDescriptionKey: "Ungültiger GPX-Dateipfad"]
+                    )
+                }
+                if FileManager.default.fileExists(atPath: safeURL.path) {
+                    try FileManager.default.removeItem(at: safeURL)
+                }
+            }
+        } catch {
+            status = "Route konnte nicht sicher zurückgesetzt werden: \(error.localizedDescription)"
+            return
+        }
+
+        autoPause.reset()
+        elapsedTimer?.invalidate()
+        elapsedTimer = nil
+        sessionEngine.clearPersistedSession()
+        resetDisplayedRideState()
+        setManualStop(false, now: Date())
+        activateDailyTracking()
+        if active {
+            status = "Route auf 0 gesetzt · neue Fahrt läuft"
+        }
     }
 
     private func finishSession(now: Date = Date()) {
@@ -439,6 +495,14 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
 
     private func ensureAutomaticDailyRide(now: Date) {
+        if isManuallyStopped,
+           let stoppedAt = UserDefaults.standard.object(
+                forKey: Self.manualStopDateKey
+           ) as? Date,
+           !Calendar.autoupdatingCurrent.isDate(stoppedAt, inSameDayAs: now) {
+            setManualStop(false, now: now)
+        }
+        guard !isManuallyStopped else { return }
         if DailyRidePolicy.requiresRollover(startedAt: startedAt, now: now),
            active || recoveryAvailable {
             finishSession(now: now)
@@ -460,7 +524,7 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
         }
         let timestampFormatter = ISO8601DateFormatter()
         timestampFormatter.formatOptions = [.withInternetDateTime]
-        var gpx = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><gpx version=\"1.1\" creator=\"Streckenschmiede\" xmlns=\"http://www.topografix.com/GPX/1/1\"><trk><name>Tagesfahrt</name><trkseg>"
+        var gpx = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><gpx version=\"1.1\" creator=\"Streckenschmiede\" xmlns=\"http://www.topografix.com/GPX/1/1\"><trk><name>Streckenschmiede Fahrt</name><trkseg>"
         for sample in sessionEngine.samples {
             gpx += "<trkpt lat=\"\(sample.latitude)\" lon=\"\(sample.longitude)\"><ele>\(sample.altitude)</ele><time>\(timestampFormatter.string(from:sample.timestamp))</time></trkpt>"
         }
@@ -471,11 +535,16 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
         dateFormatter.timeZone = .autoupdatingCurrent
         dateFormatter.dateFormat = "yyyy-MM-dd"
         let day = dateFormatter.string(from: startedAt ?? now)
+        dateFormatter.dateFormat = "yyyy-MM-dd-HHmmss"
+        let startedStamp = dateFormatter.string(from: snapshot.startedAt)
+        let shortRideID = snapshot.rideID.uuidString.lowercased().prefix(8)
         let documents = FileManager.default.urls(
             for: .documentDirectory,
             in: .userDomainMask
         ).first ?? FileManager.default.temporaryDirectory
-        let url = documents.appendingPathComponent("Tagesfahrt-\(day).gpx")
+        let url = documents.appendingPathComponent(
+            "Fahrt-\(startedStamp)-\(shortRideID).gpx"
+        )
         try gpx.write(to: url, atomically: true, encoding: .utf8)
         let durations = sessionEngine.durations(at: now)
         let entry = RideArchiveEntry(
@@ -495,6 +564,51 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
         )
         rideHistory = try RideArchiveStore.upsert(entry)
         return url
+    }
+
+    private func restoreManualStop(now: Date) {
+        let defaults = UserDefaults.standard
+        guard let stoppedAt = defaults.object(forKey: Self.manualStopDateKey) as? Date,
+              Calendar.autoupdatingCurrent.isDate(stoppedAt, inSameDayAs: now) else {
+            setManualStop(false, now: now)
+            return
+        }
+        isManuallyStopped = true
+        if let rawRideID = defaults.string(forKey: Self.manualStopRideIDKey),
+           let stoppedRideID = UUID(uuidString: rawRideID) {
+            rideID = stoppedRideID
+        }
+        status = "Fahrt gestoppt"
+    }
+
+    private func setManualStop(_ stopped: Bool, now: Date) {
+        isManuallyStopped = stopped
+        let defaults = UserDefaults.standard
+        if stopped {
+            defaults.set(now, forKey: Self.manualStopDateKey)
+            defaults.set(rideID.uuidString, forKey: Self.manualStopRideIDKey)
+        } else {
+            defaults.removeObject(forKey: Self.manualStopDateKey)
+            defaults.removeObject(forKey: Self.manualStopRideIDKey)
+        }
+    }
+
+    private func resetDisplayedRideState() {
+        sessionPhase = .idle
+        rideID = UUID()
+        startedAt = nil
+        trackCoordinates = []
+        distance = 0
+        points = 0
+        speedKmh = 0
+        averageSpeedKmh = 0
+        maximumSpeedKmh = 0
+        ascent = 0
+        descent = 0
+        elapsedSeconds = 0
+        ridingSeconds = 0
+        pausedSeconds = 0
+        exportURL = nil
     }
 }
 private enum AppMode: Hashable {
@@ -759,6 +873,7 @@ private struct RideDashboard: View {
     let clearRoute: () -> Void
     @State private var showingMusicControls = false
     @State private var showingMusicLibrary = false
+    @State private var confirmingRideReset = false
     @AppStorage("rideMusicControlsEnabled") private var rideMusicControlsEnabled = false
     @AppStorage("rideCockpitFieldCount") private var rideCockpitFieldCount = 6
     @AppStorage("rideCockpitTextSize") private var rideCockpitTextSizeRaw = "suggested"
@@ -810,7 +925,7 @@ private struct RideDashboard: View {
                     }
                 }
 
-                ridePauseButton
+                rideControlButton
             }
             .offset(x: 1)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .trailing)
@@ -818,6 +933,18 @@ private struct RideDashboard: View {
         .background(Color.black)
         .sheet(isPresented: $showingMusicLibrary) {
             AppleMusicPlayerSheet()
+        }
+        .confirmationDialog(
+            "Aufgezeichnete Route auf 0 setzen?",
+            isPresented: $confirmingRideReset,
+            titleVisibility: .visible
+        ) {
+            Button("Route und Messwerte löschen", role: .destructive) {
+                ride.resetCurrentRideAndStartFresh()
+            }
+            Button("Abbrechen", role: .cancel) {}
+        } message: {
+            Text("Die aktuelle Route, ihre Zeiten und Messwerte werden gelöscht. Danach beginnt eine leere neue Fahrt.")
         }
         .onAppear { ride.activateDailyTracking() }
         .onChange(of: rideMusicControlsEnabled) { _, enabled in
@@ -851,9 +978,31 @@ private struct RideDashboard: View {
         .accessibilityLabel("Musiksteuerung öffnen")
     }
 
-    private var ridePauseButton: some View {
-        Button(action: toggleRidePause) {
-            Image(systemName: ride.isRecording ? "pause.fill" : "play.fill")
+    private var rideControlButton: some View {
+        Menu {
+            Button(action: toggleRidePause) {
+                Label(
+                    ride.isRecording ? "Pausieren" : "Fortsetzen / neue Fahrt",
+                    systemImage: ride.isRecording ? "pause.fill" : "play.fill"
+                )
+            }
+            Button {
+                ride.stop()
+            } label: {
+                Label("Stoppen und speichern", systemImage: "stop.fill")
+            }
+            .disabled(!(ride.active || ride.recoveryAvailable))
+
+            Divider()
+
+            Button(role: .destructive) {
+                confirmingRideReset = true
+            } label: {
+                Label("Auf 0 setzen", systemImage: "arrow.counterclockwise")
+            }
+            .disabled(!ride.hasRideData)
+        } label: {
+            Image(systemName: rideControlIcon)
                 .font(.system(size: 19, weight: .black))
                 .frame(width: 50, height: 50)
                 .contentShape(Circle())
@@ -870,11 +1019,17 @@ private struct RideDashboard: View {
             )
         )
         .shadow(color: .black.opacity(0.6), radius: 7, y: 3)
-        .accessibilityLabel(ride.isRecording ? "Fahrt pausieren" : "Fahrt fortsetzen")
-        .accessibilityValue(ridePauseAccessibilityValue)
+        .accessibilityLabel("Fahrtsteuerung")
+        .accessibilityValue(rideControlAccessibilityValue)
     }
 
-    private var ridePauseAccessibilityValue: String {
+    private var rideControlIcon: String {
+        if ride.isManuallyStopped { return "stop.fill" }
+        return ride.isRecording ? "pause.fill" : "play.fill"
+    }
+
+    private var rideControlAccessibilityValue: String {
+        if ride.isManuallyStopped { return "Fahrt gestoppt" }
         if ride.isAutoPaused { return "Automatisch pausiert" }
         if ride.isPaused { return "Manuell pausiert" }
         if ride.recoveryAvailable { return "Unterbrochene Fahrt gefunden" }
@@ -889,6 +1044,8 @@ private struct RideDashboard: View {
             ride.resume()
         } else if ride.recoveryAvailable {
             ride.resumeRecoveredRide()
+        } else if ride.isManuallyStopped {
+            ride.start()
         } else {
             ride.activateDailyTracking()
         }
@@ -900,7 +1057,11 @@ private struct RideDashboard: View {
                 Circle()
                     .fill(ride.isRecording ? Color.green : (ride.recoveryAvailable ? Color.red : Color.orange))
                     .frame(width: 8, height: 8)
-                Text(ride.isAutoPaused ? "AUTO-PAUSE" : "TAGESFAHRT")
+                Text(
+                    ride.isManuallyStopped
+                        ? "GESTOPPT"
+                        : (ride.isAutoPaused ? "AUTO-PAUSE" : "TAGESFAHRT")
+                )
                 Spacer()
                 Text("\(visibleFieldCount) FELDER · ANTIPPEN")
             }
@@ -1630,7 +1791,7 @@ struct SettingsView: View {
                     }
                     Slider(value: $rideMapZoomMeters, in: 250...10_000, step: 250)
                 }
-                Text("Nah, Fahrt, Voraus und Übersicht sind handschuhtaugliche Presets. Der Positionspfeil liegt beim Folgen im unteren Bildschirmdrittel, damit die Karte vor dir den größten Raum erhält.")
+                Text("Nah, Fahrt, Voraus und Übersicht sind handschuhtaugliche Presets. Der Positionspfeil liegt beim Folgen knapp über den unteren Kartenknöpfen, damit die Karte vor dir den größten Raum erhält.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 if RideMapLayer.openCycleMapKey == nil {

@@ -15,7 +15,7 @@ struct RideArchiveEntry: Codable, Equatable, Identifiable {
     let pointCount: Int
     let gpxFileName: String
 
-    var id: String { dayIdentifier }
+    var id: UUID { rideID }
 
     var averageSpeedKmh: Double {
         ridingSeconds > 0 ? distanceMeters / Double(ridingSeconds) * 3.6 : 0
@@ -34,7 +34,7 @@ struct RideArchiveEntry: Codable, Equatable, Identifiable {
             && ridingSeconds <= totalSeconds
             && pausedSeconds <= totalSeconds
             && pointCount >= 0
-            && gpxFileName.hasPrefix("Tagesfahrt-")
+            && (gpxFileName.hasPrefix("Tagesfahrt-") || gpxFileName.hasPrefix("Fahrt-"))
             && gpxFileName.hasSuffix(".gpx")
             && !gpxFileName.contains("..")
             && URL(fileURLWithPath: gpxFileName).lastPathComponent == gpxFileName
@@ -61,7 +61,8 @@ enum RideArchiveStore {
         guard envelope.schemaVersion == 1,
               envelope.entries.count <= maximumEntries,
               envelope.entries.allSatisfy(\.isValid),
-              Set(envelope.entries.map(\.dayIdentifier)).count == envelope.entries.count else {
+              Set(envelope.entries.map(\.rideID)).count == envelope.entries.count,
+              Set(envelope.entries.map(\.gpxFileName)).count == envelope.entries.count else {
             throw archiveError("Ungültige Fahrtenhistorie")
         }
         return envelope.entries.sorted { $0.startedAt > $1.startedAt }
@@ -75,7 +76,7 @@ enum RideArchiveStore {
         guard entry.isValid else { throw archiveError("Ungültiger Historieneintrag") }
         let url = storeURL ?? defaultStoreURL()
         var entries = try load(storeURL: url)
-        entries.removeAll { $0.dayIdentifier == entry.dayIdentifier }
+        entries.removeAll { $0.rideID == entry.rideID }
         entries.append(entry)
         entries.sort { $0.startedAt > $1.startedAt }
         if entries.count > maximumEntries {
@@ -136,7 +137,8 @@ enum RideArchiveStore {
     private static func persist(_ entries: [RideArchiveEntry], to url: URL) throws {
         guard entries.count <= maximumEntries,
               entries.allSatisfy(\.isValid),
-              Set(entries.map(\.dayIdentifier)).count == entries.count else {
+              Set(entries.map(\.rideID)).count == entries.count,
+              Set(entries.map(\.gpxFileName)).count == entries.count else {
             throw archiveError("Ungültige Fahrtenhistorie")
         }
         let encoder = JSONEncoder()

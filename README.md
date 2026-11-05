@@ -33,8 +33,9 @@ Verbindlicher Gesamtumfang und Abnahmestatus: [TODO.md](TODO.md) · Technische Z
   Bildschirmrand. Er öffnet dort eine nur ungefähr 15 Prozent breite,
   vertikal ausgerichtete und bündig sitzende Symbolleiste mit
   Zurück, Play/Pause, Weiter und Mediathek; das Blatt von unten bietet
-  Apple-Music-Playlists; direkt darunter pausiert beziehungsweise setzt ein
-  gleich großer kompakter Fahrtknopf die automatische Tagesaufzeichnung fort;
+  Apple-Music-Playlists; direkt darunter öffnet ein gleich großer kompakter
+  Fahrtknopf Pause/Fortsetzen, Stoppen und Speichern sowie das bestätigte
+  Zurücksetzen der aktuellen Route auf 0;
   mehrere lokal gespeicherte Fahrradprofile mit aktivem Rad, eigenem Namen,
   Fahrradtyp, Schattenbild und Abroll-Durchmesser; der daraus berechnete
   Radumfang wird direkt für BLE-Geschwindigkeitssensoren verwendet;
@@ -46,7 +47,7 @@ Verbindlicher Gesamtumfang und Abnahmestatus: [TODO.md](TODO.md) · Technische Z
   Kadenz, Leistung, Pedalbalance, Umgebungstemperatur, FTMS-Livewerten und Akku
   sowie erste begrenzte
   FTMS-Steuerung für D100-kompatible Trainer mit ERG, Widerstand, Steigung,
-  Pause und Not-Stopp; eine Bibliothek zeigt jede gespeicherte Tagesfahrt mit
+  Pause und Not-Stopp; eine Bibliothek zeigt jede gespeicherte Fahrt mit
   GPX-Kartenlinie und Fahrdaten und löscht ausgewählte abgeschlossene Fahrten
   samt GPX erst nach Bestätigung
 

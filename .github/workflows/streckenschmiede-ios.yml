@@ -55,7 +55,7 @@ jobs:
         run: |
           xcrun swiftc Streckenschmiede/Sources/DailyRidePolicy.swift Streckenschmiede/Tests/DailyRidePolicySelfTest.swift -o "$RUNNER_TEMP/daily-ride-tests"
           "$RUNNER_TEMP/daily-ride-tests"
-      - name: Test persistent daily ride history
+      - name: Test persistent ride history and separate same-day rides
         run: |
           xcrun swiftc Streckenschmiede/Sources/RideArchive.swift Streckenschmiede/Tests/RideArchiveSelfTest.swift -o "$RUNNER_TEMP/ride-archive-tests"
           "$RUNNER_TEMP/ride-archive-tests"

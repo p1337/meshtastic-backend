@@ -232,7 +232,7 @@ Zoom wird als sichtbare Breite/Höhe in Metern statt als anbieterspezifische Kac
 - Fahrtrichtung oben nutzt geglätteten Kurs; bei Stillstand wird nicht unruhig gedreht.
 - Die Fahrtkarte füllt die verfügbare Aufzeichnungsfläche bis an den oberen Bildschirmrand. Messwerte und Fahrtaktionen liegen als kompakte kontrastreiche Overlays darauf; es gibt keine separate dauerhaft sichtbare „Bereit“- oder GPS-Punkt-Zeile.
 - Die Karte behält ihre bildschirmfüllende Geometrie und wird für die Statusleiste niemals nach unten verschoben. Ein ohne eigene Layoutfläche darübergelegter, durchscheinender Material-Blur hält Uhr, Funk und Akku unabhängig vom Karteninhalt lesbar, lässt die Karte aber sichtbar weiterlaufen. Der native MapKit-Kompass wird als eigener `MKCompassButton` links verankert; Outdoor, Indoor und Einstellungen liegen rechts in derselben Zeile. Diese Zeile wird höher und vertikal zwischen Dynamic Island/Statusbereich und dem direkt anschließenden Cockpit ausgemittelt. Die textliche Meldung „Karte verschoben“ entfällt, der orange/weiße Zustand des Zentrieren-Knopfs genügt.
-- Die Aufzeichnung ist eine automatische lokale Tagesfahrt. Nach Standortfreigabe wird die atomar gesicherte Sitzung desselben Kalendertags fortgesetzt oder neu begonnen. Auto-Pause trennt Stillstand; ein Tageswechsel exportiert den alten Tag und eröffnet den neuen. Ein manueller Startknopf oder eine dauerhafte Fahrt-Aktionsleiste existiert nicht. Ein einzelner kompakter Pause-/Fortsetzen-Knopf sitzt am rechten Kartenrand unter der optionalen Musiksteuerung, nutzt denselben `RideSessionEngine`-Zustand und beendet oder verwirft die Tagesroute nie. Planung, Import, Tagesexport/Teilen und Kamera-Sync liegen in Einstellungen.
+- Die Aufzeichnung startet zunächst als automatische lokale Tagesfahrt. Nach Standortfreigabe wird die atomar gesicherte Sitzung desselben Kalendertags fortgesetzt oder neu begonnen. Auto-Pause trennt Stillstand; ein Tageswechsel exportiert den alten Tag und eröffnet den neuen. Ein großer Startbalken oder eine dauerhafte Fahrt-Aktionsleiste existiert nicht. Ein einzelner kompakter Fahrtknopf sitzt am rechten Kartenrand unter der optionalen Musiksteuerung und öffnet Pause/Fortsetzen, Stoppen/Speichern sowie ein bestätigtes Zurücksetzen von Route, Zeiten und Messwerten. Manueller Stopp wird für den aktuellen Tag gespeichert und verhindert automatische Wiederaufnahme bis zum ausdrücklichen Neustart; Zurücksetzen löscht die aktuelle GPX/Metadaten sicher und beginnt eine leere neue Fahrt. Alle Aktionen nutzen denselben `RideSessionEngine`-Zustand. Planung, Import, Export/Teilen und Kamera-Sync liegen in Einstellungen.
 - Im Vorausblick wird die native MapKit-Kamera nach der 2D-/3D-Projektion so verschoben, dass die unveränderte GPS-Koordinate horizontal mittig gegenüber dem früheren unteren-Drittel-Anker um 15 Prozent der Kartenhöhe weiter unten liegt. `MapCameraPolicy` berechnet den Anker aus der tatsächlichen Kartenhöhe und begrenzt ihn knapp oberhalb der reservierten Bedienzone: Marker-Radius plus mindestens 15 Punkte Abstand vor den 84-Punkte-Trefferflächen. Apple- und regelkonforme OSM-Rasterebenen verwenden denselben `MKMapView`-Kamerapfad, damit Zoom, Neigung und Providerwechsel die Position nicht unter die Knöpfe schieben. Fehlt ein Fahrkurs, wird die Bildschirmoberkante als stabile Bezugsrichtung verwendet. Die Nutzerstufe 0–30 Grad wird auf 0–60 Grad MapKit-Pitch abgebildet, sodass 30 Grad eine deutlich geneigte, aber noch fahrbare Perspektive ergibt.
 - Die untere Kartensteuerung ist symmetrisch und handschuhtauglich: Minus direkt unten links, Fadenkreuz-Zentrieren unten mittig und Plus direkt unten rechts. Alle drei Knöpfe besitzen eine unsichtbare 84 × 84 Punkte große Trefferfläche bei einem ruhigen 58-Punkte-Kreis. Nur ein aktives Manöverbanner liegt mit eigenem Abstand darüber.
 - Outdoor, Indoor und Einstellungen teilen sich rechts oben einen kompakten Modus-Umschalter. Die untere Tab-Leiste entfällt vollständig, damit die Karte bis an den unteren Bildschirmrand reicht.
@@ -267,13 +267,15 @@ Trainerkommandos außerhalb derselben `TrainerCore`-Sicherheitsgrenzen.
 
 Rohmessungen bleiben unverändert. Zusammenfassungen, Rekorde und Diagrammreihen werden versioniert abgeleitet und können nach Algorithmusänderungen neu berechnet werden. Karten-Vorschaubilder sind Cache, nicht Primärdaten. Löschen einer Fahrt ist ausdrücklich, rückgängig machbar soweit praktisch und entfernt zugehörige HealthKit-Daten nur nach separater Bestätigung und Berechtigung.
 
-Die erste lokale Historienstufe speichert mit `RideArchiveStore` genau einen
-versionierten Metadatensatz pro lokalem Kalendertag. Der Index liegt atomar als
-JSON im Application-Support-Verzeichnis, ist auf 3.650 plausible, eindeutige
-Einträge begrenzt und verweist ausschließlich auf sichere
-`Tagesfahrt-YYYY-MM-DD.gpx`-Dateinamen im Documents-Verzeichnis. Ein erneuter
-Export desselben Tages ersetzt dessen Zusammenfassung atomar. Die GPX-Datei
-bleibt Rohdatenquelle; Kartenbilder, Diagramme, Sensorzusammenfassungen und eine
+Die erste lokale Historienstufe speichert mit `RideArchiveStore` einen
+versionierten Metadatensatz pro eindeutiger Fahrt-ID. Der Index liegt atomar
+als JSON im Application-Support-Verzeichnis, ist auf 3.650 plausible,
+eindeutige Einträge und GPX-Dateinamen begrenzt und verweist ausschließlich auf
+sichere `Fahrt-YYYY-MM-DD-HHmmss-<ID>.gpx`-Dateien im Documents-Verzeichnis;
+vorhandene `Tagesfahrt-YYYY-MM-DD.gpx` bleiben lesbare Altbestände. Ein erneuter
+Export derselben Fahrt ersetzt nur deren Zusammenfassung atomar, mehrere
+gestoppte Fahrten desselben Tages bleiben getrennt. Die GPX-Datei bleibt
+Rohdatenquelle; Kartenbilder, Diagramme, Sensorzusammenfassungen und eine
 spätere SwiftData-/Backup-Schicht dürfen daraus neu abgeleitet werden.
 
 Die Indoor-Streckenbibliothek liest dieselben `RideArchiveEntry`-Metadaten und
