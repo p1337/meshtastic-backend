@@ -60,8 +60,18 @@ enum MapCameraPolicySelfTest {
             markerDiameter: 42
         )
         mapCameraExpect(
-            mapCameraApproximatelyEqual(riderY, phoneHeight * 2 / 3),
-            "normal screens must anchor the rider one third above the bottom"
+            mapCameraApproximatelyEqual(
+                MapCameraPolicy.preferredRiderScreenFraction,
+                (2.0 / 3.0) + 0.15
+            ),
+            "the preferred rider anchor must move down by 15 percent of map height"
+        )
+        mapCameraExpect(
+            mapCameraApproximatelyEqual(
+                riderY,
+                phoneHeight * MapCameraPolicy.preferredRiderScreenFraction
+            ),
+            "normal screens must apply the complete 15 percent lowering"
         )
         mapCameraExpect(
             riderY + 21 + MapCameraPolicy.minimumRiderControlGap <= controlTop,

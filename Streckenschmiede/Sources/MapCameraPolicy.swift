@@ -1,14 +1,16 @@
 import Foundation
 
-/// Keeps the rider visibly inside the lower map area while preserving useful
-/// route look-ahead. The screen anchor is calculated from the actual map-view
-/// height, so 2D/3D projection and zoom no longer decide whether the marker can
-/// collide with the bottom controls.
+/// Keeps the rider visibly just above the lower map controls while preserving
+/// useful route look-ahead. The screen anchor is calculated from the actual
+/// map-view height, so 2D/3D projection and zoom no longer decide whether the
+/// marker can collide with the bottom controls.
 enum MapCameraPolicy {
     static let minimumZoomMeters = 250.0
     static let maximumZoomMeters = 10_000.0
-    static let preferredRiderScreenFraction = 2.0 / 3.0
-    static let minimumRiderControlGap = 24.0
+    /// The original lower-third anchor plus the requested 15% screen-height
+    /// lowering. `riderScreenY` still clamps this before the control hit areas.
+    static let preferredRiderScreenFraction = (2.0 / 3.0) + 0.15
+    static let minimumRiderControlGap = 15.0
 
     static func lookAheadDistance(zoomMeters: Double, is3D: Bool) -> Double {
         let safeZoom = min(max(zoomMeters, minimumZoomMeters), maximumZoomMeters)
