@@ -11,7 +11,9 @@ struct SensorDeviceSnapshot: Identifiable, Equatable {
     var heartRateBpm: Int?
     var cadenceRpm: Double?
     var powerWatts: Int?
+    var pedalBalancePercent: Double?
     var speedKmh: Double?
+    var temperatureCelsius: Double?
     var batteryPercent: Int?
     var manufacturer: String?
     var model: String?
@@ -29,6 +31,7 @@ final class SensorHub: NSObject, ObservableObject, CBCentralManagerDelegate, CBP
     @Published private(set) var speedKmh: Double?
     @Published private(set) var pedalBalancePercent: Double?
     @Published private(set) var resistanceLevel: Double?
+    @Published private(set) var temperatureCelsius: Double?
     @Published private(set) var batteryPercent: Int?
     @Published private(set) var trainerDeviceID: UUID?
     @Published private(set) var trainerName: String?
@@ -58,6 +61,7 @@ final class SensorHub: NSObject, ObservableObject, CBCentralManagerDelegate, CBP
     private var batterySource: UUID?
     private var balanceSource: UUID?
     private var resistanceSource: UUID?
+    private var temperatureSource: UUID?
     private var ftmsControlPoints: [UUID: CBCharacteristic] = [:]
     private var ftmsCapabilities: [UUID: FTMSTargetCapabilities] = [:]
     private var ftmsResistanceRanges: [UUID: FTMSValueRange] = [:]
@@ -333,7 +337,10 @@ final class SensorHub: NSObject, ObservableObject, CBCentralManagerDelegate, CBP
                 powerWatts = measurement.watts
                 powerSource = id
                 pedalBalancePercent = measurement.pedalPowerBalancePercent
-                if measurement.pedalPowerBalancePercent != nil { balanceSource = id }
+                if let balance = measurement.pedalPowerBalancePercent {
+                    records[id]?.pedalBalancePercent = balance
+                    balanceSource = id
+                }
                 updateRevolutions(
                     RevolutionMeasurement(
                         wheelRevolutions: measurement.wheelRevolutions,
@@ -358,6 +365,11 @@ final class SensorHub: NSObject, ObservableObject, CBCentralManagerDelegate, CBP
                 records[id]?.batteryPercent = level
                 batteryPercent = level
                 batterySource = id
+            case "2A6E":
+                let value = try BikeSensorParser.temperatureCelsius(data)
+                records[id]?.temperatureCelsius = value
+                temperatureCelsius = value
+                temperatureSource = id
             case "2A29": records[id]?.manufacturer = decodedString(data)
             case "2A24": records[id]?.model = decodedString(data)
             case "2ACC":
@@ -598,7 +610,9 @@ final class SensorHub: NSObject, ObservableObject, CBCentralManagerDelegate, CBP
                 heartRateBpm: nil,
                 cadenceRpm: nil,
                 powerWatts: nil,
+                pedalBalancePercent: nil,
                 speedKmh: nil,
+                temperatureCelsius: nil,
                 batteryPercent: nil,
                 manufacturer: nil,
                 model: nil,
@@ -641,6 +655,7 @@ final class SensorHub: NSObject, ObservableObject, CBCentralManagerDelegate, CBP
         if balanceSource == id { pedalBalancePercent = nil; balanceSource = nil }
         if resistanceSource == id { resistanceLevel = nil; resistanceSource = nil }
         if speedSource == id { speedKmh = nil; speedSource = nil }
+        if temperatureSource == id { temperatureCelsius = nil; temperatureSource = nil }
         if batterySource == id { batteryPercent = nil; batterySource = nil }
     }
 

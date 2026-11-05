@@ -626,6 +626,11 @@ struct MainView: View {
                     SensorValue(title: "Kadenz", value: sensors.cadenceRpm.map { String(format: "%.0f rpm", $0) } ?? "–")
                     SensorValue(title: "Leistung", value: sensors.powerWatts.map { "\($0) W" } ?? "–")
                 }
+                HStack {
+                    SensorValue(title: "Balance", value: sensors.pedalBalancePercent.map { String(format: "%.1f %%", $0) } ?? "–")
+                    SensorValue(title: "Temperatur", value: sensors.temperatureCelsius.map { String(format: "%.1f °C", $0) } ?? "–")
+                    SensorValue(title: "Sensorakku", value: sensors.batteryPercent.map { "\($0) %" } ?? "–")
+                }
             }
             TrainerControlPanel(sensors: sensors)
             Section("Fahrradsensoren und Trainer") {
@@ -906,6 +911,8 @@ private struct RideDashboard: View {
         case .heartRate: (sensors.heartRateBpm.map { String($0) } ?? "–", "bpm")
         case .cadence: (sensors.cadenceRpm.map { String(format: "%.0f", $0) } ?? "–", "rpm")
         case .power: (sensors.powerWatts.map { String($0) } ?? "–", "W")
+        case .powerBalance: (sensors.pedalBalancePercent.map { String(format: "%.1f", $0) } ?? "–", "%")
+        case .temperature: (sensors.temperatureCelsius.map { String(format: "%.1f", $0) } ?? "–", "°C")
         case .sensorBattery: (sensors.batteryPercent.map { String($0) } ?? "–", "%")
         }
     }
@@ -925,6 +932,8 @@ private struct RideDashboard: View {
         case .heartRate: "heart.fill"
         case .cadence: "arrow.triangle.2.circlepath"
         case .power: "bolt.fill"
+        case .powerBalance: "arrow.left.arrow.right"
+        case .temperature: "thermometer.medium"
         case .sensorBattery: "battery.75percent"
         }
     }
@@ -1285,7 +1294,9 @@ private struct SensorDeviceRow: View {
         if let heartRate = device.heartRateBpm { parts.append("\(heartRate) bpm") }
         if let cadence = device.cadenceRpm { parts.append(String(format: "%.0f rpm", cadence)) }
         if let power = device.powerWatts { parts.append("\(power) W") }
+        if let balance = device.pedalBalancePercent { parts.append(String(format: "Balance %.1f%%", balance)) }
         if let speed = device.speedKmh { parts.append(String(format: "%.1f km/h", speed)) }
+        if let temperature = device.temperatureCelsius { parts.append(String(format: "%.1f °C", temperature)) }
         if let battery = device.batteryPercent { parts.append("Akku \(battery)%") }
         return parts.isEmpty ? "Noch keine Messwerte" : parts.joined(separator: " · ")
     }

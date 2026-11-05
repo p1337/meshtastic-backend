@@ -33,10 +33,13 @@ Verbindlicher Gesamtumfang und Abnahmestatus: [TODO.md](TODO.md) · Technische Z
   vertikal ausgerichtete und bündig sitzende Symbolleiste mit
   Zurück, Play/Pause, Weiter und Mediathek; das Blatt von unten bietet
   Apple-Music-Playlists;
+  Pedalbalance und BLE-Umgebungstemperatur sind zusätzlich als frei wählbare
+  Datenfelder verfügbar;
   atomare Notfall-Wiederherstellung, Distanz und Tages-GPX-Export; Planung,
   Import, Teilen und Kamera-Sync liegen außerhalb der störungsfreien Fahrkarte
 - **Indoor:** gleichzeitige BLE-Sensorverbindungen mit Puls, Tempo,
-  Kadenz, Leistung, FTMS-Livewerten und Akku sowie erste begrenzte
+  Kadenz, Leistung, Pedalbalance, Umgebungstemperatur, FTMS-Livewerten und Akku
+  sowie erste begrenzte
   FTMS-Steuerung für D100-kompatible Trainer mit ERG, Widerstand, Steigung,
   Pause und Not-Stopp
 

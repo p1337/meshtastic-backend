@@ -87,7 +87,9 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
   steiler Gabel und angeschnittenem Rennlenker; separates Routenmotiv als Hero-Asset
 - Mehrere gleichzeitige BLE-Verbindungen mit State Restoration sowie Live-Parsern
   für Heart Rate, Cycling Speed/Cadence, Cycling Power, FTMS Indoor Bike,
-  Battery und Device Information; echte Sensorabnahme steht noch aus
+  Environmental-Sensing-Temperatur, Battery und Device Information;
+  Pedalbalance sowie Temperatur stehen im Outdoor-Datenfeldmenü und im
+  Indoor-Livebereich; echte Sensorabnahme steht noch aus
 - Erste FTMS-Trainersteuerung mit expliziter Gerätewahl, Control-Point-
   Berechtigung, bestätigten Einzelbefehlen, Wertebereichsprüfung, fünf Sekunden
   Timeout, ERG, Widerstand, Steigung/Simulation, Pause und sichtbarem Not-Stopp;

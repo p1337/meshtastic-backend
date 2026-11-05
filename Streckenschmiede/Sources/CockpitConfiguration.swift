@@ -14,6 +14,8 @@ enum RideDataField: String, CaseIterable, Identifiable {
     case heartRate
     case cadence
     case power
+    case powerBalance
+    case temperature
     case sensorBattery
 
     var id: String { rawValue }
@@ -33,6 +35,8 @@ enum RideDataField: String, CaseIterable, Identifiable {
         case .heartRate: "Puls"
         case .cadence: "Kadenz"
         case .power: "Leistung"
+        case .powerBalance: "Balance"
+        case .temperature: "Temperatur"
         case .sensorBattery: "Sensorakku"
         }
     }
