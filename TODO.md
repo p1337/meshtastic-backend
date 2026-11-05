@@ -142,7 +142,7 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 - [~] Eine breite, mindestens 64 Punkte hohe orange Haupttaste startet die Aufzeichnung ausdrücklich; GPS-Liveposition und Hilfswerkzeuge bleiben davon getrennt. Reale Handschuh- und Geräteabnahme steht aus.
 - [ ] Anpassbare Datenfelder und mindestens drei speicherbare Cockpit-Layouts.
 - [~] Live-Karte mit aktueller Position, gefahrenem Track und geplanter GPX-Linie im Fahrtbild; Abweichung und echte Navigation fehlen noch.
-- [ ] Kartenmodi: Standard, Satellit, Hybrid und OSM-basierte Darstellung mit sichtbarer Quellenangabe.
+- [~] Kartenebenenknopf rechts oben mit gespeicherter Wahl: Apple Standard, Satellit und Hybrid sowie interaktives Online-OpenStreetMap mit sichtbarer Attribution sind implementiert. OpenCycleMap ist als Thunderforest-Option vorhanden, bleibt ohne gültigen Provider-Key deaktiviert; reale Geräte-, Last- und Sperrtestfahrt fehlen.
 - [ ] Kartenorientierung: Norden oben, Fahrtrichtung oben und 3D-Perspektive.
 - [~] Follow-Modus mit eindeutigem Fadenkreuz-Zentrieren-Knopf unten mittig; Verschieben/Pinch schaltet auf freie Karte. Reale Gestenabnahme steht aus.
 - [~] Live-Karten-Zoom per Gesten und auf 84 Punkte beziehungsweise Faktor 1,5 vergrößerten Tasten: Minus unten links, Zentrieren unten mittig, Plus unten rechts; Standardbereich 250 m bis 10 km und Presets Nah/Fahrt/Voraus/Übersicht sind implementiert, reale Handschuhabnahme fehlt.

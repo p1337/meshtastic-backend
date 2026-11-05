@@ -27,6 +27,9 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
   links, Zentrieren mittig, Plus rechts; separate „Bereit“- und GPS-Punkt-
   Zeilen sowie die untere Sensorleiste wurden zugunsten der Karte entfernt
 - Puls, Kadenz, Leistung und Sensorakku stehen im oberen Daten-Cockpit
+- Kartenebenenknopf rechts oben mit dauerhaft gespeicherter Wahl: Apple Karte,
+  Apple Satellit, Apple Hybrid und interaktives OpenStreetMap sind aktiv;
+  OpenCycleMap ist sichtbar, benötigt aber einen gültigen Thunderforest-Key
 - Eigenes orange/schwarzes Corporate-Zeichen mit mittigem Rennrad-Vorderrad,
   steiler Gabel und angeschnittenem Rennlenker; separates Routenmotiv als Hero-Asset
 - Mehrere gleichzeitige BLE-Verbindungen mit State Restoration sowie Live-Parsern

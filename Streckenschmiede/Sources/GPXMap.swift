@@ -21,7 +21,10 @@ struct LiveRideMap: View {
     @AppStorage("rideMapZoomMeters") private var rideMapZoomMeters = 1_500.0
     @AppStorage("rideMapAutoZoom") private var rideMapAutoZoom = true
     @AppStorage("rideMapHeadingUp") private var rideMapHeadingUp = true
+    @AppStorage("rideMapLayer") private var rideMapLayerRaw = RideMapLayer.appleStandard.rawValue
     @State private var cameraPosition: MapCameraPosition = .automatic
+    @State private var rasterCameraTarget: RasterCameraTarget?
+    @State private var cameraRevision = 0
     @State private var followsPosition = true
     private let mapControlSize: CGFloat = 84
 
@@ -33,40 +36,27 @@ struct LiveRideMap: View {
     }
 
     var body: some View {
-        Map(position: $cameraPosition, interactionModes: .all) {
-            if plannedRoute.count > 1 {
-                MapPolyline(coordinates: plannedRoute)
-                    .stroke(
-                        Color(red: 0.82, green: 1.0, blue: 0.1),
-                        style: StrokeStyle(lineWidth: 8, lineCap: .round, lineJoin: .round)
-                    )
-            }
-            if coordinates.count > 1 {
-                MapPolyline(coordinates: coordinates)
-                    .stroke(.orange, style: StrokeStyle(lineWidth: 6, lineCap: .round, lineJoin: .round))
-            }
-            if let currentCoordinate {
-                Annotation("Aktuelle Position", coordinate: currentCoordinate) {
-                    ZStack {
-                        Circle()
-                            .fill(.black.opacity(0.86))
-                            .frame(width: 38, height: 38)
-                            .overlay(Circle().stroke(.white, lineWidth: 2))
-                        Image(systemName: "location.north.fill")
-                            .font(.system(size: 22, weight: .black))
-                            .foregroundStyle(.orange)
-                            .rotationEffect(.degrees(markerRotationDegrees))
-                    }
-                    .shadow(color: .black.opacity(0.65), radius: 5, y: 2)
-                }
-            }
-        }
-        .mapStyle(.standard(elevation: .realistic))
-        .mapControls {
-            MapCompass()
-            MapScaleView()
-        }
+        mapSurface
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .overlay(alignment: .topTrailing) {
+            mapLayerMenu
+                .padding(.top, 126)
+                .padding(.trailing, 12)
+        }
+        .overlay(alignment: .bottomTrailing) {
+            if selectedMapLayer.usesOSMData {
+                Link(destination: URL(string: selectedMapLayer.attributionURL)!) {
+                    Text(selectedMapLayer.attribution)
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 5)
+                        .background(.black.opacity(0.78), in: Capsule())
+                }
+                .padding(.trailing, 12)
+                .padding(.bottom, 234)
+            }
+        }
         .overlay(alignment: .bottom) {
             HStack(spacing: 12) {
                 mapButton(systemImage: "minus", accessibilityLabel: "Karte verkleinern") {
@@ -114,7 +104,13 @@ struct LiveRideMap: View {
         .simultaneousGesture(MagnifyGesture().onChanged { _ in
             followsPosition = false
         })
-        .onAppear { recenter() }
+        .onAppear {
+            if selectedMapLayer == .openCycleMap, openCycleMapKey == nil {
+                rideMapLayerRaw = RideMapLayer.appleStandard.rawValue
+            }
+            recenter()
+        }
+        .onChange(of: rideMapLayerRaw) { _, _ in recenter() }
         .onChange(of: currentCoordinate?.latitude) { _, _ in
             if followsPosition { recenter() }
         }
@@ -131,6 +127,137 @@ struct LiveRideMap: View {
             if followsPosition { recenter() }
         }
         .accessibilityLabel("Live-Fahrtkarte mit aktueller Position und gefahrenem Track")
+    }
+
+    @ViewBuilder
+    private var mapSurface: some View {
+        switch selectedMapLayer {
+        case .openStreetMap:
+            RasterRideMap(
+                providerID: selectedMapLayer.rawValue,
+                tileTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                coordinates: coordinates,
+                plannedRoute: plannedRoute,
+                currentCoordinate: currentCoordinate,
+                courseDegrees: courseDegrees,
+                cameraTarget: rasterCameraTarget,
+                cameraRevision: cameraRevision,
+                followsPosition: $followsPosition
+            )
+        case .openCycleMap:
+            if let openCycleMapKey {
+                RasterRideMap(
+                    providerID: selectedMapLayer.rawValue,
+                    tileTemplate: "https://tile.thunderforest.com/cycle/{z}/{x}/{y}.png?apikey=\(openCycleMapKey)",
+                    coordinates: coordinates,
+                    plannedRoute: plannedRoute,
+                    currentCoordinate: currentCoordinate,
+                    courseDegrees: courseDegrees,
+                    cameraTarget: rasterCameraTarget,
+                    cameraRevision: cameraRevision,
+                    followsPosition: $followsPosition
+                )
+            } else {
+                appleMap
+            }
+        default:
+            appleMap
+        }
+    }
+
+    private var appleMap: some View {
+        Map(position: $cameraPosition, interactionModes: .all) {
+            if plannedRoute.count > 1 {
+                MapPolyline(coordinates: plannedRoute)
+                    .stroke(
+                        Color(red: 0.82, green: 1.0, blue: 0.1),
+                        style: StrokeStyle(lineWidth: 8, lineCap: .round, lineJoin: .round)
+                    )
+            }
+            if coordinates.count > 1 {
+                MapPolyline(coordinates: coordinates)
+                    .stroke(.orange, style: StrokeStyle(lineWidth: 6, lineCap: .round, lineJoin: .round))
+            }
+            if let currentCoordinate {
+                Annotation("Aktuelle Position", coordinate: currentCoordinate) {
+                    ZStack {
+                        Circle()
+                            .fill(.black.opacity(0.86))
+                            .frame(width: 38, height: 38)
+                            .overlay(Circle().stroke(.white, lineWidth: 2))
+                        Image(systemName: "location.north.fill")
+                            .font(.system(size: 22, weight: .black))
+                            .foregroundStyle(.orange)
+                            .rotationEffect(.degrees(markerRotationDegrees))
+                    }
+                    .shadow(color: .black.opacity(0.65), radius: 5, y: 2)
+                }
+            }
+        }
+        .mapStyle(appleMapStyle)
+        .mapControls {
+            MapCompass()
+            MapScaleView()
+        }
+    }
+
+    private var appleMapStyle: MapStyle {
+        switch selectedMapLayer {
+        case .appleSatellite: .imagery
+        case .appleHybrid: .hybrid
+        default: .standard(elevation: .realistic)
+        }
+    }
+
+    private var selectedMapLayer: RideMapLayer {
+        RideMapLayer(rawValue: rideMapLayerRaw) ?? .appleStandard
+    }
+
+    private var openCycleMapKey: String? {
+        guard let key = Bundle.main.object(forInfoDictionaryKey: "THUNDERFOREST_API_KEY") as? String,
+              key.count == 32,
+              key.allSatisfy({ $0.isLetter || $0.isNumber }) else { return nil }
+        return key
+    }
+
+    private var mapLayerMenu: some View {
+        Menu {
+            Section("Apple Maps") {
+                mapLayerButton(.appleStandard)
+                mapLayerButton(.appleSatellite)
+                mapLayerButton(.appleHybrid)
+            }
+            Section("OpenStreetMap") {
+                mapLayerButton(.openStreetMap)
+                mapLayerButton(.openCycleMap, disabled: openCycleMapKey == nil)
+                if openCycleMapKey == nil {
+                    Text("OpenCycleMap benötigt einen Thunderforest-Schlüssel")
+                }
+            }
+        } label: {
+            Image(systemName: "square.3.layers.3d.top.filled")
+                .font(.system(size: 24, weight: .bold))
+                .foregroundStyle(.orange)
+                .frame(width: 58, height: 58)
+                .background(.black.opacity(0.86), in: Circle())
+                .overlay(Circle().stroke(.white.opacity(0.55), lineWidth: 2))
+                .shadow(color: .black.opacity(0.6), radius: 8, y: 3)
+        }
+        .accessibilityLabel("Kartenebene auswählen")
+    }
+
+    private func mapLayerButton(_ layer: RideMapLayer, disabled: Bool = false) -> some View {
+        Button {
+            rideMapLayerRaw = layer.rawValue
+            followsPosition = true
+            recenter()
+        } label: {
+            HStack {
+                Label(layer.title, systemImage: layer.systemImage)
+                if selectedMapLayer == layer { Image(systemName: "checkmark") }
+            }
+        }
+        .disabled(disabled)
     }
 
     @ViewBuilder
@@ -165,12 +292,20 @@ struct LiveRideMap: View {
                 distanceMeters: effectiveZoomMeters / 3
             )
         } ?? currentCoordinate
-        cameraPosition = .camera(MapCamera(
+        let camera = MapCamera(
             centerCoordinate: center,
             distance: effectiveZoomMeters,
             heading: heading,
             pitch: rideMapHeadingUp && travelBearing != nil ? 40 : 0
-        ))
+        )
+        cameraPosition = .camera(camera)
+        rasterCameraTarget = RasterCameraTarget(
+            center: center,
+            distance: effectiveZoomMeters,
+            heading: heading,
+            pitch: rideMapHeadingUp && travelBearing != nil ? 40 : 0
+        )
+        cameraRevision &+= 1
     }
 
     private var markerRotationDegrees: Double {
@@ -248,6 +383,55 @@ struct LiveRideMap: View {
             latitude: resultLatitude * 180 / .pi,
             longitude: resultLongitude * 180 / .pi
         )
+    }
+}
+
+private enum RideMapLayer: String, CaseIterable, Identifiable {
+    case appleStandard
+    case appleSatellite
+    case appleHybrid
+    case openStreetMap
+    case openCycleMap
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .appleStandard: "Apple Karte"
+        case .appleSatellite: "Apple Satellit"
+        case .appleHybrid: "Apple Hybrid"
+        case .openStreetMap: "OpenStreetMap"
+        case .openCycleMap: "OpenCycleMap"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .appleStandard: "map"
+        case .appleSatellite: "globe.americas.fill"
+        case .appleHybrid: "square.2.layers.3d"
+        case .openStreetMap: "signpost.right.and.left"
+        case .openCycleMap: "bicycle"
+        }
+    }
+
+    var usesOSMData: Bool {
+        self == .openStreetMap || self == .openCycleMap
+    }
+
+    var attribution: String {
+        switch self {
+        case .openStreetMap: "© OpenStreetMap contributors"
+        case .openCycleMap: "Maps © Thunderforest · Data © OpenStreetMap contributors"
+        default: ""
+        }
+    }
+
+    var attributionURL: String {
+        switch self {
+        case .openCycleMap: "https://www.thunderforest.com/terms/"
+        default: "https://www.openstreetmap.org/copyright"
+        }
     }
 }
 
