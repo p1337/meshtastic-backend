@@ -39,6 +39,24 @@ enum CockpitConfigurationSelfTest {
             CockpitConfiguration.field(rawValue: "removed-field", slot: 7) == .power,
             "unknown identifiers must use the slot default"
         )
+        cockpitExpect(
+            CockpitConfiguration.suggestedTextSize(fieldCount: 1) == .large,
+            "a single field should default to the largest readable size"
+        )
+        cockpitExpect(
+            CockpitConfiguration.suggestedTextSize(fieldCount: 2) == .medium
+                && CockpitConfiguration.suggestedTextSize(fieldCount: 4) == .medium,
+            "two and four fields should default to the medium size"
+        )
+        cockpitExpect(
+            CockpitConfiguration.suggestedTextSize(fieldCount: 6) == .compact
+                && CockpitConfiguration.suggestedTextSize(fieldCount: 8) == .compact,
+            "dense cockpit layouts should preserve the current compact size"
+        )
+        cockpitExpect(
+            CockpitConfiguration.textSize(rawValue: "large", fieldCount: 8) == .large,
+            "a user's explicit text-size choice must be preserved"
+        )
         print("Cockpit configuration self-test passed")
     }
 }

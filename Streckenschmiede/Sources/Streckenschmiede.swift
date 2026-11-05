@@ -528,8 +528,9 @@ struct MainView: View {
                     indoorView
                 }
 
+                statusBarBackdrop
                 modeToolbar
-                    .padding(.top, 6)
+                    .padding(.top, 1)
                     .padding(.trailing, 10)
             }
             .toolbar(.hidden, for: .navigationBar)
@@ -562,6 +563,16 @@ struct MainView: View {
         .preferredColorScheme(.dark)
     }
 
+    private var statusBarBackdrop: some View {
+        Rectangle()
+            .fill(.ultraThinMaterial)
+            .overlay(Color.black.opacity(0.48))
+            .frame(maxWidth: .infinity)
+            .frame(height: 26)
+            .ignoresSafeArea(edges: .top)
+            .allowsHitTesting(false)
+    }
+
     private var modeToolbar: some View {
         HStack(spacing: 2) {
             modeButton(.outdoor, image: "OutdoorTab", label: "Outdoor")
@@ -578,14 +589,14 @@ struct MainView: View {
             } label: {
                 Image(systemName: "gearshape.fill")
                     .font(.system(size: 17, weight: .semibold))
-                    .frame(width: 42, height: 42)
+                    .frame(width: 38, height: 38)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .foregroundStyle(.orange)
             .accessibilityLabel("Einstellungen")
         }
-        .padding(3)
+        .padding(2)
         .background(.black.opacity(0.82), in: Capsule())
         .overlay(Capsule().stroke(.white.opacity(0.20), lineWidth: 1))
         .shadow(color: .black.opacity(0.5), radius: 7, y: 3)
@@ -596,8 +607,8 @@ struct MainView: View {
             Image(image)
                 .resizable()
                 .scaledToFit()
-                .frame(width: 28, height: 28)
-                .frame(width: 42, height: 42)
+                .frame(width: 25, height: 25)
+                .frame(width: 38, height: 38)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -703,6 +714,7 @@ private struct RideDashboard: View {
     @State private var showingMusicControls = false
     @AppStorage("rideMusicControlsEnabled") private var rideMusicControlsEnabled = false
     @AppStorage("rideCockpitFieldCount") private var rideCockpitFieldCount = 6
+    @AppStorage("rideCockpitTextSize") private var rideCockpitTextSizeRaw = "suggested"
     @AppStorage("rideCockpitField0") private var rideCockpitField0 = RideDataField.speed.rawValue
     @AppStorage("rideCockpitField1") private var rideCockpitField1 = RideDataField.distance.rawValue
     @AppStorage("rideCockpitField2") private var rideCockpitField2 = RideDataField.averageSpeed.rawValue
@@ -733,7 +745,7 @@ private struct RideDashboard: View {
                 }
             }
             .padding(.horizontal, 10)
-            .padding(.top, 56)
+            .padding(.top, 43)
 
             if rideMusicControlsEnabled {
                 musicLauncher
@@ -832,12 +844,19 @@ private struct RideDashboard: View {
                 title: field.title,
                 value: display.value,
                 unit: display.unit,
-                prominent: visibleFieldCount <= 2
+                textSize: cockpitTextSize
             )
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Datenfeld \(slot + 1): \(field.title), \(display.value) \(display.unit)")
         .accessibilityHint("Antippen, um den angezeigten Wert zu ändern")
+    }
+
+    private var cockpitTextSize: CockpitTextSize {
+        CockpitConfiguration.textSize(
+            rawValue: rideCockpitTextSizeRaw,
+            fieldCount: visibleFieldCount
+        )
     }
 
     private func fieldBinding(for slot: Int) -> Binding<String> {
@@ -979,25 +998,57 @@ private struct CockpitFieldCell: View {
     let title: String
     let value: String
     let unit: String
-    let prominent: Bool
+    let textSize: CockpitTextSize
+
+    private var titleSize: CGFloat {
+        switch textSize {
+        case .compact: 8
+        case .medium: 10
+        case .large: 12
+        }
+    }
+
+    private var valueSize: CGFloat {
+        switch textSize {
+        case .compact: 15
+        case .medium: 23
+        case .large: 36
+        }
+    }
+
+    private var unitSize: CGFloat {
+        switch textSize {
+        case .compact: 8
+        case .medium: 10
+        case .large: 13
+        }
+    }
+
+    private var cellHeight: CGFloat {
+        switch textSize {
+        case .compact: 36
+        case .medium: 50
+        case .large: 72
+        }
+    }
 
     var body: some View {
-        VStack(spacing: prominent ? 2 : 1) {
+        VStack(spacing: textSize == .compact ? 1 : 2) {
             Text(title)
-                .font(.system(size: prominent ? 10 : 8, weight: .bold))
+                .font(.system(size: titleSize, weight: .bold))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
             HStack(alignment: .firstTextBaseline, spacing: 3) {
                 Text(value)
                     .font(.system(
-                        size: prominent ? 30 : 15,
-                        weight: prominent ? .black : .bold,
+                        size: valueSize,
+                        weight: textSize == .large ? .black : .bold,
                         design: .rounded
                     ))
                     .monospacedDigit()
                 if !unit.isEmpty {
                     Text(unit)
-                        .font(.system(size: prominent ? 11 : 8, weight: .bold))
+                        .font(.system(size: unitSize, weight: .bold))
                         .foregroundStyle(.secondary)
                 }
             }
@@ -1007,8 +1058,8 @@ private struct CockpitFieldCell: View {
         .padding(.horizontal, 4)
         .frame(
             maxWidth: .infinity,
-            minHeight: prominent ? 62 : 36,
-            maxHeight: prominent ? 62 : 36
+            minHeight: cellHeight,
+            maxHeight: cellHeight
         )
         .background(.white.opacity(0.055), in: RoundedRectangle(cornerRadius: 9))
         .overlay(
@@ -1274,12 +1325,15 @@ struct SettingsView: View {
     @AppStorage("rideMapAutoZoom") private var rideMapAutoZoom = true
     @AppStorage("rideMapHeadingUp") private var rideMapHeadingUp = true
     @AppStorage("rideMap3DEnabled") private var rideMap3DEnabled = true
+    @AppStorage("rideMapTiltDegrees") private var rideMapTiltDegrees = 30.0
+    @AppStorage("rideMapTrafficEnabled") private var rideMapTrafficEnabled = false
     @AppStorage("rideMapStickToRoute") private var rideMapStickToRoute = false
     @AppStorage("rideAutoPauseEnabled") private var rideAutoPauseEnabled = true
     @AppStorage("rideAutoPauseSpeedKmh") private var rideAutoPauseSpeedKmh = 2.5
     @AppStorage("rideAutoPauseDelaySeconds") private var rideAutoPauseDelaySeconds = 8.0
     @AppStorage("rideMusicControlsEnabled") private var rideMusicControlsEnabled = false
     @AppStorage("rideCockpitFieldCount") private var rideCockpitFieldCount = 6
+    @AppStorage("rideCockpitTextSize") private var rideCockpitTextSizeRaw = "suggested"
 
     private let zoomPresets: [(String, Double)] = [
         ("Nah", 500),
@@ -1348,7 +1402,13 @@ struct SettingsView: View {
                     }
                 }
                 .pickerStyle(.segmented)
-                Text("Wähle hier 1, 2, 4, 6 oder 8 Felder. Im Outdoor-Hauptbild kannst du jedes Feld antippen und seinen Wert direkt ändern.")
+                Picker("Schriftgröße", selection: $rideCockpitTextSizeRaw) {
+                    ForEach(CockpitTextSize.allCases) { size in
+                        Text(size.title).tag(size.rawValue)
+                    }
+                }
+                .pickerStyle(.segmented)
+                Text("Für 1 Feld wird Groß, für 2 oder 4 Felder Mittel und für 6 oder 8 Felder Klein vorgeschlagen. Du kannst die Schriftgröße danach frei ändern; jedes Feld bleibt im Outdoor-Hauptbild antippbar.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -1362,6 +1422,22 @@ struct SettingsView: View {
                 Toggle("Automatischer Zoom", isOn: $rideMapAutoZoom)
                 Toggle("Fahrtrichtung oben und Vorausblick", isOn: $rideMapHeadingUp)
                 Toggle("Geneigte 3D-Ansicht", isOn: $rideMap3DEnabled)
+                if rideMap3DEnabled {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text("3D-Neigung")
+                            Spacer()
+                            Text("\(Int(rideMapTiltDegrees))°")
+                                .foregroundStyle(.secondary)
+                                .monospacedDigit()
+                        }
+                        Slider(value: $rideMapTiltDegrees, in: 0...30, step: 5)
+                    }
+                }
+                Toggle("Verkehr auf Apple-Karten", isOn: $rideMapTrafficEnabled)
+                Text("Verkehrsdaten werden von MapKit auf Apple Karte, Satellit und Hybrid eingeblendet. OSM- und Fahrradkarten liefern keine Apple-Verkehrsebene.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                 Toggle("An geplante Straße kleben", isOn: $rideMapStickToRoute)
                 Text(rideMapStickToRoute
                      ? "Nur der Kartenpfeil wird bis 50 m an die aktive Route angelegt. Aufzeichnung, Roh-GPS und Abweichungswarnung bleiben unverändert."
@@ -1465,10 +1541,19 @@ struct SettingsView: View {
             rideCockpitFieldCount = CockpitConfiguration.normalizedFieldCount(
                 rideCockpitFieldCount
             )
+            rideCockpitTextSizeRaw = CockpitConfiguration.textSize(
+                rawValue: rideCockpitTextSizeRaw,
+                fieldCount: rideCockpitFieldCount
+            ).rawValue
             if RideMapLayer(rawValue: rideMapLayerRaw) == .openCycleMap,
                RideMapLayer.openCycleMapKey == nil {
                 rideMapLayerRaw = RideMapLayer.appleStandard.rawValue
             }
+        }
+        .onChange(of: rideCockpitFieldCount) { _, count in
+            rideCockpitTextSizeRaw = CockpitConfiguration.suggestedTextSize(
+                fieldCount: count
+            ).rawValue
         }
     }
 

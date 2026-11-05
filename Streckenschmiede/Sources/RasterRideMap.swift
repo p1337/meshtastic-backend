@@ -38,6 +38,7 @@ struct RasterRideMap: UIViewRepresentable {
     let courseDegrees: Double?
     let cameraTarget: RasterCameraTarget?
     let cameraRevision: Int
+    let showsTraffic: Bool
     @Binding var followsPosition: Bool
 
     func makeCoordinator() -> Coordinator {
@@ -47,16 +48,26 @@ struct RasterRideMap: UIViewRepresentable {
     func makeUIView(context: Context) -> MKMapView {
         let mapView = MKMapView(frame: .zero)
         mapView.delegate = context.coordinator
-        mapView.showsCompass = true
+        mapView.showsCompass = false
         mapView.showsScale = true
+        mapView.showsTraffic = showsTraffic
         mapView.isRotateEnabled = true
         mapView.isPitchEnabled = true
+        let compass = MKCompassButton(mapView: mapView)
+        compass.compassVisibility = .visible
+        compass.translatesAutoresizingMaskIntoConstraints = false
+        mapView.addSubview(compass)
+        NSLayoutConstraint.activate([
+            compass.leadingAnchor.constraint(equalTo: mapView.safeAreaLayoutGuide.leadingAnchor, constant: 10),
+            compass.topAnchor.constraint(equalTo: mapView.safeAreaLayoutGuide.topAnchor, constant: 2)
+        ])
         context.coordinator.installMapStyle(on: mapView)
         return mapView
     }
 
     func updateUIView(_ mapView: MKMapView, context: Context) {
         context.coordinator.parent = self
+        mapView.showsTraffic = showsTraffic
         context.coordinator.installMapStyle(on: mapView)
         context.coordinator.updatePolylines(on: mapView)
         context.coordinator.updatePosition(on: mapView)

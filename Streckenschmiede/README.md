@@ -41,14 +41,19 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
   der Pfeil automatisch nach oben und hält mindestens 24 Punkte Abstand vor
   den tiefen 84-Punkte-Kartenknöpfen. Die Position wird auch ohne verfügbaren
   Fahrkurs aus der Bildschirmmitte in den unteren Kartenbereich gesetzt. Die
-  geneigte 3D-Ansicht wirkt auch im Stand und ist separat abschaltbar
+  geneigte 3D-Ansicht wirkt auch im Stand, ist separat abschaltbar und lässt
+  sich über einen Regler von 0 bis 30 Grad anpassen. Der native Nordpfeil steht
+  links und kollidiert nicht mit dem rechten Outdoor-/Indoor-Umschalter
 - Garmin-artig konfigurierbares oberes Daten-Cockpit: 1, 2, 4, 6 oder 8
   Felder sind in Einstellungen wählbar; jedes Feld lässt sich im Hauptbild per
-  Antippen dauerhaft auf einen Fahrt-, Höhen-, Zeit- oder Sensorwert umstellen
+  Antippen dauerhaft auf einen Fahrt-, Höhen-, Zeit- oder Sensorwert umstellen.
+  Klein, Mittel und Groß sind frei wählbare Schriftstufen; 1 Feld schlägt Groß,
+  2/4 Felder Mittel und 6/8 Felder Klein vor
 - Dauerhaft gespeicherte Kartenwahl ausschließlich unter Einstellungen:
   Apple Karte, Apple Satellit, Apple Hybrid, interaktives OpenStreetMap und
   CyclOSM sind aktiv. OpenCycleMap erscheint nur mit gültigem
-  Thunderforest-Key; auf der Fahrtkarte verdeckt kein Ebenenknopf die Route
+  Thunderforest-Key; auf der Fahrtkarte verdeckt kein Ebenenknopf die Route.
+  Apple-Verkehr ist für die nativen Apple-Kartenstile separat zuschaltbar
 - Optionale, standardmäßig ausgeschaltete Musiksteuerung. Sie kann nur in den
   Einstellungen aktiviert werden; im Outdoor-Cockpit bleibt danach nur ein
   kleiner Doppelnotenknopf. Er öffnet einen dunklen Player als Sheet, der nach

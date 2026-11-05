@@ -220,12 +220,14 @@ Zoom wird als sichtbare Breite/Höhe in Metern statt als anbieterspezifische Kac
 - Auto-Zoom darf Geschwindigkeit, Distanz zum nächsten Manöver und Routenkrümmung verwenden, bleibt abschaltbar.
 - Fahrtrichtung oben nutzt geglätteten Kurs; bei Stillstand wird nicht unruhig gedreht.
 - Die Fahrtkarte füllt die verfügbare Aufzeichnungsfläche bis an den oberen Bildschirmrand. Messwerte und Fahrtaktionen liegen als kompakte kontrastreiche Overlays darauf; es gibt keine separate dauerhaft sichtbare „Bereit“- oder GPS-Punkt-Zeile.
+- Hinter der iPhone-Statusleiste liegt ein dunkler Material-Hintergrund, damit Uhr, Funk und Akku unabhängig vom Karteninhalt lesbar bleiben. Der native MapKit-Kompass wird als eigener `MKCompassButton` links unter der Statusleiste verankert; rechts bleiben Outdoor, Indoor und Einstellungen. Die textliche Meldung „Karte verschoben“ entfällt, der orange/weiße Zustand des Zentrieren-Knopfs genügt.
 - Die Aufzeichnung ist eine automatische lokale Tagesfahrt. Nach Standortfreigabe wird die atomar gesicherte Sitzung desselben Kalendertags fortgesetzt oder neu begonnen. Auto-Pause trennt Stillstand; ein Tageswechsel exportiert den alten Tag und eröffnet den neuen. Ein manueller Startknopf oder eine dauerhafte Fahrt-Aktionsleiste existiert nicht. Planung, Import, Tagesexport/Teilen und Kamera-Sync liegen in Einstellungen.
-- Im Vorausblick wird die native MapKit-Kamera nach der 2D-/3D-Projektion so verschoben, dass die unveränderte GPS-Koordinate horizontal mittig und ein Drittel über dem unteren Kartenrand liegt. `MapCameraPolicy` berechnet den Anker aus der tatsächlichen Kartenhöhe und begrenzt ihn vor der reservierten Bedienzone: Marker-Radius plus mindestens 24 Punkte Abstand vor den 84-Punkte-Trefferflächen. Apple- und regelkonforme OSM-Rasterebenen verwenden denselben `MKMapView`-Kamerapfad, damit Zoom, Neigung und Providerwechsel die Position nicht unter die Knöpfe schieben. Fehlt ein Fahrkurs, wird die Bildschirmoberkante als stabile Bezugsrichtung verwendet. Die 3D-Neigung wirkt auch im Stand.
+- Im Vorausblick wird die native MapKit-Kamera nach der 2D-/3D-Projektion so verschoben, dass die unveränderte GPS-Koordinate horizontal mittig und ein Drittel über dem unteren Kartenrand liegt. `MapCameraPolicy` berechnet den Anker aus der tatsächlichen Kartenhöhe und begrenzt ihn vor der reservierten Bedienzone: Marker-Radius plus mindestens 24 Punkte Abstand vor den 84-Punkte-Trefferflächen. Apple- und regelkonforme OSM-Rasterebenen verwenden denselben `MKMapView`-Kamerapfad, damit Zoom, Neigung und Providerwechsel die Position nicht unter die Knöpfe schieben. Fehlt ein Fahrkurs, wird die Bildschirmoberkante als stabile Bezugsrichtung verwendet. Die Nutzerstufe 0–30 Grad wird auf 0–60 Grad MapKit-Pitch abgebildet, sodass 30 Grad eine deutlich geneigte, aber noch fahrbare Perspektive ergibt.
 - Die untere Kartensteuerung ist symmetrisch und handschuhtauglich: Minus direkt unten links, Fadenkreuz-Zentrieren unten mittig und Plus direkt unten rechts. Alle drei Knöpfe besitzen eine unsichtbare 84 × 84 Punkte große Trefferfläche bei einem ruhigen 58-Punkte-Kreis. Nur ein aktives Manöverbanner liegt mit eigenem Abstand darüber.
 - Outdoor, Indoor und Einstellungen teilen sich rechts oben einen kompakten Modus-Umschalter. Die untere Tab-Leiste entfällt vollständig, damit die Karte bis an den unteren Bildschirmrand reicht.
 - „An geplante Straße kleben“ ist eine reine Darstellungshilfe und standardmäßig aus. In der ersten Stufe darf sie nur den sichtbaren Positionspfeil innerhalb einer engen Schwelle auf die aktive Routengeometrie projizieren. Roh-GPS, gespeicherte Spur und Abweichungslogik verwenden immer die unveränderte Messung. Allgemeines Street-Matching gehört in einen austauschbaren Provider und darf niemals still aktiviert werden.
-- Das obere Outdoor-Cockpit besitzt genau 1, 2, 4, 6 oder 8 sichtbare Felder. Die Anzahl wird in Einstellungen gewählt; jedes Feld besitzt eine stabile Slot-ID und kann im Hauptbild per Menü unabhängig auf einen verfügbaren Fahrt-/Sensorwert gelegt werden. Der erste persistente Stand nutzt acht versionierbare UserDefaults-Slots und stabile `RideDataField`-Kennungen; unbekannte Kennungen fallen auf sichere Slot-Standardwerte zurück. Mehrere benannte Layoutprofile folgen später.
+- Das obere Outdoor-Cockpit besitzt genau 1, 2, 4, 6 oder 8 sichtbare Felder. Die Anzahl wird in Einstellungen gewählt; jedes Feld besitzt eine stabile Slot-ID und kann im Hauptbild per Menü unabhängig auf einen verfügbaren Fahrt-/Sensorwert gelegt werden. Klein, Mittel und Groß sind persistente, ausdrücklich wählbare Typografiestufen. Beim Wechsel der Feldanzahl wird 1→Groß, 2/4→Mittel und 6/8→Klein vorgeschlagen; anschließend hat die Nutzerwahl Vorrang. Der erste persistente Stand nutzt acht versionierbare UserDefaults-Slots und stabile `RideDataField`-Kennungen; unbekannte Kennungen fallen auf sichere Slot-Standardwerte zurück. Mehrere benannte Layoutprofile folgen später.
+- `MKMapView.showsTraffic` ist eine optionale Apple-Kartenfähigkeit. Sie wird nur für Apple Standard, Satellit und Hybrid zugesagt; externe OSM-Rasterebenen besitzen keine behauptete Apple-Verkehrsabdeckung.
 - Puls, Kadenz, Leistung und Sensorakku sind reguläre wählbare Datenfelder. Eine zusätzliche untere Sensorleiste darf die freie Kartenfläche und die Fahrtaktionen nicht verkleinern.
 - Die GPS-Position besitzt im Follow-Modus eine exklusive Schutzzone. Untere Overlays melden ihre reservierte Höhe an `MapCameraPolicy`; der native Kartenpfad verschiebt den unveränderten Positionspunkt bei Bedarf weiter nach oben. Cockpit, Manöverbanner, Kamera, Musik und Bedienelemente dürfen nicht über diese Zone gelegt werden.
 
@@ -335,11 +337,32 @@ Teilnehmers, verschlüsselte aktuelle Position mit Zeit/Genauigkeit, sichtbarer
 Ablauf, Widerruf und automatische Löschung. Google-/Apple-Links dürfen nur als
 ausdrückliche Übergabe zum jeweiligen Dienst dienen und werden nicht gescrapt.
 
+Der vorhandene Kotlin/MQTT-Meshtastic-Server ist dafür keine geeignete Basis:
+ihm fehlen Nutzeridentität, Gruppen-ACL, Ablaufzeit, Widerruf und ein auf
+personenbezogene Livepositionen ausgelegtes Sicherheitsmodell. Die bevorzugte
+erste Infrastruktur ist ein getrennt bereitgestellter, kleiner TLS-/WebSocket-
+Dienst mit einem kurzlebigen Raum pro Fahrt. Der Einladungs-QR enthält
+Gruppenkennung und clientseitigen Schlüssel; der Dienst speichert höchstens
+verschlüsselte letzte Position, Genauigkeit, Zeit und Ablauf je freiwilligem
+Teilnehmer, begrenzt die Rate und löscht automatisch. CloudKit bleibt eine
+Apple-only-Alternative, setzt aber iCloud-/CloudKit-Entitlements und damit
+voraussichtlich ein angepasstes Provisioning-Profil voraus. Game Center wird
+nicht als Transport missbraucht: `GKMatch` ist für aktive Multiplayer-Spiele,
+nicht für dauerhafte Hintergrund-Ortung vorgesehen.
+
+Ein Karten-Langdruck erzeugt zunächst einen lokalen, persistenten
+`SavedMapMarker`. Die anschließende ausdrückliche Aktion wandelt ihn in Ziel,
+geordnetes Zwischenziel oder unabhängigen Wegpunkt um. Routing besitzt Ziel und
+Zwischenziele; Wegpunkte bleiben lokale Referenzen und verändern eine aktive
+Route nicht ohne weitere Nutzeraktion.
+
 Primärquellen:
 
 - <https://developers.google.com/maps/documentation/urls/get-started>
 - <https://support.google.com/maps/answer/15437054>
 - <https://developer.apple.com/find-my/>
+- <https://developer.apple.com/documentation/gamekit/gkmatch>
+- <https://developer.apple.com/app-store/review/guidelines/>
 
 ## Kamera
 
