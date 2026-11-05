@@ -35,6 +35,7 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
     private enum PendingAction { case newRide, recoveredRide }
     private var pendingActionAfterAuthorization: PendingAction?
     private var elapsedTimer: Timer?
+    private var applicationIsActive = true
 
     var active: Bool { sessionPhase == .recording || sessionPhase == .paused }
     var isRecording: Bool { sessionPhase == .recording }
@@ -59,10 +60,27 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
         }
     }
 
-    func refreshLocation() {
+    func activateLiveLocation() {
+        guard CLLocationManager.locationServicesEnabled() else {
+            status = "Ortungsdienste am iPhone einschalten"
+            return
+        }
+        if location.authorizationStatus == .notDetermined {
+            status = "Standortfreigabe wird angefordert"
+            location.requestWhenInUseAuthorization()
+            return
+        }
         guard location.authorizationStatus == .authorizedWhenInUse
-                || location.authorizationStatus == .authorizedAlways else { return }
-        location.requestLocation()
+                || location.authorizationStatus == .authorizedAlways else {
+            status = "Standortzugriff in Einstellungen erlauben"
+            return
+        }
+        updateLocationMode()
+    }
+
+    func setApplicationActive(_ isActive: Bool) {
+        applicationIsActive = isActive
+        updateLocationMode()
     }
 
     func start() {
@@ -87,9 +105,6 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
     private func beginRecording() {
         sessionEngine.start(now: Date())
         trackCoordinates = []
-        currentCoordinate = nil
-        currentHorizontalAccuracy = nil
-        courseDegrees = nil
         distance = 0
         points = 0
         speedKmh = 0
@@ -113,8 +128,8 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
     func pause() {
         guard isRecording else { return }
         sessionEngine.pause(now: Date())
-        stopLocationUpdates()
         syncFromSession(now: Date())
+        updateLocationMode()
         status = "Fahrt pausiert"
     }
 
@@ -173,18 +188,34 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
         RunLoop.main.add(timer, forMode: .common)
     }
 
-    private func startLocationUpdates() {
-        location.allowsBackgroundLocationUpdates = true
-        location.showsBackgroundLocationIndicator = true
-        location.pausesLocationUpdatesAutomatically = false
-        location.startUpdatingLocation()
-    }
+    private func startLocationUpdates() { updateLocationMode() }
 
-    private func stopLocationUpdates() {
-        location.stopUpdatingLocation()
-        location.allowsBackgroundLocationUpdates = false
-        location.showsBackgroundLocationIndicator = false
-        location.pausesLocationUpdatesAutomatically = true
+    private func updateLocationMode() {
+        let allowed = location.authorizationStatus == .authorizedWhenInUse
+            || location.authorizationStatus == .authorizedAlways
+        let mode = LocationModePolicy.mode(
+            isAuthorized: allowed,
+            servicesEnabled: CLLocationManager.locationServicesEnabled(),
+            applicationIsActive: applicationIsActive,
+            isRecording: isRecording
+        )
+        switch mode {
+        case .off:
+            location.stopUpdatingLocation()
+            location.allowsBackgroundLocationUpdates = false
+            location.showsBackgroundLocationIndicator = false
+            location.pausesLocationUpdatesAutomatically = true
+        case .recordingBackground:
+            location.allowsBackgroundLocationUpdates = true
+            location.showsBackgroundLocationIndicator = true
+            location.pausesLocationUpdatesAutomatically = false
+            location.startUpdatingLocation()
+        case .foregroundLive:
+            location.allowsBackgroundLocationUpdates = false
+            location.showsBackgroundLocationIndicator = false
+            location.pausesLocationUpdatesAutomatically = false
+            location.startUpdatingLocation()
+        }
     }
 
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
@@ -201,8 +232,10 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
             } else {
                 status = "Standortzugriff verweigert"
             }
-        } else if allowed, !isRecording {
-            manager.requestLocation()
+        } else if allowed {
+            updateLocationMode()
+        } else if manager.authorizationStatus != .notDetermined {
+            manager.stopUpdatingLocation()
         }
     }
 
@@ -213,10 +246,10 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
 
     private func finishSession() {
         _ = sessionEngine.finish(now: Date())
-        stopLocationUpdates()
         elapsedTimer?.invalidate()
         elapsedTimer = nil
         syncFromSession(now: Date())
+        updateLocationMode()
         guard !sessionEngine.samples.isEmpty else {
             sessionEngine.clearPersistedSession()
             sessionPhase = .finished
@@ -259,6 +292,8 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
             currentCoordinate = point.coordinate
             currentHorizontalAccuracy = point.horizontalAccuracy
             if point.verticalAccuracy >= 0 { elevation = point.altitude }
+            speedKmh = point.speed >= 0 ? point.speed * 3.6 : 0
+            if point.course >= 0, point.speed >= 0.8 { courseDegrees = point.course }
             return
         }
         var acceptedPoint = false
@@ -297,7 +332,6 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
         rideID = snapshot.rideID
         startedAt = snapshot.startedAt
         distance = snapshot.distanceMeters
-        speedKmh = snapshot.latestSpeedKmh
         maximumSpeedKmh = snapshot.maximumSpeedKmh
         ascent = snapshot.ascentMeters
         descent = snapshot.descentMeters
@@ -305,7 +339,9 @@ final class RideTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
         trackCoordinates = snapshot.samples.map {
             CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude)
         }
-        if let latest = snapshot.samples.last {
+        let shouldUseRecordedPosition = sessionPhase == .recording || currentCoordinate == nil
+        if shouldUseRecordedPosition, let latest = snapshot.samples.last {
+            speedKmh = snapshot.latestSpeedKmh
             currentCoordinate = CLLocationCoordinate2D(
                 latitude: latest.latitude,
                 longitude: latest.longitude
@@ -409,6 +445,7 @@ struct MainView: View {
             importGPX(from: url, source: "Geteilt")
         }
         .onChange(of: scenePhase) { _, phase in
+            ride.setApplicationActive(phase == .active)
             if phase == .background || phase == .inactive {
                 ride.persistNow()
             }
@@ -468,7 +505,7 @@ private struct RideDashboard: View {
         .sheet(isPresented: $showingCameraSync) {
             CameraSyncView(ride: ride)
         }
-        .onAppear { ride.refreshLocation() }
+        .onAppear { ride.activateLiveLocation() }
     }
 
     private var cockpitOverlay: some View {
