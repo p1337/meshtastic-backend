@@ -16,8 +16,12 @@ enum MapCameraPolicy {
         return safeZoom * safeFraction
     }
 
-    static func pitchDegrees(is3DEnabled: Bool) -> Double {
-        is3DEnabled ? 55 : 0
+    /// The setting is shown as a simple 0...30 degree rider-facing control.
+    /// MapKit measures pitch from the overhead view, so the full 30 degree
+    /// control range maps to a clearly inclined 60 degree camera.
+    static func pitchDegrees(is3DEnabled: Bool, visualTiltDegrees: Double) -> Double {
+        guard is3DEnabled else { return 0 }
+        return min(max(visualTiltDegrees, 0), 30) * 2
     }
 
     static func riderScreenY(

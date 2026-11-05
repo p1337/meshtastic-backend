@@ -23,6 +23,8 @@ struct LiveRideMap: View {
     @AppStorage("rideMapAutoZoom") private var rideMapAutoZoom = true
     @AppStorage("rideMapHeadingUp") private var rideMapHeadingUp = true
     @AppStorage("rideMap3DEnabled") private var rideMap3DEnabled = true
+    @AppStorage("rideMapTiltDegrees") private var rideMapTiltDegrees = 30.0
+    @AppStorage("rideMapTrafficEnabled") private var rideMapTrafficEnabled = false
     @AppStorage("rideMapStickToRoute") private var rideMapStickToRoute = false
     @AppStorage("rideMapLayer") private var rideMapLayerRaw = RideMapLayer.appleStandard.rawValue
     @State private var rasterCameraTarget: RasterCameraTarget?
@@ -86,17 +88,6 @@ struct LiveRideMap: View {
             .padding(.horizontal, 0)
             .padding(.bottom, mapControlsBottomPadding)
         }
-        .overlay(alignment: .topLeading) {
-            if !followsPosition {
-                Text("Karte verschoben")
-                    .font(.caption.weight(.semibold))
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 7)
-                    .background(.black.opacity(0.78), in: Capsule())
-                    .padding(.top, 210)
-                    .padding(.leading, 12)
-            }
-        }
         .simultaneousGesture(DragGesture(minimumDistance: 8).onChanged { _ in
             followsPosition = false
         })
@@ -120,6 +111,9 @@ struct LiveRideMap: View {
             if followsPosition { recenter() }
         }
         .onChange(of: rideMap3DEnabled) { _, _ in
+            if followsPosition { recenter() }
+        }
+        .onChange(of: rideMapTiltDegrees) { _, _ in
             if followsPosition { recenter() }
         }
         .onChange(of: rideMapStickToRoute) { _, _ in
@@ -160,6 +154,7 @@ struct LiveRideMap: View {
                 courseDegrees: courseDegrees,
                 cameraTarget: rasterCameraTarget,
                 cameraRevision: cameraRevision,
+                showsTraffic: showsTrafficOnCurrentLayer,
                 followsPosition: $followsPosition
             )
         case .cycleOSM:
@@ -173,6 +168,7 @@ struct LiveRideMap: View {
                 courseDegrees: courseDegrees,
                 cameraTarget: rasterCameraTarget,
                 cameraRevision: cameraRevision,
+                showsTraffic: showsTrafficOnCurrentLayer,
                 followsPosition: $followsPosition
             )
         case .openCycleMap:
@@ -187,6 +183,7 @@ struct LiveRideMap: View {
                     courseDegrees: courseDegrees,
                     cameraTarget: rasterCameraTarget,
                     cameraRevision: cameraRevision,
+                    showsTraffic: showsTrafficOnCurrentLayer,
                     followsPosition: $followsPosition
                 )
             } else {
@@ -208,6 +205,7 @@ struct LiveRideMap: View {
             courseDegrees: courseDegrees,
             cameraTarget: rasterCameraTarget,
             cameraRevision: cameraRevision,
+            showsTraffic: showsTrafficOnCurrentLayer,
             followsPosition: $followsPosition
         )
     }
@@ -222,6 +220,10 @@ struct LiveRideMap: View {
 
     private var selectedMapLayer: RideMapLayer {
         RideMapLayer(rawValue: rideMapLayerRaw) ?? .appleStandard
+    }
+
+    private var showsTrafficOnCurrentLayer: Bool {
+        rideMapTrafficEnabled && !selectedMapLayer.usesOSMData
     }
 
     @ViewBuilder
@@ -266,7 +268,10 @@ struct LiveRideMap: View {
                 is3D: rideMap3DEnabled
             )
         )
-        let pitch = CGFloat(MapCameraPolicy.pitchDegrees(is3DEnabled: rideMap3DEnabled))
+        let pitch = CGFloat(MapCameraPolicy.pitchDegrees(
+            is3DEnabled: rideMap3DEnabled,
+            visualTiltDegrees: rideMapTiltDegrees
+        ))
         rasterCameraTarget = RasterCameraTarget(
             center: center,
             riderCoordinate: currentCoordinate,

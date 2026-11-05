@@ -39,12 +39,17 @@ enum MapCameraPolicySelfTest {
             "invalid high zoom values must be clamped"
         )
         mapCameraExpect(
-            MapCameraPolicy.pitchDegrees(is3DEnabled: true) == 55,
-            "3D must tilt the map even before a valid travel course exists"
+            MapCameraPolicy.pitchDegrees(is3DEnabled: true, visualTiltDegrees: 30) == 60,
+            "the full rider-facing tilt must create a clearly inclined MapKit camera"
         )
         mapCameraExpect(
-            MapCameraPolicy.pitchDegrees(is3DEnabled: false) == 0,
+            MapCameraPolicy.pitchDegrees(is3DEnabled: false, visualTiltDegrees: 30) == 0,
             "disabled 3D must return to a flat map"
+        )
+        mapCameraExpect(
+            MapCameraPolicy.pitchDegrees(is3DEnabled: true, visualTiltDegrees: 100) == 60
+                && MapCameraPolicy.pitchDegrees(is3DEnabled: true, visualTiltDegrees: -10) == 0,
+            "saved tilt values must remain inside the supported 0...30 degree range"
         )
         let phoneHeight = 844.0
         let controlTop = phoneHeight - 34 - 84

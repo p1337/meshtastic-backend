@@ -12,13 +12,15 @@ Verbindlicher Gesamtumfang und Abnahmestatus: [TODO.md](TODO.md) · Technische Z
   durch Auto-Pause getrennt und pro Kalendertag in einer Route gesammelt;
   ein in Einstellungen auf 1, 2, 4, 6 oder 8 Felder schaltbares Cockpit;
   jedes Feld kann im Hauptbild per Antippen auf einen Fahrt- oder Sensorwert
-  gelegt werden;
+  gelegt werden; die Beschriftung ist zusätzlich in Klein, Mittel oder Groß
+  wählbar und erhält abhängig von der Feldanzahl einen sinnvollen Vorschlag;
   handschuhtaugliche 84-Punkte-Trefferflächen mit visuell kompaktem Minus
   links, Zentrieren mittig und Plus rechts; der Pfeil bleibt im Follow-Modus
   mit reserviertem Abstand oberhalb dieser Bedienzone;
   Kartenwahl in den Einstellungen für Apple Karte, Satellit, Hybrid,
   Online-OSM und die offene Fahrradkarte CyclOSM, ohne zusätzlichen
-  Ebenenknopf über der Fahrkarte;
+  Ebenenknopf über der Fahrkarte; Apple-Verkehr und eine 0–30-Grad-
+  3D-Neigung sind separat einstellbar;
   erster Zielplaner mit Adress-/POI-Suche, Apple-Fahrradrouten und Alternativen;
   kompakte Live-Führung mit nächstem Apple-Manöver, Entfernung, Reststrecke,
   Restzeit und sichtbarer Routenabweichung; die aktive Apple- oder GPX-Route
