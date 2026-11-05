@@ -180,6 +180,7 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 
 ## P0 – Apple Watch, HealthKit und Apple Fitness
 
+- [?] Das aus der signierten IPA 2.7.0 (Build 89) ausgelesene Ad-hoc-Profil enthält keine HealthKit-Entitlements. Für Workout-/Fitness-Integration ist einmalig ein kompatibles Provisioning-Profil mit HealthKit-Capability erforderlich; das vorhandene Distribution-Zertifikat kann grundsätzlich weiterverwendet werden, sofern Apple-Profil und Bundle-ID passen.
 - [ ] HealthKit-Capability, verständliche Zwecktexte und granulare Freigabeoberfläche ergänzen.
 - [ ] watchOS-Begleit-App mit großen Live-Werten, Herzfrequenz, Start, Pause, Fortsetzen, Runde und Stop.
 - [ ] Bei vorhandener Watch eine primäre `HKWorkoutSession` auf der Watch starten und zum iPhone spiegeln; ohne Watch eine iPhone-Workout-Session verwenden.
@@ -190,6 +191,7 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 - [ ] FTP lesen/anzeigen und nur dann schreiben, wenn Quelle und HealthKit-Regeln dies erlauben; keine erfundenen Werte.
 - [ ] Gewicht, Alter und weitere notwendige Profildaten nur nach Freigabe lesen und ausschließlich für nachvollziehbare Berechnungen verwenden.
 - [ ] Apple-Fitness-Integration über das gespeicherte HealthKit-Workout und die zulässigen Energie-/Trainingsdaten; keine direkte, nicht existierende „Fitness-API“ vortäuschen.
+- [ ] Ringe nur mit echten Daten unterstützen: Outdoor/Indoor-Cycling-Workout mit Fahrtzeit, Fahrraddistanz, aktiver Energie und Route korrekt speichern. Apple Fitness entscheidet über Bewegungs-/Trainingsgutschrift; Streckenschmiede setzt oder manipuliert Ringe nicht direkt und erfindet keine Kalorien.
 - [ ] HealthKit-Autorisierung, abgelehnte Einzelrechte, gesperrtes Gerät, Watch-Trennung und späteren Sync testen.
 
 ## P0 – Bluetooth- und Fahrradsensoren
@@ -247,6 +249,7 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 ## P1 – optionale Musiksteuerung
 
 - [~] Musiksteuerung ist standardmäßig aus und ausschließlich in **Einstellungen > Musik** aktivierbar. Im Outdoor-Cockpit erscheint danach nur ein kleiner Doppelnotenknopf; der dunkle Player mit Titel/Künstler sowie Zurück, Play/Pause und Weiter klappt als Sheet auf und belegt geschlossen keinen Kartenplatz. Der signierte Release-Build 75 kompiliert und paketiert diesen Stand erfolgreich; der echte Apple-Music-Gerätetest steht noch aus.
+- [ ] Apple-Music-/Mediathek-Playlists nach ausdrücklicher Medienfreigabe im einklappbaren Player auswählen und starten; zuletzt gewählte Playlist lokal merken, leere/Cloud-nicht-verfügbare Titel sauber behandeln und geschlossen weiterhin nur das kleine Musik-Symbol zeigen.
 - [ ] Spotify App Remote als getrennten Adapter ergänzen. Voraussetzung sind eine registrierte Spotify-Developer-App, Client-ID, Redirect-URI, Spotify-App auf dem Gerät und ausdrückliche Autorisierung; keine Zugangsdaten im Repository.
 - [ ] Amazon Music erst integrieren, wenn Amazon den Zugriff auf die derzeit geschlossene Beta freigibt, die App zertifiziert ist und eine belastbare iOS-Schnittstelle bereitsteht; keine undokumentierte Fernsteuerung.
 - [ ] Eigenen lokalen Player für MP3/AAC/ALAC aus einem vom Nutzer gewählten Dateien-/iCloud-Drive-Ordner bauen: Security-Scoped Bookmark, Bibliotheksindex, Wiedergabeliste, Unterbrechungsbehandlung, Background Audio, Sperrbildschirm-/Headset-Steuerung und nachvollziehbarer Rechteentzug.
