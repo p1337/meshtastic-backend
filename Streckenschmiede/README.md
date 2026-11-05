@@ -36,10 +36,15 @@ Native iPhone- und später Apple-TV-App für Fahrradaufzeichnung und Indoor-Trai
 - Die vier unteren Werkzeuge Route, GPX-Import, Kamera-Sync und Teilen besitzen
   jetzt gleiche kompakte Flächen; Start/Pause/Stop bleiben davon getrennt groß
 - Puls, Kadenz, Leistung und Sensorakku stehen im oberen Daten-Cockpit
-- Kartenebenenknopf rechts oben mit dauerhaft gespeicherter Wahl: Apple Karte,
-  Apple Satellit, Apple Hybrid, interaktives OpenStreetMap und die offene
-  Fahrradkarte CyclOSM sind aktiv; OpenCycleMap ist zusätzlich sichtbar,
-  benötigt aber einen gültigen Thunderforest-Key
+- Dauerhaft gespeicherte Kartenwahl ausschließlich unter Einstellungen:
+  Apple Karte, Apple Satellit, Apple Hybrid, interaktives OpenStreetMap und
+  CyclOSM sind aktiv. OpenCycleMap erscheint nur mit gültigem
+  Thunderforest-Key; auf der Fahrtkarte verdeckt kein Ebenenknopf die Route
+- Optionale, standardmäßig ausgeschaltete Musikleiste im Outdoor-Cockpit. Sie
+  kann nur in den Einstellungen aktiviert werden und steuert in der ersten
+  Stufe nach ausdrücklicher Freigabe Apple Music mit Titel/Künstler sowie
+  Zurück, Play/Pause und Weiter; Spotify, Amazon Music und eigener
+  iCloud-/Dateien-Player sind als getrennte Adapter dokumentiert
 - Erster Zielplaner innerhalb des Aufzeichnungsbereichs: Adresse oder POI
   suchen, Apple-Fahrradrouten ab aktueller GPS-Position einschließlich
   verfügbarer Alternativen gemeinsam auf der Karte vergleichen, über große

@@ -587,6 +587,7 @@ private struct RideDashboard: View {
     let clearRoute: () -> Void
     @State private var showingCameraSync = false
     @State private var showingRoutePlanner = false
+    @AppStorage("rideMusicControlsEnabled") private var rideMusicControlsEnabled = false
 
     private let columns = [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())]
 
@@ -605,6 +606,10 @@ private struct RideDashboard: View {
 
                 VStack(spacing: 0) {
                     cockpitOverlay
+                    if rideMusicControlsEnabled {
+                        AppleMusicControlsView()
+                            .padding(.top, 6)
+                    }
                     Spacer(minLength: 170)
                     bottomOverlay
                 }
@@ -1167,6 +1172,7 @@ private func formatDuration(_ seconds: Int) -> String {
 }
 
 struct SettingsView: View {
+    @AppStorage("rideMapLayer") private var rideMapLayerRaw = RideMapLayer.appleStandard.rawValue
     @AppStorage("rideMapZoomMeters") private var rideMapZoomMeters = 1_500.0
     @AppStorage("rideMapAutoZoom") private var rideMapAutoZoom = true
     @AppStorage("rideMapHeadingUp") private var rideMapHeadingUp = true
@@ -1175,6 +1181,7 @@ struct SettingsView: View {
     @AppStorage("rideAutoPauseEnabled") private var rideAutoPauseEnabled = true
     @AppStorage("rideAutoPauseSpeedKmh") private var rideAutoPauseSpeedKmh = 2.5
     @AppStorage("rideAutoPauseDelaySeconds") private var rideAutoPauseDelaySeconds = 8.0
+    @AppStorage("rideMusicControlsEnabled") private var rideMusicControlsEnabled = false
 
     private let zoomPresets: [(String, Double)] = [
         ("Nah", 500),
@@ -1214,6 +1221,12 @@ struct SettingsView: View {
                 }
             }
             Section("Fahrtkarte") {
+                Picker("Kartendarstellung", selection: $rideMapLayerRaw) {
+                    ForEach(availableMapLayers) { layer in
+                        Label(layer.title, systemImage: layer.systemImage)
+                            .tag(layer.rawValue)
+                    }
+                }
                 Toggle("Automatischer Zoom", isOn: $rideMapAutoZoom)
                 Toggle("Fahrtrichtung oben und Vorausblick", isOn: $rideMapHeadingUp)
                 Toggle("Geneigte 3D-Ansicht", isOn: $rideMap3DEnabled)
@@ -1257,6 +1270,27 @@ struct SettingsView: View {
                 Text("Nah, Fahrt, Voraus und Übersicht sind handschuhtaugliche Presets. Der Positionspfeil liegt beim Folgen im unteren Bildschirmdrittel, damit die Karte vor dir den größten Raum erhält.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                if RideMapLayer.openCycleMapKey == nil {
+                    Text("OpenCycleMap erscheint erst mit einem gültigen Thunderforest-Schlüssel. Apple Karte, Satellit, Hybrid, OpenStreetMap und CyclOSM sind direkt wählbar.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            Section("Musik") {
+                Toggle("Musiksteuerung im Outdoor-Cockpit", isOn: $rideMusicControlsEnabled)
+                if rideMusicControlsEnabled {
+                    AppleMusicControlsView()
+                    Text("Apple Music ist die erste freigegebene Quelle. Streckenschmiede greift erst nach deiner ausdrücklichen Freigabe auf Titelinformationen und Wiedergabe zu.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    LabeledContent("Spotify", value: "Adapter geplant")
+                    LabeledContent("Amazon Music", value: "Freigabe erforderlich")
+                    LabeledContent("iCloud / Dateien", value: "Eigener Player geplant")
+                } else {
+                    Text("Ausgeschaltet: Auf der Fahrtkarte erscheinen keine Musikdaten oder Musikknöpfe.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
             Section("Streckenschmiede") {
                 Text("Einstellungen")
@@ -1264,6 +1298,18 @@ struct SettingsView: View {
             }
         }
         .navigationTitle("Einstellungen")
+        .onAppear {
+            if RideMapLayer(rawValue: rideMapLayerRaw) == .openCycleMap,
+               RideMapLayer.openCycleMapKey == nil {
+                rideMapLayerRaw = RideMapLayer.appleStandard.rawValue
+            }
+        }
+    }
+
+    private var availableMapLayers: [RideMapLayer] {
+        RideMapLayer.allCases.filter { layer in
+            layer != .openCycleMap || RideMapLayer.openCycleMapKey != nil
+        }
     }
 }
 

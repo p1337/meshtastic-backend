@@ -43,11 +43,6 @@ struct LiveRideMap: View {
     var body: some View {
         mapSurface
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .overlay(alignment: .topTrailing) {
-            mapLayerMenu
-                .padding(.top, 210)
-                .padding(.trailing, 12)
-        }
         .overlay(alignment: .bottomTrailing) {
             if selectedMapLayer.usesOSMData {
                 Link(destination: URL(string: selectedMapLayer.attributionURL)!) {
@@ -109,7 +104,7 @@ struct LiveRideMap: View {
             followsPosition = false
         })
         .onAppear {
-            if selectedMapLayer == .openCycleMap, openCycleMapKey == nil {
+            if selectedMapLayer == .openCycleMap, RideMapLayer.openCycleMapKey == nil {
                 rideMapLayerRaw = RideMapLayer.appleStandard.rawValue
             }
             recenter()
@@ -176,7 +171,7 @@ struct LiveRideMap: View {
                 followsPosition: $followsPosition
             )
         case .openCycleMap:
-            if let openCycleMapKey {
+            if let openCycleMapKey = RideMapLayer.openCycleMapKey {
                 RasterRideMap(
                     providerID: selectedMapLayer.rawValue,
                     tileTemplate: "https://tile.thunderforest.com/cycle/{z}/{x}/{y}.png?apikey=\(openCycleMapKey)",
@@ -242,54 +237,6 @@ struct LiveRideMap: View {
 
     private var selectedMapLayer: RideMapLayer {
         RideMapLayer(rawValue: rideMapLayerRaw) ?? .appleStandard
-    }
-
-    private var openCycleMapKey: String? {
-        guard let key = Bundle.main.object(forInfoDictionaryKey: "THUNDERFOREST_API_KEY") as? String,
-              key.count == 32,
-              key.allSatisfy({ $0.isLetter || $0.isNumber }) else { return nil }
-        return key
-    }
-
-    private var mapLayerMenu: some View {
-        Menu {
-            Section("Apple Maps") {
-                mapLayerButton(.appleStandard)
-                mapLayerButton(.appleSatellite)
-                mapLayerButton(.appleHybrid)
-            }
-            Section("OpenStreetMap") {
-                mapLayerButton(.openStreetMap)
-                mapLayerButton(.cycleOSM)
-                mapLayerButton(.openCycleMap, disabled: openCycleMapKey == nil)
-                if openCycleMapKey == nil {
-                    Text("OpenCycleMap benötigt einen Thunderforest-Schlüssel")
-                }
-            }
-        } label: {
-            Image(systemName: "square.3.layers.3d.top.filled")
-                .font(.system(size: 24, weight: .bold))
-                .foregroundStyle(.orange)
-                .frame(width: 58, height: 58)
-                .background(.black.opacity(0.86), in: Circle())
-                .overlay(Circle().stroke(.white.opacity(0.55), lineWidth: 2))
-                .shadow(color: .black.opacity(0.6), radius: 8, y: 3)
-        }
-        .accessibilityLabel("Kartenebene auswählen")
-    }
-
-    private func mapLayerButton(_ layer: RideMapLayer, disabled: Bool = false) -> some View {
-        Button {
-            rideMapLayerRaw = layer.rawValue
-            followsPosition = true
-            recenter()
-        } label: {
-            HStack {
-                Label(layer.title, systemImage: layer.systemImage)
-                if selectedMapLayer == layer { Image(systemName: "checkmark") }
-            }
-        }
-        .disabled(disabled)
     }
 
     @ViewBuilder
@@ -475,7 +422,7 @@ struct LiveRideMap: View {
     }
 }
 
-private enum RideMapLayer: String, CaseIterable, Identifiable {
+enum RideMapLayer: String, CaseIterable, Identifiable {
     case appleStandard
     case appleSatellite
     case appleHybrid
@@ -525,6 +472,13 @@ private enum RideMapLayer: String, CaseIterable, Identifiable {
         case .openCycleMap: "https://www.thunderforest.com/terms/"
         default: "https://www.openstreetmap.org/copyright"
         }
+    }
+
+    static var openCycleMapKey: String? {
+        guard let key = Bundle.main.object(forInfoDictionaryKey: "THUNDERFOREST_API_KEY") as? String,
+              key.count == 32,
+              key.allSatisfy({ $0.isLetter || $0.isNumber }) else { return nil }
+        return key
     }
 }
 
