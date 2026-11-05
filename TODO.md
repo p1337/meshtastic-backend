@@ -134,7 +134,7 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 - [~] Gesamtzeit, Fahrzeit sowie manuelle und automatische Pausenzeit werden getrennt geführt und im Cockpit angezeigt. Ein kompakter Fahrtknopf am rechten Kartenrand pausiert die Tagesaufzeichnung manuell beziehungsweise setzt sie fort, ohne die Route zu beenden; echte Fahrtabnahme fehlt.
 - [~] Erste GPS-Live-Werte: aktuelle, durchschnittliche und maximale Geschwindigkeit, Distanz, Zeit, Höhe sowie Auf-/Abstieg. BLE-Herzfrequenz, Trittfrequenz, Leistung, Pedalbalance, Umgebungstemperatur und Sensorakku können im Cockpit gewählt werden; Steigung, Kalorien, Quellenpriorität und echte Sensorabnahme bleiben offen.
 - [ ] Datenherkunft je Wert sichtbar und testbar machen: Sensor, Apple Watch, GPS oder Schätzung.
-- [ ] Einheiten km/mi, kg/lb, °C/°F und konfigurierbarer Radumfang.
+- [~] Der Abroll-Durchmesser ist je Fahrradprofil von 250 bis 900 mm editierbar; der daraus berechnete Radumfang speist die BLE-CSC-Geschwindigkeit. Einheiten km/mi, kg/lb, °C/°F sowie echte Mess-/Sensorabnahme bleiben offen.
 
 ## P0 – modernes Fahrt-Cockpit und Karten
 
@@ -163,7 +163,7 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 - [~] Zielwahl über Apple-Adress-/POI-Suche ab aktueller GPS-Position ist implementiert; Favoriten, Kartenpunkt, Zwischenziele und Kontakte nach ausdrücklicher Freigabe fehlen.
 - [ ] Zwischenziele hinzufügen, sortieren und entfernen.
 - [ ] Profile: **Radwege bevorzugt**, **Ausgewogen**, **Straße/schnell**.
-- [ ] Fahrradtypen: Rennrad, Gravel/Cross, City/Trekking, Mountainbike und E-Bike.
+- [~] Versionierte, atomar gespeicherte Fahrradprofile mit aktivem Rad, freiem Namen, 28 Typen und originalen Code-Schattenbildern: Rennrad, Gravel, Cyclocross, Triathlon, Bahn/Fixie, Hardtail/Fully/Enduro/Dirt/Fatbike, Trekking, City, Reise, Hybrid, Lastenrad, Falt-, BMX-, Liege-, Tandem-, Hand-, Cruiser- und Kinderrad sowie E-Rennrad, E-Gravel, E-MTB, E-City/Trekking, E-Lastenrad und Andere. UI-/Roundtrip-Selbsttest folgt im nächsten signierten Build; Gewicht, E-Bike-Konfiguration, Sensorzuordnung und Routingpräferenzen je Profil bleiben offen.
 - [ ] Regler für Straßenanteil, Hügel, schlechte Oberflächen, Hauptstraßen, Fähren, Treppen und unbefestigte Wege.
 - [~] Apple-MapKit-Fahrradrouting nutzt `.cycling`, Distanz, erwartete Zeit, Hinweise und verfügbare Alternativen; Regionsverfügbarkeit, echte Route und Fehlerfälle auf dem iPhone bleiben zu testen.
 - [ ] OSM-basiertes Valhalla-Routing als austauschbaren Provider anbinden, damit Radweg-/Straßenanteil, Fahrradtyp, Untergrund und Hügel tatsächlich steuerbar sind.
@@ -198,7 +198,7 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 
 - [~] `SensorHub` unterstützt mehrere gleichzeitige Verbindungen, Wiederverbindung und Core-Bluetooth-State-Restoration; dauerhafte Zuordnung pro Fahrrad und echte Hardwareabnahme fehlen.
 - [~] Heart Rate Service (`0x180D`): Puls, RR-Intervalle und Sensor-Kontaktstatus werden defensiv dekodiert; reale Brustgurt-/Watch-Abnahme fehlt.
-- [~] Cycling Speed and Cadence Service (`0x1816`): Rad-/Kurbelumdrehungen, Geschwindigkeit und Trittfrequenz einschließlich Zeitüberlauf sind implementiert; Radumfang-Einstellung, Distanzquelle und Hardwaretest fehlen.
+- [~] Cycling Speed and Cadence Service (`0x1816`): Rad-/Kurbelumdrehungen, Geschwindigkeit und Trittfrequenz einschließlich Zeitüberlauf sind implementiert; der Umfang des aktiven Fahrradprofils wird übernommen und setzt den Revolutionszustand beim Wechsel sicher zurück. Distanzquelle und Hardwaretest fehlen.
 - [~] Cycling Power Service (`0x1818`): Leistung, Balance und optionale Rad-/Kurbelwerte werden dekodiert; Drehmoment-/Extremkraftfelder, Quellenwahl und Hardwaretest fehlen.
 - [~] Fitness Machine Service (`0x1826`): Indoor-Bike-Livewerte, Target-Features, unterstützte Widerstands-/Steigungs-/Leistungsbereiche, Status und Control Point sind implementiert; zusätzliche FTMS-Messfelder und echte Hardwareabnahme fehlen.
 - [~] Battery Service (`0x180F`) und Device Information Service (`0x180A`) werden gelesen und pro Gerät angezeigt; echte Geräteabnahme fehlt.
@@ -222,6 +222,7 @@ Stand: 4. November 2026. Dieses Dokument ist die verbindliche Produkt- und Abnah
 - [ ] Virtuelle Gänge mit konfigurierbarer Gangzahl/Übersetzung; Click verändert nur das Gangmodell, der Trainer-Controller bleibt alleiniger Eigentümer der D100-Kommandos.
 - [ ] Linken Click über mindestens 60 Minuten auf den historisch dokumentierten firmwareabhängigen Ausfall testen.
 - [~] Indoor-Cockpit zeigt Leistung, Kadenz, Herzfrequenz und FTMS-Steuerung für Widerstand/ERG/Steigung; Gang, Indoor-Zeit/Energie, Intervalle und anpassbare Felder fehlen.
+- [ ] Im Indoor-Bereich alle gespeicherten gefahrenen Strecken als Bibliothek zeigen: je Fahrt eine Karten-Vorschau mit der gefahrenen Linie, Datum/Name, Distanz, Zeiten, Tempo, Auf-/Abstieg und verfügbare Sensordaten. Jeder Eintrag muss nach ausdrücklicher Bestätigung einschließlich Historieneintrag und zugehöriger lokaler GPX-Datei sicher löschbar sein.
 - [ ] Strukturierte Workouts mit Warm-up, Intervallen, ERG, frei fahren und Cool-down.
 - [ ] Trainingsplan-Bibliothek mit Vorlagen, selbst erstellbaren Einheiten, Kalender/Planfortschritt, Zielbereichen für Leistung, Puls und Kadenz sowie sicherer Pause/Fortsetzung.
 - [ ] Indoor-„Geistfahrt“ gegen eine eigene gespeicherte Referenzfahrt: Fortschritt entlang derselben Distanz/Route, Zeitabstand, bisherige und aktuelle Leistung/Kadenz/Puls, persönliche Bestzeit und Datenschutz vollständig lokal; Trainerziele laufen weiterhin ausschließlich über `TrainerCore` und seine Sicherheitsgrenzen.

@@ -85,6 +85,12 @@ final class SensorHub: NSObject, ObservableObject, CBCentralManagerDelegate, CBP
         )
     }
 
+    func useWheelCircumference(meters: Double) {
+        guard meters.isFinite, (0.5...4).contains(meters) else { return }
+        wheelCircumferenceMeters = meters
+        revolutionStates.removeAll()
+    }
+
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
         switch central.state {
         case .poweredOn: status = "Bluetooth bereit"

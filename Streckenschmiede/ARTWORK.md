@@ -45,3 +45,14 @@ jeweiligen Plattformvorgaben getrennt zu prüfen.
 - Beide SVGs sind einfarbige Template-Assets, damit iOS sie im Tab-Balken mit
   der aktiven oder inaktiven Systemfarbe rendert. Sie enthalten weder fremde
   Markenformen noch D100-Produktgrafiken.
+
+## Fahrradprofil-Schattenbilder
+
+- Die Profilvorschauen sind eigene, zur Laufzeit gezeichnete SwiftUI-Vektoren;
+  es werden keine Herstellerbilder, Produktfotos oder fremden Markenformen
+  gespeichert.
+- Orange Kartenfläche, tiefschwarze Silhouette, große Räder und wenige kräftige
+  Rahmenlinien bleiben auch als kleine Vorschau erkennbar.
+- Typmerkmale wie Rennlenker, Aeroaufsatz, Federung, Gepäckträger, Lastenbox,
+  Tandemsitz, Faltgelenk oder E-Bike-Akku werden nur abstrahiert angedeutet.
+  Das Bild ist Orientierung, keine maßhaltige Produktdarstellung.

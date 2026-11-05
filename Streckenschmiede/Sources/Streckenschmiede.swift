@@ -490,6 +490,7 @@ struct MainView: View {
 
     @StateObject private var ride = RideTracker()
     @StateObject private var sensors = SensorHub()
+    @StateObject private var bikeProfiles = BikeProfileManager()
     @Environment(\.scenePhase) private var scenePhase
     @State private var selectedMode: AppMode = .outdoor
     @State private var importing = false
@@ -553,6 +554,10 @@ struct MainView: View {
             importGPX(from: url, source: "Geteilt")
         }
         .onAppear { ride.activateDailyTracking() }
+        .onAppear { applyActiveBikeProfile() }
+        .onChange(of: bikeProfiles.activeProfile) { _, _ in
+            applyActiveBikeProfile()
+        }
         .onChange(of: scenePhase) { _, phase in
             ride.setApplicationActive(phase == .active)
             if phase == .background || phase == .inactive {
@@ -580,6 +585,7 @@ struct MainView: View {
             NavigationLink {
                 SettingsView(
                     ride: ride,
+                    bikeProfiles: bikeProfiles,
                     hasActiveRoute: routePlan != nil,
                     planRoute: { showingRoutePlanner = true },
                     importRoute: { importing = true },
@@ -688,6 +694,11 @@ struct MainView: View {
         } catch {
             routeMessage = "Import fehlgeschlagen: \(error.localizedDescription)"
         }
+    }
+
+    private func applyActiveBikeProfile() {
+        guard let profile = bikeProfiles.activeProfile else { return }
+        sensors.useWheelCircumference(meters: profile.wheelCircumferenceMeters)
     }
 
     private func activateRoute(_ plan: RideRoutePlan) {
@@ -1390,6 +1401,7 @@ private func formatDuration(_ seconds: Int) -> String {
 
 struct SettingsView: View {
     @ObservedObject var ride: RideTracker
+    @ObservedObject var bikeProfiles: BikeProfileManager
     let hasActiveRoute: Bool
     let planRoute: () -> Void
     let importRoute: () -> Void
@@ -1419,6 +1431,44 @@ struct SettingsView: View {
 
     var body: some View {
         Form {
+            Section("Fahrräder") {
+                NavigationLink {
+                    BikeProfilesView(manager: bikeProfiles)
+                } label: {
+                    HStack(spacing: 12) {
+                        if let active = bikeProfiles.activeProfile {
+                            BikeSilhouetteView(kind: active.kind)
+                                .frame(width: 94, height: 58)
+                                .accessibilityHidden(true)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(active.name)
+                                    .font(.headline)
+                                Text(active.kind.title)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        } else {
+                            Image(systemName: "bicycle")
+                                .font(.title2)
+                                .foregroundStyle(.orange)
+                            Text("Fahrradprofile anlegen")
+                        }
+                    }
+                }
+                if let active = bikeProfiles.activeProfile {
+                    LabeledContent(
+                        "Abroll-Durchmesser",
+                        value: String(format: "%.0f mm", active.wheelDiameterMillimeters)
+                    )
+                    LabeledContent(
+                        "Sensor-Radumfang",
+                        value: String(format: "%.0f mm", active.wheelCircumferenceMillimeters)
+                    )
+                }
+                Text("Das aktive Profil bestimmt den Radumfang für gekoppelte Geschwindigkeits- und Kadenzsensoren. Jedes Rad kann einen eigenen Typ, Namen und Abroll-Durchmesser erhalten.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
             Section("Aufzeichnung") {
                 Toggle("Auto-Pause", isOn: $rideAutoPauseEnabled)
                 if rideAutoPauseEnabled {

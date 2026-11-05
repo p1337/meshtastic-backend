@@ -34,6 +34,9 @@ Verbindlicher Gesamtumfang und Abnahmestatus: [TODO.md](TODO.md) · Technische Z
   Zurück, Play/Pause, Weiter und Mediathek; das Blatt von unten bietet
   Apple-Music-Playlists; direkt darunter pausiert beziehungsweise setzt ein
   gleich großer kompakter Fahrtknopf die automatische Tagesaufzeichnung fort;
+  mehrere lokal gespeicherte Fahrradprofile mit aktivem Rad, eigenem Namen,
+  Fahrradtyp, Schattenbild und Abroll-Durchmesser; der daraus berechnete
+  Radumfang wird direkt für BLE-Geschwindigkeitssensoren verwendet;
   Pedalbalance und BLE-Umgebungstemperatur sind zusätzlich als frei wählbare
   Datenfelder verfügbar;
   atomare Notfall-Wiederherstellung, Distanz und Tages-GPX-Export; Planung,
@@ -43,6 +46,11 @@ Verbindlicher Gesamtumfang und Abnahmestatus: [TODO.md](TODO.md) · Technische Z
   sowie erste begrenzte
   FTMS-Steuerung für D100-kompatible Trainer mit ERG, Widerstand, Steigung,
   Pause und Not-Stopp
+
+Die Profiltypen decken Rennrad, Gravel, Cyclocross, Triathlon, Bahn/Fixie,
+MTB-Varianten, Trekking, City, Reise, Hybrid, Lastenrad, Falt-/Kinder-/BMX-,
+Liege-, Tandem-, Hand-, Cruiser- und die entsprechenden E-Bike-Klassen ab;
+„Andere“ bleibt für Sonderräder verfügbar.
 
 Einstellungen sind über das Zahnradsymbol erreichbar. Design: dunkel, orangefarbene Akzente. Der derzeitige Build ist nur ein Grundprototyp. Das verbindliche Ziel umfasst ein modernes Fahrt-Cockpit, Live-Navigation mit Radweg-/Straßenprofilen und einstellbaren Zoomstufen, OSM-Option, Apple Watch/HealthKit/Apple Fitness, mehrere gleichzeitige Fahrradsensoren, D100/FTMS, Click V2 und die dokumentierten Historien-/Analysefunktionen. Diese Punkte sind in [TODO.md](TODO.md) einzeln aufgeführt und überwiegend **noch nicht implementiert**.
 
