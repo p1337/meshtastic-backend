@@ -10,6 +10,8 @@ Verbindlicher Gesamtumfang und Abnahmestatus: [TODO.md](TODO.md) · Technische Z
   unteren Drittel und großem Vorausblick; Live-Position läuft bei geöffneter
   App dauerhaft, während Trackpunkte erst nach Start geschrieben werden;
   eine breite orange Haupttaste „Aufzeichnung starten“ beginnt die Speicherung;
+  Puls, Kadenz, Leistung und Sensorakku stehen kompakt im oberen Cockpit;
+  84-Punkte-Kartensteuerung mit Minus links, Zentrieren mittig und Plus rechts;
   GPS-Fahrt mit Pause/Fortsetzen, atomarer Notfall-Wiederherstellung, Distanz
   und GPX-Export; GPX-Import und Kartenansicht über Apple MapKit
 - **Indoor-Training:** gleichzeitige BLE-Sensorverbindungen mit Puls, Tempo,

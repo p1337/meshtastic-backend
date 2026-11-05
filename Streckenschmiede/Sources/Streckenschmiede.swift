@@ -509,51 +509,60 @@ private struct RideDashboard: View {
     }
 
     private var cockpitOverlay: some View {
-        HStack(alignment: .center, spacing: 10) {
-            VStack(alignment: .leading, spacing: 0) {
-                HStack(spacing: 6) {
-                    Circle()
-                        .fill(ride.isRecording ? Color.green : (ride.recoveryAvailable ? Color.red : Color.orange))
-                        .frame(width: 8, height: 8)
-                    Text("TEMPO")
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(.secondary)
+        VStack(spacing: 7) {
+            HStack(alignment: .center, spacing: 10) {
+                VStack(alignment: .leading, spacing: 0) {
+                    HStack(spacing: 6) {
+                        Circle()
+                            .fill(ride.isRecording ? Color.green : (ride.recoveryAvailable ? Color.red : Color.orange))
+                            .frame(width: 8, height: 8)
+                        Text("TEMPO")
+                            .font(.caption2.weight(.bold))
+                            .foregroundStyle(.secondary)
+                    }
+                    HStack(alignment: .firstTextBaseline, spacing: 4) {
+                        Text(String(format: "%.1f", ride.speedKmh))
+                            .font(.system(size: 44, weight: .black, design: .rounded))
+                            .monospacedDigit()
+                        Text("km/h")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(.secondary)
+                    }
                 }
-                HStack(alignment: .firstTextBaseline, spacing: 4) {
-                    Text(String(format: "%.1f", ride.speedKmh))
-                        .font(.system(size: 44, weight: .black, design: .rounded))
-                        .monospacedDigit()
-                    Text("km/h")
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(.secondary)
+                .frame(minWidth: 122, alignment: .leading)
+
+                LazyVGrid(columns: columns, spacing: 6) {
+                    RideMetric(title: "km", value: String(format: "%.2f", ride.distance / 1_000))
+                    RideMetric(title: "Ø", value: String(format: "%.1f", ride.averageSpeedKmh))
+                    RideMetric(title: "max", value: String(format: "%.1f", ride.maximumSpeedKmh))
+                    RideMetric(title: "Fahrt", value: formatDuration(ride.ridingSeconds))
+                    RideMetric(title: "Höhe", value: String(format: "%.0f m", ride.elevation))
+                    RideMetric(title: "Auf/Ab", value: String(format: "%.0f/%.0f", ride.ascent, ride.descent))
                 }
-            }
-            .frame(minWidth: 122, alignment: .leading)
 
-            LazyVGrid(columns: columns, spacing: 6) {
-                RideMetric(title: "km", value: String(format: "%.2f", ride.distance / 1_000))
-                RideMetric(title: "Ø", value: String(format: "%.1f", ride.averageSpeedKmh))
-                RideMetric(title: "max", value: String(format: "%.1f", ride.maximumSpeedKmh))
-                RideMetric(title: "Fahrt", value: formatDuration(ride.ridingSeconds))
-                RideMetric(title: "Höhe", value: String(format: "%.0f m", ride.elevation))
-                RideMetric(title: "Auf/Ab", value: String(format: "%.0f/%.0f", ride.ascent, ride.descent))
+                NavigationLink {
+                    SettingsView()
+                } label: {
+                    Image(systemName: "gearshape.fill")
+                        .font(.title3.weight(.semibold))
+                        .frame(width: 48, height: 48)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.orange)
+                .background(.black.opacity(0.7), in: Circle())
+                .accessibilityLabel("Einstellungen")
             }
 
-            NavigationLink {
-                SettingsView()
-            } label: {
-                Image(systemName: "gearshape.fill")
-                    .font(.title3.weight(.semibold))
-                    .frame(width: 48, height: 48)
-                    .contentShape(Rectangle())
+            HStack(spacing: 6) {
+                RideMetric(title: "PULS", value: sensors.heartRateBpm.map { "\($0)" } ?? "–")
+                RideMetric(title: "KADENZ", value: sensors.cadenceRpm.map { String(format: "%.0f", $0) } ?? "–")
+                RideMetric(title: "WATT", value: sensors.powerWatts.map { "\($0)" } ?? "–")
+                RideMetric(title: "AKKU", value: sensors.batteryPercent.map { "\($0)%" } ?? "–")
             }
-            .buttonStyle(.plain)
-            .foregroundStyle(.orange)
-            .background(.black.opacity(0.7), in: Circle())
-            .accessibilityLabel("Einstellungen")
         }
         .padding(.horizontal, 12)
-        .padding(.vertical, 9)
+        .padding(.vertical, 8)
         .background(.black.opacity(0.82), in: RoundedRectangle(cornerRadius: 18))
         .overlay(RoundedRectangle(cornerRadius: 18).stroke(.white.opacity(0.18)))
     }
@@ -568,17 +577,6 @@ private struct RideDashboard: View {
                     .padding(.vertical, 7)
                     .background(.black.opacity(0.78), in: Capsule())
             }
-
-            HStack(spacing: 6) {
-                SensorValue(title: "PULS", value: sensors.heartRateBpm.map { "\($0)" } ?? "–")
-                SensorValue(title: "KADENZ", value: sensors.cadenceRpm.map { String(format: "%.0f", $0) } ?? "–")
-                SensorValue(title: "WATT", value: sensors.powerWatts.map { "\($0)" } ?? "–")
-                SensorValue(title: "AKKU", value: sensors.batteryPercent.map { "\($0)%" } ?? "–")
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 7)
-            .background(.black.opacity(0.82), in: RoundedRectangle(cornerRadius: 16))
-            .overlay(RoundedRectangle(cornerRadius: 16).stroke(.white.opacity(0.15)))
 
             if ride.active {
                 HStack(spacing: 10) {

@@ -23,6 +23,7 @@ struct LiveRideMap: View {
     @AppStorage("rideMapHeadingUp") private var rideMapHeadingUp = true
     @State private var cameraPosition: MapCameraPosition = .automatic
     @State private var followsPosition = true
+    private let mapControlSize: CGFloat = 84
 
     private var effectiveZoomMeters: Double {
         guard rideMapAutoZoom else { return rideMapZoomMeters }
@@ -66,21 +67,35 @@ struct LiveRideMap: View {
             MapScaleView()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .overlay(alignment: .trailing) {
-            VStack(spacing: 10) {
-                mapButton(systemImage: "plus.magnifyingglass") {
-                    rideMapZoomMeters = max(250, rideMapZoomMeters / 1.5)
-                    followsPosition = true
-                    recenter()
-                }
-                mapButton(systemImage: "minus.magnifyingglass") {
+        .overlay(alignment: .bottom) {
+            HStack(spacing: 12) {
+                mapButton(systemImage: "minus", accessibilityLabel: "Karte verkleinern") {
                     rideMapZoomMeters = min(10_000, rideMapZoomMeters * 1.5)
                     followsPosition = true
                     recenter()
                 }
+
+                Spacer(minLength: 0)
+
+                mapButton(
+                    systemImage: "scope",
+                    accessibilityLabel: "Fahrrad auf der Karte zentrieren",
+                    foreground: followsPosition ? .orange : .white
+                ) {
+                    followsPosition = true
+                    recenter()
+                }
+
+                Spacer(minLength: 0)
+
+                mapButton(systemImage: "plus", accessibilityLabel: "Karte vergrößern") {
+                    rideMapZoomMeters = max(250, rideMapZoomMeters / 1.5)
+                    followsPosition = true
+                    recenter()
+                }
             }
-            .padding(.trailing, 12)
-            .offset(y: -24)
+            .padding(.horizontal, 14)
+            .padding(.bottom, 142)
         }
         .overlay(alignment: .topLeading) {
             if !followsPosition {
@@ -92,24 +107,6 @@ struct LiveRideMap: View {
                     .padding(.top, 126)
                     .padding(.leading, 12)
             }
-        }
-        .overlay(alignment: .bottom) {
-            Button {
-                followsPosition = true
-                recenter()
-            } label: {
-                Image(systemName: "scope")
-                    .font(.title2.weight(.black))
-                    .frame(width: 60, height: 60)
-                    .contentShape(Circle())
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(followsPosition ? .orange : .white)
-            .background(.black.opacity(0.84), in: Circle())
-            .overlay(Circle().stroke(.white.opacity(0.65), lineWidth: 1))
-            .shadow(color: .black.opacity(0.55), radius: 8, y: 3)
-            .padding(.bottom, 154)
-            .accessibilityLabel("Fahrrad auf der Karte zentrieren")
         }
         .simultaneousGesture(DragGesture(minimumDistance: 8).onChanged { _ in
             followsPosition = false
@@ -137,18 +134,24 @@ struct LiveRideMap: View {
     }
 
     @ViewBuilder
-    private func mapButton(systemImage: String, action: @escaping () -> Void) -> some View {
+    private func mapButton(
+        systemImage: String,
+        accessibilityLabel: String,
+        foreground: Color = .orange,
+        action: @escaping () -> Void
+    ) -> some View {
         Button(action: action) {
             Image(systemName: systemImage)
-                .font(.title3.weight(.bold))
-                .frame(width: 56, height: 56)
-                .contentShape(Rectangle())
+                .font(.system(size: 30, weight: .black))
+                .frame(width: mapControlSize, height: mapControlSize)
+                .contentShape(Circle())
         }
         .buttonStyle(.plain)
-        .foregroundStyle(.orange)
-        .background(.black.opacity(0.8), in: Circle())
-        .overlay(Circle().stroke(.white.opacity(0.35), lineWidth: 1))
-        .accessibilityLabel(systemImage)
+        .foregroundStyle(foreground)
+        .background(.black.opacity(0.86), in: Circle())
+        .overlay(Circle().stroke(.white.opacity(0.55), lineWidth: 2))
+        .shadow(color: .black.opacity(0.6), radius: 8, y: 3)
+        .accessibilityLabel(accessibilityLabel)
     }
 
     private func recenter() {
